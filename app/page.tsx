@@ -10,7 +10,7 @@ type HomeProps = {
   testimonials: Awaited<ReturnType<typeof getTestimonials>>;
 };
 
-export const revalidate = 0; // always fetch fresh data
+export const revalidate = 3600; // revalidate every hour
 
 export default async function Home() {
   const services = await getServices();
@@ -19,7 +19,7 @@ export default async function Home() {
   return (
     <div className="flex flex-col min-h-screen">
       {/* Hero Section */}
-      <section className="relative pt-32 pb-20 md:pt-48 md:pb-32 gradient-hero">
+      <section className="relative h-screen flex items-center gradient-hero">
         {/* Background Pattern */}
         <div className="absolute inset-0 bg-hero-pattern opacity-10" />
 
@@ -27,38 +27,42 @@ export default async function Home() {
         <div className="absolute top-0 right-0 -mr-40 -mt-40 w-96 h-96 rounded-full bg-primary-500/20 blur-3xl animate-pulse-slow" />
         <div className="absolute bottom-0 left-0 -ml-40 -mb-40 w-96 h-96 rounded-full bg-accent-500/20 blur-3xl animate-pulse-slow animate-delay-300" />
 
-        <div className="container-max section-padding relative z-10 text-center text-white">
-          <span className="inline-block animate-fade-in opacity-0 py-1 px-3 rounded-full bg-white/10 border border-white/20 text-sm font-medium mb-6">
-            ✨ Kenya&apos;s #1 Artisan Marketplace
-          </span>
-          <h1 className="text-5xl md:text-6xl lg:text-7xl font-heading font-extrabold mb-6 tracking-tight animate-slide-up opacity-0 animate-delay-100">
-            Find Trusted <span className="gradient-text">Fundis</span> <br className="hidden md:block" /> Near You
-          </h1>
-          <p className="max-w-2xl mx-auto text-lg md:text-xl text-white/80 mb-10 animate-slide-up opacity-0 animate-delay-200">
-            Connect with verified plumbers, electricians, carpenters, and more.
-            Quality work, fair prices, and peace of mind.
-          </p>
+        <div className="container-max relative z-10 text-center text-white h-full grid grid-rows-[auto_1fr_auto]">
+          <div>
+            <span className="inline-block animate-fade-in opacity-0 py-1 px-3 rounded-full bg-white/10 border border-white/20 text-sm font-medium mb-6">
+              ✨ Kenya&apos;s #1 Artisan Marketplace
+            </span>
+            <h1 className="text-5xl md:text-6xl lg:text-7xl font-heading font-extrabold mb-6 tracking-tight animate-slide-up opacity-0 animate-delay-100">
+              Find Trusted <span className="gradient-text">Fundis</span> <br className="hidden md:block" /> Near You
+            </h1>
+            <p className="max-w-2xl mx-auto text-lg md:text-xl text-white/80 mb-10 animate-slide-up opacity-0 animate-delay-200">
+              Connect with verified plumbers, electricians, carpenters, and more.
+              Quality work, fair prices, and peace of mind.
+            </p>
+          </div>
 
           {/* Search Bar */}
-          <div className="animate-slide-up animate-delay-300">
+          <div className="animate-slide-up animate-delay-300 flex items-center justify-center">
             <SearchBar />
           </div>
 
           {/* Stats quick */}
-          <div className="flex flex-wrap items-center justify-center gap-6 md:gap-12 animate-fade-in opacity-0 animate-delay-400">
-            <div className="text-center">
-              <p className="text-3xl font-heading font-bold">5,000+</p>
-              <p className="text-sm text-white/60">Verified Fundis</p>
-            </div>
-            <div className="hidden sm:block w-px h-10 bg-white/20"></div>
-            <div className="text-center">
-              <p className="text-3xl font-heading font-bold">12,000+</p>
-              <p className="text-sm text-white/60">Happy Customers</p>
-            </div>
-            <div className="hidden sm:block w-px h-10 bg-white/20"></div>
-            <div className="text-center">
-              <p className="text-3xl font-heading font-bold">4.8/5</p>
-              <p className="text-sm text-white/60">Average Rating</p>
+          <div className="animate-fade-in opacity-0 animate-delay-400">
+            <div className="flex flex-wrap items-center justify-center gap-6 md:gap-12">
+              <div className="text-center">
+                <p className="text-3xl font-heading font-bold">5,000+</p>
+                <p className="text-sm text-white/60">Verified Fundis</p>
+              </div>
+              <div className="hidden sm:block w-px h-10 bg-white/20"></div>
+              <div className="text-center">
+                <p className="text-3xl font-heading font-bold">12,000+</p>
+                <p className="text-sm text-white/60">Happy Customers</p>
+              </div>
+              <div className="hidden sm:block w-px h-10 bg-white/20"></div>
+              <div className="text-center">
+                <p className="text-3xl font-heading font-bold">4.8/5</p>
+                <p className="text-sm text-white/60">Average Rating</p>
+              </div>
             </div>
           </div>
         </div>

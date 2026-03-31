@@ -183,6 +183,28 @@ export async function POST(request: NextRequest) {
 
     const result = await usersCollection.insertOne(newUser);
 
+    // If registering as fundi, create a worker application
+    if (role === 'fundi') {
+      const applicationsCollection = await getCollection('worker_applications');
+      await applicationsCollection.insertOne({
+        name,
+        phone,
+        idNumber,
+        email,
+        skill: body.skill,
+        experience: body.experience,
+        tvetInstitution: body.tvetInstitution || undefined,
+        description: body.description,
+        location: body.location,
+        neighborhood: body.neighborhood,
+        availability: body.availability || 'flexible',
+        reasonForJoining: body.reasonForJoining || undefined,
+        status: 'pending',
+        createdAt: new Date(),
+        submittedAt: new Date(),
+      });
+    }
+
     return NextResponse.json({
       message: 'Account created successfully',
       userId: result.insertedId,

@@ -43,6 +43,8 @@ export default function HeroSlider() {
             fill
             className="object-cover"
             priority={index === 0}
+            sizes="100vw"
+            quality={80}
           />
           <div className="absolute inset-0 bg-black/40" />
         </div>
