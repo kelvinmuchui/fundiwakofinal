@@ -271,6 +271,7 @@ export default function FundiProfile() {
     };
 
     const displayData = isEditing ? formData : combinedProfile;
+    const publicProfileId = profileData?._id || (displayData as FundiProfile)._id;
 
     return (
         <div className="min-h-screen bg-gray-50 pt-20 pb-20">
@@ -366,13 +367,23 @@ export default function FundiProfile() {
                                 </div>
 
                                 {/* Profile Actions */}
-                                <div className="flex gap-3 mb-4 md:mb-0">
+                                <div className="flex gap-2 mb-4 md:mb-0">
                                     <button
                                         onClick={() => signOut()}
                                         className="px-6 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full transition-colors font-medium"
                                     >
                                         Sign Out
                                     </button>
+                                    {publicProfileId && (
+                                      <a
+                                        href={`/fundi/public/${publicProfileId}`}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="px-6 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-full transition-colors font-medium"
+                                      >
+                                        Public Profile
+                                      </a>
+                                    )}
                                 </div>
                             </div>
 
