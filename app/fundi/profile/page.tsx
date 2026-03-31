@@ -267,18 +267,14 @@ export default function FundiProfile() {
     const displayData = isEditing ? formData : combinedProfile;
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50 pt-20 pb-20">
+        <div className="min-h-screen bg-gray-50 pt-20 pb-20">
             <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Header */}
-                <div className="mb-12">
-                    <div className="flex justify-between items-start mb-8">
+                <div className="bg-white border-b border-gray-200 px-8 py-4">
+                    <div className="flex justify-between items-center">
                         <div>
-                            <h1 className="text-4xl md:text-5xl font-heading font-extrabold text-gray-900 mb-2">
-                                Welcome, {displayData?.name}!
-                            </h1>
-                            <p className="text-lg text-gray-600">
-                                Manage Your Fundi Profile
-                            </p>
+                            <h1 className="text-2xl font-bold text-gray-900">Your Professional Profile</h1>
+                            <p className="text-gray-600 text-sm">Manage and showcase your skills</p>
                         </div>
                         <div className="flex gap-3">
                             {!isEditing && (
@@ -287,7 +283,7 @@ export default function FundiProfile() {
                                         setIsEditing(true);
                                         setFormData(profileData || formData);
                                     }}
-                                    className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors text-sm font-medium"
+                                    className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-full transition-colors text-sm font-medium"
                                 >
                                     Edit Profile
                                 </button>
@@ -296,14 +292,14 @@ export default function FundiProfile() {
                                 <>
                                     <button
                                         onClick={() => setIsEditing(false)}
-                                        className="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-900 rounded-lg transition-colors text-sm font-medium"
+                                        className="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-900 rounded-full transition-colors text-sm font-medium"
                                     >
                                         Cancel
                                     </button>
                                     <button
                                         onClick={saveProfile}
                                         disabled={saving}
-                                        className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white rounded-lg transition-colors text-sm font-medium"
+                                        className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white rounded-full transition-colors text-sm font-medium"
                                     >
                                         {saving ? 'Saving...' : 'Save Changes'}
                                     </button>
@@ -311,7 +307,7 @@ export default function FundiProfile() {
                             )}
                             <button
                                 onClick={() => signOut()}
-                                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors text-sm font-medium"
+                                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-full transition-colors text-sm font-medium"
                             >
                                 Sign Out
                             </button>
@@ -320,174 +316,221 @@ export default function FundiProfile() {
 
                     {/* Messages */}
                     {successMessage && (
-                        <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg mb-6">
+                        <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg mt-4">
                             {successMessage}
                         </div>
                     )}
                     {errorMessage && (
-                        <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg mb-6">
+                        <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg mt-4">
                             {errorMessage}
                         </div>
                     )}
                 </div>
 
                 {!isEditing ? (
-                    // View Mode
-                    <>
-                        {/* Profile Header with Photo */}
-                        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 mb-12">
-                            <div className="flex items-start gap-8">
-                                <div className="flex-shrink-0">
+                    // View Mode - LinkedIn Style
+                    <div className="bg-white shadow-sm">
+                        {/* Cover Photo */}
+                        <div className="h-48 bg-gradient-to-r from-primary-600 to-secondary-600 relative">
+                            <div className="absolute inset-0 bg-black/20"></div>
+                            {/* Decorative elements */}
+                            <div className="absolute top-4 right-4 text-white/30">
+                                <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.84L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.84l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.35 2.524 1 1 0 01-1.4 0zM6 18a1 1 0 001-1v-2.065a8.935 8.935 0 00-2-.712V17a1 1 0 001 1z"></path>
+                                </svg>
+                            </div>
+                        </div>
+
+                        {/* Profile Header */}
+                        <div className="px-8 pb-6">
+                            <div className="flex flex-col md:flex-row md:items-end md:justify-between -mt-16 relative z-10">
+                                {/* Profile Picture */}
+                                <div className="flex-shrink-0 mb-4 md:mb-0">
                                     {displayData?.photoURL ? (
                                         <img
                                             src={displayData.photoURL}
                                             alt={displayData.name}
-                                            className="w-32 h-32 rounded-full object-cover border-4 border-primary-100"
+                                            className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-lg"
                                         />
                                     ) : (
-                                        <div className="w-32 h-32 rounded-full bg-gradient-to-br from-primary-100 to-secondary-100 flex items-center justify-center border-4 border-primary-100">
+                                        <div className="w-32 h-32 rounded-full bg-gradient-to-br from-primary-100 to-secondary-100 flex items-center justify-center border-4 border-white shadow-lg">
                                             <span className="text-4xl">👤</span>
                                         </div>
                                     )}
                                 </div>
-                                <div className="flex-1">
-                                    <h2 className="text-3xl font-heading font-bold text-gray-900 mb-2">{displayData?.name}</h2>
-                                    <p className="text-gray-600 mb-4">{displayData?.skill}</p>
-                                    <div className="flex items-center gap-4">
-                                        <span className={`px-4 py-1 rounded-full text-sm font-semibold ${displayData?.isVerified ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                                            {displayData?.isVerified ? '✓ Verified' : '⏳ Pending Review'}
-                                        </span>
-                                        <span className="text-sm text-gray-600">{displayData?.experience}</span>
-                                    </div>
+
+                                {/* Profile Actions */}
+                                <div className="flex gap-3 mb-4 md:mb-0">
+                                    <button
+                                        onClick={() => signOut()}
+                                        className="px-6 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full transition-colors font-medium"
+                                    >
+                                        Sign Out
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Profile Info */}
+                            <div className="mt-4">
+                                <h1 className="text-3xl font-bold text-gray-900 mb-1">{displayData?.name}</h1>
+                                <p className="text-xl text-gray-600 mb-2">{displayData?.skill}</p>
+                                <div className="flex items-center gap-4 text-gray-500 mb-3">
+                                    <span>{displayData?.location}, {displayData?.neighborhood}</span>
+                                    <span>•</span>
+                                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${displayData?.isVerified ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                                        {displayData?.isVerified ? 'Verified Professional' : 'Pending Verification'}
+                                    </span>
+                                </div>
+                                <div className="flex items-center gap-4 text-gray-500">
+                                    <span>{displayData?.experience} of experience</span>
+                                    <span>•</span>
+                                    <span>Available: {displayData?.availability}</span>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Status Card */}
-                        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 mb-12">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <h2 className="text-2xl font-heading font-bold text-gray-900 mb-2">Account Status</h2>
-                                    <p className="text-gray-600">
-                                        {displayData?.isVerified ? '✓ Your account is verified' : '⏳ Waiting for verification'}
-                                    </p>
-                                </div>
-                                <div className={`w-16 h-16 rounded-full flex items-center justify-center text-3xl ${displayData?.isVerified ? 'bg-green-100' : 'bg-yellow-100'}`}>
-                                    {displayData?.isVerified ? '✓' : '⌛'}
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Profile Cards Grid */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
-                            {/* Personal Info Card */}
-                            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-                                <h2 className="text-xl font-heading font-bold text-gray-900 mb-6">Personal Information</h2>
-                                <div className="space-y-4">
-                                    <div>
-                                        <p className="text-sm text-gray-500 mb-1">Name</p>
-                                        <p className="text-gray-900 font-medium">{displayData?.name || 'N/A'}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-sm text-gray-500 mb-1">Email</p>
-                                        <p className="text-gray-900 font-medium">{displayData?.email || 'N/A'}</p>
-                                    </div>                                    <div>
-                                        <p className="text-sm text-gray-500 mb-1">Phone</p>
-                                        <p className="text-gray-900 font-medium">{displayData?.phone || 'N/A'}</p>
-                                    </div>                                    <div>
-                                        <p className="text-sm text-gray-500 mb-1">Phone</p>
-                                        <p className="text-gray-900 font-medium">{displayData?.phone || 'N/A'}</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Professional Info Card */}
-                            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-                                <h2 className="text-xl font-heading font-bold text-gray-900 mb-6">Professional Information</h2>
-                                <div className="space-y-4">
-                                    <div>
-                                        <p className="text-sm text-gray-500 mb-1">Primary Skill</p>
-                                        <p className="text-gray-900 font-medium">{displayData?.skill || 'Not specified'}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-sm text-gray-500 mb-1">Experience</p>
-                                        <p className="text-gray-900 font-medium">{displayData?.experience || 'Not specified'}</p>
-                                    </div>
-                                    <div>
-                                    <p className="text-sm text-gray-500 mb-1">TVET Institution</p>
-                                    <p className="text-gray-900 font-medium">{displayData?.tvetInstitution || 'Not specified'}</p>
-                                </div>
-                                <div>
-                                    </div>
-                                    <div>
-                                        <p className="text-sm text-gray-500 mb-1">Neighborhood</p>
-                                        <p className="text-gray-900 font-medium">{displayData?.neighborhood || 'Not specified'}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-sm text-gray-500 mb-1">Availability</p>
-                                        <p className="text-gray-900 font-medium capitalize">{displayData?.availability || 'flexible'}</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Skills Card */}
-                            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-                                <h2 className="text-xl font-heading font-bold text-gray-900 mb-6">Skills</h2>
-                                <div className="space-y-3">
-                                    {displayData?.skills && displayData.skills.length > 0 ? (
-                                        displayData.skills.map((skill, idx) => (
-                                            <span key={idx} className="inline-block bg-primary-100 text-primary-800 px-3 py-1 rounded-full text-sm font-medium mr-2 mb-2">
-                                                {skill}
-                                            </span>
-                                        ))
-                                    ) : (
-                                        <p className="text-gray-500">No skills added yet</p>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Description Card */}
-                        {displayData?.description && (
-                            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 mb-12">
-                                <h2 className="text-xl font-heading font-bold text-gray-900 mb-4">About You</h2>
-                                <p className="text-gray-700">{displayData.description}</p>
-                            </div>
-                        )}
-                    </>
-                ) : (
-                    // Edit Mode
-                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-                        <h2 className="text-2xl font-heading font-bold text-gray-900 mb-8">Edit Your Profile</h2>
-                        
-                        {/* Profile Photo Section */}
-                        <div className="mb-8 pb-8 border-b border-gray-200">
-                            <label className="block text-sm font-medium text-gray-700 mb-4">Profile Photo</label>
-                            <div className="flex items-start gap-6">
-                                <div className="flex-shrink-0">
-                                    {photoPreview || displayData?.photoURL ? (
-                                        <img
-                                            src={photoPreview || displayData?.photoURL}
-                                            alt="Preview"
-                                            className="w-32 h-32 rounded-full object-cover border-4 border-primary-100"
-                                        />
-                                    ) : (
-                                        <div className="w-32 h-32 rounded-full bg-gray-100 flex items-center justify-center border-4 border-gray-200">
-                                            <span className="text-3xl">📷</span>
+                        {/* Main Content Grid */}
+                        <div className="px-8 pb-8">
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                {/* Left Column */}
+                                <div className="lg:col-span-2 space-y-6">
+                                    {/* About Section */}
+                                    {displayData?.description && (
+                                        <div className="bg-white border border-gray-200 rounded-lg p-6">
+                                            <h2 className="text-xl font-semibold text-gray-900 mb-4">About</h2>
+                                            <p className="text-gray-700 leading-relaxed">{displayData.description}</p>
                                         </div>
                                     )}
+
+                                    {/* Experience Section */}
+                                    <div className="bg-white border border-gray-200 rounded-lg p-6">
+                                        <h2 className="text-xl font-semibold text-gray-900 mb-4">Experience</h2>
+                                        <div className="space-y-4">
+                                            <div className="flex items-start gap-4">
+                                                <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                                    <svg className="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m8 0V8a2 2 0 01-2 2H8a2 2 0 01-2-2V6m8 0H8" />
+                                                    </svg>
+                                                </div>
+                                                <div className="flex-1">
+                                                    <h3 className="font-semibold text-gray-900">{displayData?.skill}</h3>
+                                                    <p className="text-gray-600">{displayData?.experience}</p>
+                                                    {displayData?.tvetInstitution && (
+                                                        <p className="text-sm text-gray-500 mt-1">{displayData.tvetInstitution}</p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Skills Section */}
+                                    <div className="bg-white border border-gray-200 rounded-lg p-6">
+                                        <h2 className="text-xl font-semibold text-gray-900 mb-4">Skills</h2>
+                                        <div className="flex flex-wrap gap-2">
+                                            {displayData?.skills && displayData.skills.length > 0 ? (
+                                                displayData.skills.map((skill, idx) => (
+                                                    <span key={idx} className="px-3 py-1 bg-primary-50 text-primary-700 rounded-full text-sm font-medium border border-primary-200">
+                                                        {skill}
+                                                    </span>
+                                                ))
+                                            ) : (
+                                                <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-sm">
+                                                    {displayData?.skill || 'No skills specified'}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
                                 </div>
-                                <div className="flex-1">
-                                    <input
-                                        type="file"
-                                        accept="image/*"
-                                        onChange={handlePhotoChange}
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                                    />
-                                    <p className="text-sm text-gray-500 mt-2">Supported formats: JPG, PNG, GIF (Max 5MB)</p>
+
+                                {/* Right Column */}
+                                <div className="space-y-6">
+                                    {/* Contact Info */}
+                                    <div className="bg-white border border-gray-200 rounded-lg p-6">
+                                        <h2 className="text-xl font-semibold text-gray-900 mb-4">Contact Information</h2>
+                                        <div className="space-y-3">
+                                            <div className="flex items-center gap-3">
+                                                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                                </svg>
+                                                <span className="text-gray-700">{displayData?.email}</span>
+                                            </div>
+                                            <div className="flex items-center gap-3">
+                                                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                                                </svg>
+                                                <span className="text-gray-700">{displayData?.phone || 'Not provided'}</span>
+                                            </div>
+                                            <div className="flex items-center gap-3">
+                                                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                </svg>
+                                                <span className="text-gray-700">{displayData?.location}, {displayData?.neighborhood}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Availability Status */}
+                                    <div className="bg-white border border-gray-200 rounded-lg p-6">
+                                        <h2 className="text-xl font-semibold text-gray-900 mb-4">Availability</h2>
+                                        <div className="flex items-center gap-3">
+                                            <div className={`w-3 h-3 rounded-full ${displayData?.availability === 'available' ? 'bg-green-500' : displayData?.availability === 'busy' ? 'bg-red-500' : 'bg-yellow-500'}`}></div>
+                                            <span className="text-gray-700 capitalize">{displayData?.availability || 'Flexible'}</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Verification Status */}
+                                    <div className="bg-white border border-gray-200 rounded-lg p-6">
+                                        <h2 className="text-xl font-semibold text-gray-900 mb-4">Verification Status</h2>
+                                        <div className="flex items-center gap-3">
+                                            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-sm ${displayData?.isVerified ? 'bg-green-100 text-green-600' : 'bg-yellow-100 text-yellow-600'}`}>
+                                                {displayData?.isVerified ? '✓' : '⏳'}
+                                            </div>
+                                            <span className="text-gray-700">
+                                                {displayData?.isVerified ? 'Verified Professional' : 'Awaiting Admin Verification'}
+                                            </span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
+                    </div>
+                ) : (
+                    // Edit Mode - LinkedIn Style
+                    <div className="bg-white shadow-sm mt-6">
+                        <div className="px-8 py-6 border-b border-gray-200">
+                            <h2 className="text-2xl font-semibold text-gray-900">Edit Profile</h2>
+                            <p className="text-gray-600 mt-1">Update your professional information</p>
+                        </div>
+                        <div className="px-8 py-6">
+                            {/* Profile Photo Section */}
+                            <div className="mb-8">
+                                <label className="block text-lg font-semibold text-gray-900 mb-4">Profile Photo</label>
+                                <div className="flex items-center gap-6">
+                                    <div className="flex-shrink-0">
+                                        {photoPreview || displayData?.photoURL ? (
+                                            <img
+                                                src={photoPreview || displayData?.photoURL}
+                                                alt="Preview"
+                                                className="w-24 h-24 rounded-full object-cover border-4 border-gray-200"
+                                            />
+                                        ) : (
+                                            <div className="w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center border-4 border-gray-200">
+                                                <span className="text-2xl">📷</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="flex-1">
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={handlePhotoChange}
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                                        />
+                                        <p className="text-sm text-gray-500 mt-2">Supported formats: JPG, PNG, GIF (Max 5MB)</p>
+                                    </div>
+                                </div>
+                            </div>
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {/* Personal Information */}
@@ -639,7 +682,7 @@ export default function FundiProfile() {
                                             onClick={() => removeSkill(skill)}
                                             className="text-primary-600 hover:text-primary-800 font-bold"
                                         >
-                                            ×
+                                            x
                                         </button>
                                     </span>
                                 ))}
@@ -670,8 +713,7 @@ export default function FundiProfile() {
                                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                                 placeholder="Share your motivation for joining FundiWako..."
                             />
-                        </div>
-                    </div>
+                        </div>                    </div>                    </div>
                 )}
             </div>
         </div>
