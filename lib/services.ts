@@ -28,9 +28,29 @@ export async function ensureSeeded() {
 export async function getServices(): Promise<Service[]> {
   try {
     await ensureSeeded();
-    const collection = await getCollection<Service>("services");
-    const services = await collection.find().sort({ title: 1 }).toArray();
-    return services;
+    const servicesCollection = await getCollection<Service>("services");
+    const usersCollection = await getCollection("users");
+    
+    // Get base services data
+    const services = await servicesCollection.find().sort({ title: 1 }).toArray();
+    
+    // Calculate dynamic fundi counts
+    const servicesWithCounts = await Promise.all(
+      services.map(async (service) => {
+        // Count fundis with this skill
+        const fundiCount = await usersCollection.countDocuments({
+          role: 'fundi',
+          skill: service.title
+        });
+        
+        return {
+          ...service,
+          fundiCount: fundiCount || service.fundiCount // fallback to seeded count if no fundis found
+        };
+      })
+    );
+    
+    return servicesWithCounts;
   } catch (error) {
     console.error("Failed to fetch services from MongoDB:", error);
     // Return fallback mock data if MongoDB is unavailable

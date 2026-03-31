@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 type ServiceCardProps = {
   iconName: string;
   title: string;
@@ -76,7 +78,8 @@ export default function ServiceCard({
   color,
 }: ServiceCardProps) {
   return (
-    <div className="group relative bg-white rounded-2xl p-6 card-hover border border-neutral-100 overflow-hidden cursor-pointer">
+    <Link href={`/search?service=${encodeURIComponent(title)}`}>
+      <div className="group relative bg-white rounded-2xl p-6 card-hover border border-neutral-100 overflow-hidden cursor-pointer">
       {/* Gradient overlay on hover */}
       <div
         className={`absolute inset-0 opacity-0 group-hover:opacity-5 transition-opacity duration-500 ${color}`}
@@ -114,5 +117,6 @@ export default function ServiceCard({
                 className={`absolute bottom-0 left-0 right-0 h-1 ${color} transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left`}
             />
         </div>
-    );
+    </Link>
+  );
 }

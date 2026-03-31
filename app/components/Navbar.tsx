@@ -130,7 +130,7 @@ export default function Navbar() {
                     {/* Mobile Menu Button */}
                     <button
                         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                        className={`md:hidden p-2 rounded-lg transition-colors ${isScrolled ? "text-secondary-500" : "text-white"
+                        className={`md:hidden p-2 rounded-lg transition-colors ${isScrolled ? "text-white bg-black/20 hover:bg-black/30" : "text-white"
                             }`}
                         aria-label="Toggle menu"
                     >
@@ -155,17 +155,17 @@ export default function Navbar() {
                                 key={link.name}
                                 href={link.href}
                                 onClick={() => setIsMobileMenuOpen(false)}
-                                className="block px-4 py-3 rounded-xl text-neutral-700 font-medium hover:bg-primary-50 hover:text-primary-600 transition-all duration-200"
+                                className="block px-4 py-3 rounded-xl text-black font-medium hover:bg-primary-50 hover:text-primary-600 transition-all duration-200"
                             >
                                 {link.name}
                             </a>
                         ))}
                         <div className="pt-3 space-y-2 border-t border-neutral-200">
                             {status === 'loading' ? (
-                                <div className="px-4 py-3 text-center text-neutral-500">Loading...</div>
+                                <div className="px-4 py-3 text-center text-black">Loading...</div>
                             ) : session ? (
                                 <>
-                                    <div className="px-4 py-3 text-neutral-700 font-medium">
+                                    <div className="px-4 py-3 text-black font-medium">
                                         Welcome, {(session.user as any)?.name || 'User'}
                                     </div>
                                     {(session.user as any)?.role === 'admin' && (
