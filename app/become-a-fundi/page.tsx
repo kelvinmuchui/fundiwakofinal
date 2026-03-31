@@ -27,7 +27,26 @@ export default function BecomeAFundi() {
         certificates: [] as File[],
         reasonForJoining: "",
         availability: "flexible",
+        skills: [] as string[],
     });
+    const [currentSkillInput, setCurrentSkillInput] = useState("");
+
+    const handleSkillAdd = () => {
+        if (currentSkillInput.trim() && !formData.skills.includes(currentSkillInput.trim())) {
+            setFormData(prev => ({
+                ...prev,
+                skills: [...prev.skills, currentSkillInput.trim()]
+            }));
+            setCurrentSkillInput("");
+        }
+    };
+
+    const handleSkillRemove = (skillToRemove: string) => {
+        setFormData(prev => ({
+            ...prev,
+            skills: prev.skills.filter(s => s !== skillToRemove)
+        }));
+    };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value, files } = e.target as HTMLInputElement;
@@ -69,8 +88,12 @@ export default function BecomeAFundi() {
             // Add all form fields
             Object.entries(formData).forEach(([key, value]) => {
                 if (key === 'certificates') {
-                    (value as File[]).forEach((file, index) => {
+                    (value as File[]).forEach((file) => {
                         formDataToSend.append(`certificates`, file);
+                    });
+                } else if (key === 'skills') {
+                    (value as string[]).forEach((skill) => {
+                        formDataToSend.append(`skills`, skill);
                     });
                 } else if (key !== 'confirmPassword') {
                     formDataToSend.append(key, value as string);
@@ -100,7 +123,7 @@ export default function BecomeAFundi() {
             setFormData({
                 name: "", phone: "", idNumber: "", email: "", password: "", confirmPassword: "",
                 skill: "", experience: "", tvetInstitution: "", description: "", location: "", neighborhood: "",
-                certificates: [], reasonForJoining: "", availability: "flexible"
+                certificates: [], reasonForJoining: "", availability: "flexible", skills: []
             });
 
             // Redirect to fundi profile page after 1 second
@@ -297,6 +320,54 @@ export default function BecomeAFundi() {
                                                 <option value="Cleaner">Cleaning</option>
                                                 <option value="Other">Other</option>
                                             </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-neutral-700 mb-2">
+                                                Additional Skills (Optional)
+                                            </label>
+                                            <div className="flex gap-2">
+                                                <input
+                                                    type="text"
+                                                    value={currentSkillInput}
+                                                    onChange={(e) => setCurrentSkillInput(e.target.value)}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter') {
+                                                            e.preventDefault();
+                                                            handleSkillAdd();
+                                                        }
+                                                    }}
+                                                    className="flex-1 px-4 py-3 rounded-xl border border-neutral-200 focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all bg-neutral-50 focus:bg-white text-sm"
+                                                    placeholder="Type a skill and press Enter"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={handleSkillAdd}
+                                                    className="px-4 py-3 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 rounded-xl font-medium transition-colors text-sm"
+                                                >
+                                                    Add
+                                                </button>
+                                            </div>
+                                            {formData.skills.length > 0 && (
+                                                <div className="flex flex-wrap gap-2 mt-3">
+                                                    {formData.skills.map((skill, index) => (
+                                                        <span 
+                                                            key={index}
+                                                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary-50 text-primary-700 rounded-full text-xs font-medium border border-primary-100"
+                                                        >
+                                                            {skill}
+                                                            <button 
+                                                                type="button"
+                                                                onClick={() => handleSkillRemove(skill)}
+                                                                className="hover:text-primary-900 focus:outline-none"
+                                                            >
+                                                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                                                </svg>
+                                                            </button>
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            )}
                                         </div>
                                         <div>
                                             <label className="block text-sm font-medium text-neutral-700 mb-2">

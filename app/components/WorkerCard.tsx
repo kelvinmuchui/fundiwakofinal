@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import { Worker } from "../data/mockWorkers";
+import StarRating from "./StarRating";
 
 interface WorkerCardProps {
   worker: Worker;
@@ -10,6 +12,8 @@ interface WorkerCardProps {
 
 export default function WorkerCard({ worker }: WorkerCardProps) {
   const [showContact, setShowContact] = useState(false);
+  const [currentRating, setCurrentRating] = useState(worker.rating);
+  const { data: session, status } = useSession();
 
   // Helper to determine availability badge color
   const getAvailabilityColor = (status: string) => {
@@ -18,6 +22,34 @@ export default function WorkerCard({ worker }: WorkerCardProps) {
       case 'Available in 1-2 days': return 'bg-amber-100 text-amber-700 border-amber-200';
       case 'Busy': return 'bg-rose-100 text-rose-700 border-rose-200';
       default: return 'bg-neutral-100 text-neutral-700 border-neutral-200';
+    }
+  };
+
+  const handleRatingSubmit = async (rating: number, review?: string) => {
+    try {
+      const response = await fetch('/api/ratings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          fundiId: worker.id,
+          rating,
+          review,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to submit rating');
+      }
+
+      const data = await response.json();
+      setCurrentRating(data.averageRating);
+      alert('Rating submitted successfully!');
+    } catch (error) {
+      console.error('Error submitting rating:', error);
+      alert('Failed to submit rating. Please try again.');
+      throw error;
     }
   };
 
@@ -43,10 +75,12 @@ export default function WorkerCard({ worker }: WorkerCardProps) {
               <p className="text-sm font-semibold text-primary-600 mb-1">{worker.skill}</p>
             </div>
             <div className="flex items-center bg-neutral-50 px-2 py-1 rounded-lg">
-              <svg className="w-4 h-4 text-amber-500 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-              </svg>
-              <span className="text-sm font-bold text-neutral-700">{worker.rating}</span>
+              <StarRating
+                currentRating={currentRating}
+                onRatingSubmit={handleRatingSubmit}
+                readonly={false}
+                showReviewInput={true}
+              />
             </div>
           </div>
           

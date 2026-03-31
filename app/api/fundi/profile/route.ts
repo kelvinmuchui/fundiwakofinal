@@ -93,11 +93,13 @@ export async function PUT(request: NextRequest) {
       { returnDocument: 'after' }
     );
 
-    if (!result || !result.value) {
+    if (!result) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    return NextResponse.json(result.value);
+    // In MongoDB driver 6.x, findOneAndUpdate returns the document directly
+    const updatedUser = (result as any).value || result;
+    return NextResponse.json(updatedUser);
   } catch (error) {
     console.error('Error updating profile:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

@@ -32,6 +32,7 @@ export default function FundiProfile() {
     const [successMessage, setSuccessMessage] = useState('');
     const [errorMessage, setErrorMessage] = useState('');
     const [profileData, setProfileData] = useState<FundiProfile | null>(null);
+    const [isSavingStatus, setIsSavingStatus] = useState(false);
     const [formData, setFormData] = useState<FundiProfile>({
         name: '',
         email: '',
@@ -171,15 +172,102 @@ export default function FundiProfile() {
         }));
     };
 
-    const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
+            // Check file size (max 2MB)
+            if (file.size > 2 * 1024 * 1024) {
+                setErrorMessage('Image size must be less than 2MB');
+                return;
+            }
+
             setPhotoFile(file);
             const reader = new FileReader();
-            reader.onloadend = () => {
-                setPhotoPreview(reader.result as string);
+            reader.onloadend = async () => {
+                const base64 = reader.result as string;
+                setPhotoPreview(base64);
+                
+                // If not in editing mode, ask if they want to save it immediately
+                if (!isEditing) {
+                    if (confirm('Update profile picture?')) {
+                        await savePhotoOnly(base64);
+                    } else {
+                        setPhotoPreview(null);
+                        setPhotoFile(null);
+                    }
+                }
             };
             reader.readAsDataURL(file);
+        }
+    };
+
+    const savePhotoOnly = async (photoURL: string) => {
+        setSaving(true);
+        setErrorMessage('');
+        setSuccessMessage('');
+
+        try {
+            const res = await fetch('/api/fundi/profile', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    ...formData,
+                    photoURL
+                }),
+                credentials: 'include'
+            });
+
+            if (res.ok) {
+                const updated = await res.json();
+                setProfileData(updated);
+                setFormData(updated);
+                setPhotoPreview(null);
+                setPhotoFile(null);
+                setSuccessMessage('Profile picture updated!');
+                setTimeout(() => setSuccessMessage(''), 3000);
+            } else {
+                const error = await res.json();
+                setErrorMessage(error.error || 'Failed to update photo');
+            }
+        } catch (error) {
+            console.error('Error saving photo:', error);
+            setErrorMessage('Error saving photo');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const saveStatusOnly = async (newStatus: string) => {
+        setIsSavingStatus(true);
+        setErrorMessage('');
+        setSuccessMessage('');
+
+        try {
+            const res = await fetch('/api/fundi/profile', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    ...formData,
+                    availability: newStatus
+                }),
+                credentials: 'include'
+            });
+
+            if (res.ok) {
+                const updated = await res.json();
+                setProfileData(updated);
+                setFormData(updated);
+                setSuccessMessage('Availability updated!');
+                setTimeout(() => setSuccessMessage(''), 3000);
+            } else {
+                const error = await res.json();
+                setErrorMessage(error.error || 'Failed to update status');
+            }
+        } catch (error) {
+            console.error('Error updating status:', error);
+            setErrorMessage('Error updating status');
+        } finally {
+            setIsSavingStatus(false);
         }
     };
 
@@ -362,16 +450,42 @@ export default function FundiProfile() {
                         <div className="px-8 pb-6">
                             <div className="flex flex-col md:flex-row md:items-end md:justify-between -mt-16 relative z-10">
                                 {/* Profile Picture */}
-                                <div className="flex-shrink-0 mb-4 md:mb-0">
-                                    {displayData?.photoURL ? (
-                                        <img
-                                            src={displayData.photoURL}
-                                            alt={displayData.name}
-                                            className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-lg"
-                                        />
-                                    ) : (
-                                        <div className="w-32 h-32 rounded-full bg-gradient-to-br from-primary-100 to-secondary-100 flex items-center justify-center border-4 border-white shadow-lg">
-                                            <span className="text-4xl">👤</span>
+                                <div className="flex-shrink-0 mb-4 md:mb-0 relative group">
+                                    <input
+                                        type="file"
+                                        id="quick-photo-change"
+                                        accept="image/*"
+                                        className="hidden"
+                                        onChange={handlePhotoChange}
+                                    />
+                                    <div className="relative">
+                                        {displayData?.photoURL ? (
+                                            <img
+                                                src={displayData.photoURL}
+                                                alt={displayData.name}
+                                                className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-lg"
+                                            />
+                                        ) : (
+                                            <div className="w-32 h-32 rounded-full bg-gradient-to-br from-primary-100 to-secondary-100 flex items-center justify-center border-4 border-white shadow-lg">
+                                                <span className="text-4xl">👤</span>
+                                            </div>
+                                        )}
+                                        
+                                        {/* Camera Overlay */}
+                                        <label
+                                            htmlFor="quick-photo-change"
+                                            className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity"
+                                        >
+                                            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            </svg>
+                                        </label>
+                                    </div>
+                                    
+                                    {saving && (
+                                        <div className="absolute inset-0 flex items-center justify-center bg-white/60 rounded-full">
+                                            <div className="w-8 h-8 border-4 border-primary-600 border-t-transparent rounded-full animate-spin"></div>
                                         </div>
                                     )}
                                 </div>
@@ -499,11 +613,38 @@ export default function FundiProfile() {
 
                                     {/* Availability Status */}
                                     <div className="bg-white border border-gray-200 rounded-lg p-6">
-                                        <h2 className="text-xl font-semibold text-gray-900 mb-4">Availability</h2>
-                                        <div className="flex items-center gap-3">
-                                            <div className={`w-3 h-3 rounded-full ${displayData?.availability === 'available' ? 'bg-green-500' : displayData?.availability === 'busy' ? 'bg-red-500' : 'bg-yellow-500'}`}></div>
-                                            <span className="text-gray-700 capitalize">{displayData?.availability || 'Flexible'}</span>
+                                        <div className="flex justify-between items-center mb-4">
+                                            <h2 className="text-xl font-semibold text-gray-900">Availability</h2>
+                                            {isSavingStatus && (
+                                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-600"></div>
+                                            )}
                                         </div>
+                                        <div className="relative">
+                                            <select
+                                                value={displayData?.availability || 'flexible'}
+                                                onChange={(e) => saveStatusOnly(e.target.value)}
+                                                className={`w-full appearance-none px-4 py-2 rounded-lg border-2 font-medium transition-all cursor-pointer ${
+                                                    displayData?.availability === 'available' || displayData?.availability === 'Available Now'
+                                                        ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                                                        : displayData?.availability === 'busy' || displayData?.availability === 'Busy'
+                                                        ? 'bg-rose-50 border-rose-200 text-rose-700'
+                                                        : 'bg-amber-50 border-amber-200 text-amber-700'
+                                                }`}
+                                            >
+                                                <option value="available">Available Now</option>
+                                                <option value="busy">Busy / Fully Booked</option>
+                                                <option value="flexible">Flexible / Contact me</option>
+                                                <option value="available-soon">Available in 1-2 days</option>
+                                            </select>
+                                            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                </svg>
+                                            </div>
+                                        </div>
+                                        <p className="mt-2 text-xs text-gray-500">
+                                            Quickly update your status to let customers know if you're ready for new jobs.
+                                        </p>
                                     </div>
 
                                     {/* Verification Status */}

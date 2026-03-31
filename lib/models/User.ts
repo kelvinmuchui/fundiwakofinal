@@ -70,3 +70,13 @@ export interface WorkerApplication {
   createdAt: Date;
   submittedAt: Date;
 }
+
+export interface Rating {
+  _id?: string | ObjectId;
+  fundiId: string; // ID of the fundi being rated
+  clientId: string; // ID of the client giving the rating
+  rating: number; // 1-5 stars
+  review?: string; // Optional review text
+  createdAt: Date;
+  updatedAt: Date;
+}

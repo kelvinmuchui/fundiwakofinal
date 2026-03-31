@@ -299,6 +299,69 @@ async function run() {
   console.log('Seeded users:', insertResult.insertedCount);
   console.log('Seeded applications:', insertApps.insertedCount);
 
+  // Seed ratings
+  const ratings = [
+    {
+      fundiId: insertResult.insertedIds[0].toString(), // Kevin Mburu (Plumbing)
+      clientId: insertResult.insertedIds[8].toString(), // Daniel Mwangi (Client)
+      rating: 5,
+      review: "Excellent work! Fixed my leaking pipe quickly and professionally.",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+    {
+      fundiId: insertResult.insertedIds[0].toString(), // Kevin Mburu (Plumbing)
+      clientId: insertResult.insertedIds[9].toString(), // Mary Wambui (Client)
+      rating: 4,
+      review: "Good job, but arrived 30 minutes late.",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+    {
+      fundiId: insertResult.insertedIds[1].toString(), // Amina Otieno (Electrical)
+      clientId: insertResult.insertedIds[8].toString(), // Daniel Mwangi (Client)
+      rating: 5,
+      review: "Outstanding electrician! Very knowledgeable and safe.",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+    {
+      fundiId: insertResult.insertedIds[2].toString(), // Wanjiru Ndegwa (Carpentry)
+      clientId: insertResult.insertedIds[9].toString(), // Mary Wambui (Client)
+      rating: 5,
+      review: "Beautiful custom cabinets. Exceeded expectations!",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+    {
+      fundiId: insertResult.insertedIds[3].toString(), // Mark Odhiambo (Painting)
+      clientId: insertResult.insertedIds[10].toString(), // Joshua Kimani (Client)
+      rating: 4,
+      review: "Good painting job, clean and professional.",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+  ];
+
+  const ratingsCol = db.collection('ratings');
+  const insertRatings = await ratingsCol.insertMany(ratings);
+  console.log('Seeded ratings:', insertRatings.insertedCount);
+
+  // Update fundi ratings based on the seeded ratings
+  const fundisWithRatings = [
+    { fundiIndex: 0, expectedRating: 4.5 }, // Kevin: (5+4)/2 = 4.5
+    { fundiIndex: 1, expectedRating: 5.0 }, // Amina: 5
+    { fundiIndex: 2, expectedRating: 5.0 }, // Wanjiru: 5
+    { fundiIndex: 3, expectedRating: 4.0 }, // Mark: 4
+  ];
+
+  for (const { fundiIndex, expectedRating } of fundisWithRatings) {
+    await usersCol.updateOne(
+      { _id: insertResult.insertedIds[fundiIndex] },
+      { $set: { rating: expectedRating, updatedAt: new Date() } }
+    );
+  }
+
   // Verify the data was inserted
   console.log('\nVerifying inserted data...');
   const userCount = await usersCol.countDocuments();

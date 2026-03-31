@@ -35,6 +35,7 @@ export async function POST(request: NextRequest) {
         availability: formData.get('availability'),
         role: formData.get('role'),
         certificates: formData.getAll('certificates'),
+        skills: formData.getAll('skills'),
       };
     } else {
       return NextResponse.json(
@@ -175,6 +176,7 @@ export async function POST(request: NextRequest) {
         availability: body.availability || 'flexible',
         reasonForJoining: body.reasonForJoining || undefined,
         certificates: certificates.length > 0 ? certificates : undefined,
+        skills: body.skills || [],
       };
     } else {
       // Client or Admin
@@ -199,6 +201,7 @@ export async function POST(request: NextRequest) {
         neighborhood: body.neighborhood,
         availability: body.availability || 'flexible',
         reasonForJoining: body.reasonForJoining || undefined,
+        skills: body.skills || [],
         status: 'pending',
         createdAt: new Date(),
         submittedAt: new Date(),
