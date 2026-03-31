@@ -23,45 +23,49 @@ export default async function Home() {
         {/* Background Pattern */}
         <div className="absolute inset-0 bg-hero-pattern opacity-10" />
 
-        {/* Decorative Blobs */}
-        <div className="absolute top-0 right-0 -mr-40 -mt-40 w-96 h-96 rounded-full bg-primary-500/20 blur-3xl animate-pulse-slow" />
-        <div className="absolute bottom-0 left-0 -ml-40 -mb-40 w-96 h-96 rounded-full bg-accent-500/20 blur-3xl animate-pulse-slow animate-delay-300" />
+        {/* Background Decorative Elements */}
+        <div className="absolute top-0 right-0 -mr-40 -mt-40 w-[32rem] h-[32rem] rounded-full bg-primary-500/10 blur-[100px] animate-float" />
+        <div className="absolute bottom-0 left-0 -ml-40 -mb-40 w-[28rem] h-[28rem] rounded-full bg-accent-500/10 blur-[80px] animate-float animate-delay-500" />
+        <div className="absolute top-1/3 left-1/4 w-64 h-64 rounded-full bg-secondary-500/10 blur-[120px] animate-float transition-all duration-1000" />
 
         <div className="container-max relative z-10 text-center text-white h-full grid grid-rows-[auto_1fr_auto]">
           <div>
             <span className="inline-block animate-fade-in opacity-0 py-1 px-3 rounded-full bg-white/10 border border-white/20 text-sm font-medium mb-6">
               ✨ Kenya&apos;s #1 Artisan Marketplace
             </span>
-            <h1 className="text-5xl md:text-6xl lg:text-7xl font-heading font-extrabold mb-6 tracking-tight animate-slide-up opacity-0 animate-delay-100">
-              Find Trusted <span className="gradient-text">Fundis</span> <br className="hidden md:block" /> Near You
+            <h1 className="text-5xl md:text-6xl lg:text-7xl font-heading font-extrabold mb-6 tracking-tight animate-reveal opacity-0 [animation-delay:200ms]">
+              Find Trusted <span className="gradient-text drop-shadow-[0_0_15px_rgba(249,115,22,0.3)]">Fundis</span> <br className="hidden md:block" /> Near You
             </h1>
-            <p className="max-w-2xl mx-auto text-lg md:text-xl text-white/80 mb-10 animate-slide-up opacity-0 animate-delay-200">
+            <p className="max-w-2xl mx-auto text-lg md:text-xl text-white/80 mb-10 animate-reveal opacity-0 [animation-delay:400ms]">
               Connect with verified plumbers, electricians, carpenters, and more.
               Quality work, fair prices, and peace of mind.
             </p>
           </div>
 
-          {/* Search Bar */}
-          <div className="animate-slide-up animate-delay-300 flex items-center justify-center">
-            <SearchBar />
+          {/* Search Bar with Glass Interaction */}
+          <div className="animate-reveal opacity-0 [animation-delay:600ms] flex items-center justify-center w-full max-w-3xl mx-auto relative group">
+            <div className="absolute -inset-1 bg-gradient-to-r from-primary-500/0 via-primary-500/30 to-primary-500/0 rounded-[1.5rem] blur opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+            <div className="relative w-full">
+              <SearchBar />
+            </div>
           </div>
 
-          {/* Stats quick */}
-          <div className="animate-fade-in opacity-0 animate-delay-400">
-            <div className="flex flex-wrap items-center justify-center gap-6 md:gap-12">
-              <div className="text-center">
-                <p className="text-3xl font-heading font-bold">5,000+</p>
-                <p className="text-sm text-white/60">Verified Fundis</p>
+          {/* High-Impact Stats Section */}
+          <div className="animate-reveal opacity-0 [animation-delay:800ms] mt-12">
+            <div className="glass-light/10 border-white/10 p-8 rounded-3xl backdrop-blur-md flex flex-wrap items-center justify-center gap-6 md:gap-16 border">
+              <div className="text-center group cursor-default">
+                <p className="text-4xl font-heading font-bold text-white group-hover:translate-x-1 transition-transform">5,000+</p>
+                <p className="text-xs font-semibold uppercase tracking-widest text-primary-400">Verified Fundis</p>
               </div>
-              <div className="hidden sm:block w-px h-10 bg-white/20"></div>
-              <div className="text-center">
-                <p className="text-3xl font-heading font-bold">12,000+</p>
-                <p className="text-sm text-white/60">Happy Customers</p>
+              <div className="hidden sm:block w-px h-12 bg-white/10 shrink-0"></div>
+              <div className="text-center group cursor-default">
+                <p className="text-4xl font-heading font-bold text-white group-hover:translate-x-1 transition-transform">12,000+</p>
+                <p className="text-xs font-semibold uppercase tracking-widest text-accent-400">Happy Customers</p>
               </div>
-              <div className="hidden sm:block w-px h-10 bg-white/20"></div>
-              <div className="text-center">
-                <p className="text-3xl font-heading font-bold">4.8/5</p>
-                <p className="text-sm text-white/60">Average Rating</p>
+              <div className="hidden sm:block w-px h-12 bg-white/10 shrink-0"></div>
+              <div className="text-center group cursor-default">
+                <p className="text-4xl font-heading font-bold text-white group-hover:translate-x-1 transition-transform">4.8/5</p>
+                <p className="text-xs font-semibold uppercase tracking-widest text-secondary-300">Average Rating</p>
               </div>
             </div>
           </div>
@@ -108,9 +112,9 @@ export default async function Home() {
                 Our platform streamlines the entire process from search to payment.
               </p>
 
-              <div className="space-y-8">
-                <div className="flex gap-4">
-                  <div className="shrink-0 w-12 h-12 rounded-full gradient-primary flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-primary-500/30">
+              <div className="space-y-6">
+                <div className="group flex gap-5 p-4 rounded-2xl hover:bg-primary-50/50 transition-all duration-300 border border-transparent hover:border-primary-100">
+                  <div className="shrink-0 w-14 h-14 rounded-2xl bg-white shadow-md flex items-center justify-center text-primary-500 font-bold text-2xl group-hover:bg-primary-500 group-hover:text-white transition-all transform group-hover:rotate-6">
                     1
                   </div>
                   <div>
@@ -119,8 +123,8 @@ export default async function Home() {
                   </div>
                 </div>
 
-                <div className="flex gap-4">
-                  <div className="shrink-0 w-12 h-12 rounded-full gradient-primary flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-primary-500/30">
+                <div className="group flex gap-5 p-4 rounded-2xl hover:bg-primary-50/50 transition-all duration-300 border border-transparent hover:border-primary-100">
+                  <div className="shrink-0 w-14 h-14 rounded-2xl bg-white shadow-md flex items-center justify-center text-primary-500 font-bold text-2xl group-hover:bg-primary-500 group-hover:text-white transition-all transform group-hover:-rotate-6">
                     2
                   </div>
                   <div>
@@ -129,8 +133,8 @@ export default async function Home() {
                   </div>
                 </div>
 
-                <div className="flex gap-4">
-                  <div className="shrink-0 w-12 h-12 rounded-full gradient-primary flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-primary-500/30">
+                <div className="group flex gap-5 p-4 rounded-2xl hover:bg-primary-50/50 transition-all duration-300 border border-transparent hover:border-primary-100">
+                  <div className="shrink-0 w-14 h-14 rounded-2xl bg-white shadow-md flex items-center justify-center text-primary-500 font-bold text-2xl group-hover:bg-primary-500 group-hover:text-white transition-all transform group-hover:rotate-6">
                     3
                   </div>
                   <div>

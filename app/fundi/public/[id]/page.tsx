@@ -28,6 +28,8 @@ export default function PublicFundiProfile() {
   const [profile, setProfile] = useState<PublicFundiProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [contactClicked, setContactClicked] = useState(false);
+  const [isTracking, setIsTracking] = useState(false);
 
   useEffect(() => {
     const id = params?.id;
@@ -48,6 +50,9 @@ export default function PublicFundiProfile() {
 
         const data = await res.json();
         setProfile(data);
+        
+        // Track view
+        trackEngagement('view', id);
       } catch (err) {
         console.error('Public profile fetch error:', err);
         setError('Unable to load profile');
@@ -56,8 +61,36 @@ export default function PublicFundiProfile() {
       }
     };
 
+    const trackEngagement = async (type: 'view' | 'contact', fundiId: string) => {
+      try {
+        await fetch(`/api/fundi/${fundiId}/track?type=${type}`, {
+          method: 'POST',
+        });
+      } catch (err) {
+        console.error(`Error tracking ${type}:`, err);
+      }
+    };
+
     fetchProfile();
   }, [params]);
+
+  const handleContact = async () => {
+    if (contactClicked || !profile?._id) return;
+    
+    setIsTracking(true);
+    try {
+      await fetch(`/api/fundi/${profile._id}/track?type=contact`, {
+        method: 'POST',
+      });
+      setContactClicked(true);
+      // Optional: scroll to contact info
+      document.getElementById('contact-info')?.scrollIntoView({ behavior: 'smooth' });
+    } catch (err) {
+      console.error('Error tracking contact click:', err);
+    } finally {
+      setIsTracking(false);
+    }
+  };
 
   if (loading) return <div className="min-h-screen flex items-center justify-center">Loading public profile...</div>;
   if (error) return <div className="min-h-screen flex items-center justify-center text-red-600">{error}</div>;
@@ -115,9 +148,29 @@ export default function PublicFundiProfile() {
             </div>
 
             <div className="space-y-4">
-              <div className="bg-slate-100 p-4 rounded-lg">
-                <h3 className="text-md font-semibold">Contact</h3>
-                <p className="text-gray-700">Email: {profile.email}</p>
+              <button
+                onClick={handleContact}
+                disabled={contactClicked || isTracking}
+                className={`w-full py-4 rounded-xl font-bold text-lg transition-all shadow-lg flex items-center justify-center gap-2 ${
+                  contactClicked 
+                    ? 'bg-emerald-500 text-white cursor-default' 
+                    : 'bg-primary-600 hover:bg-primary-700 text-white hover:scale-[1.02] active:scale-95'
+                }`}
+              >
+                {isTracking ? (
+                  <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                ) : contactClicked ? (
+                  <><span>✅</span> Contacted!</>
+                ) : (
+                  <><span>📞</span> Contact Fundi</>
+                )}
+              </button>
+
+              <div id="contact-info" className={`p-4 rounded-lg transition-all duration-500 ${contactClicked ? 'bg-emerald-50 ring-2 ring-emerald-500 scale-105' : 'bg-slate-100'}`}>
+                <h3 className="text-md font-semibold flex items-center gap-2">
+                  Contact Information {contactClicked && <span className="text-emerald-600 text-xs font-bold animate-bounce hidden sm:inline">Revealed!</span>}
+                </h3>
+                <p className="text-gray-700 mt-2">Email: {profile.email}</p>
                 <p className="text-gray-700">Phone: {profile.phone || 'Not provided'}</p>
               </div>
 

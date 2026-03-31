@@ -41,8 +41,20 @@ export interface User {
   
   // Common fields
   isVerified: boolean;
+  profileViews?: number;
+  contactClicks?: number;
+  notifications?: Notification[];
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface Notification {
+  _id?: string | ObjectId;
+  type: 'view' | 'contact' | 'rating' | 'system';
+  message: string;
+  senderName?: string;
+  createdAt: Date;
+  isRead: boolean;
 }
 
 export interface WorkerApplication {

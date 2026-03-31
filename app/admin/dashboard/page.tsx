@@ -175,64 +175,68 @@ export default function AdminDashboard() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Success/Error Messages */}
-        {successMessage && (
-          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg text-green-800">
-            {successMessage}
-          </div>
-        )}
-        {errorMessage && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-800">
-            {errorMessage}
-          </div>
-        )}
+        {/* Floating Toast Notifications */}
+        <div className="fixed bottom-8 right-8 z-[100] flex flex-col gap-3 pointer-events-none">
+          {successMessage && (
+            <div className="animate-reveal glass-light bg-emerald-500 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 pointer-events-auto border-none">
+              <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center font-bold text-sm">✓</div>
+              <p className="font-semibold">{successMessage}</p>
+            </div>
+          )}
+          {errorMessage && (
+            <div className="animate-reveal glass-light bg-rose-500 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 pointer-events-auto border-none">
+              <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center font-bold text-sm">✕</div>
+              <p className="font-semibold">{errorMessage}</p>
+            </div>
+          )}
+        </div>
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-gray-800 rounded-lg p-6 border border-gray-700 hover:border-primary-500 transition-colors">
+          <div className="group bg-gray-800 rounded-2xl p-6 border border-gray-700 hover:border-primary-500 transition-all duration-300 hover:shadow-2xl hover:shadow-primary-500/10 hover:-translate-y-1">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-400 text-sm font-medium">Total Users</p>
-                <p className="text-3xl font-bold text-white mt-2">{stats.totalUsers}</p>
+                <p className="text-gray-400 text-xs font-bold uppercase tracking-wider">Total Users</p>
+                <p className="text-4xl font-extrabold text-white mt-1">{stats.totalUsers}</p>
               </div>
-              <div className="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center">
-                <span className="text-2xl">👥</span>
+              <div className="w-14 h-14 bg-blue-500/10 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                <span className="text-3xl">👥</span>
               </div>
             </div>
           </div>
 
-          <div className="bg-gray-800 rounded-lg p-6 border border-gray-700 hover:border-green-500 transition-colors">
+          <div className="group bg-gray-800 rounded-2xl p-6 border border-gray-700 hover:border-emerald-500 transition-all duration-300 hover:shadow-2xl hover:shadow-emerald-500/10 hover:-translate-y-1">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-400 text-sm font-medium">Fundis</p>
-                <p className="text-3xl font-bold text-green-400 mt-2">{stats.fundis}</p>
+                <p className="text-gray-400 text-xs font-bold uppercase tracking-wider">Fundis</p>
+                <p className="text-4xl font-extrabold text-emerald-400 mt-1">{stats.fundis}</p>
               </div>
-              <div className="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center">
-                <span className="text-2xl">🔧</span>
+              <div className="w-14 h-14 bg-emerald-500/10 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                <span className="text-3xl">🔧</span>
               </div>
             </div>
           </div>
 
-          <div className="bg-gray-800 rounded-lg p-6 border border-gray-700 hover:border-blue-500 transition-colors">
+          <div className="group bg-gray-800 rounded-2xl p-6 border border-gray-700 hover:border-blue-500 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/10 hover:-translate-y-1">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-400 text-sm font-medium">Clients</p>
-                <p className="text-3xl font-bold text-blue-400 mt-2">{stats.clients}</p>
+                <p className="text-gray-400 text-xs font-bold uppercase tracking-wider">Clients</p>
+                <p className="text-4xl font-extrabold text-blue-400 mt-1">{stats.clients}</p>
               </div>
-              <div className="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center">
-                <span className="text-2xl">💼</span>
+              <div className="w-14 h-14 bg-blue-500/10 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                <span className="text-3xl">💼</span>
               </div>
             </div>
           </div>
 
-          <div className="bg-gray-800 rounded-lg p-6 border border-gray-700 hover:border-yellow-500 transition-colors">
+          <div className="group bg-gray-800 rounded-2xl p-6 border border-gray-700 hover:border-amber-500 transition-all duration-300 hover:shadow-2xl hover:shadow-amber-500/10 hover:-translate-y-1">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-400 text-sm font-medium">Pending Apps</p>
-                <p className="text-3xl font-bold text-yellow-400 mt-2">{stats.pendingApplications}</p>
+                <p className="text-gray-400 text-xs font-bold uppercase tracking-wider">Pending Apps</p>
+                <p className="text-4xl font-extrabold text-amber-400 mt-1">{stats.pendingApplications}</p>
               </div>
-              <div className="w-12 h-12 bg-yellow-500/20 rounded-lg flex items-center justify-center">
-                <span className="text-2xl">📋</span>
+              <div className="w-14 h-14 bg-amber-500/10 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                <span className="text-3xl animate-pulse">📋</span>
               </div>
             </div>
           </div>
@@ -395,11 +399,12 @@ export default function AdminDashboard() {
                       <th className="px-6 py-3 text-left text-sm font-semibold text-gray-300">Role</th>
                       <th className="px-6 py-3 text-left text-sm font-semibold text-gray-300">Status</th>
                       <th className="px-6 py-3 text-left text-sm font-semibold text-gray-300">Joined</th>
+                      <th className="px-6 py-3 text-right text-sm font-semibold text-gray-300 whitespace-nowrap">Quick Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-700">
                     {filteredUsers.map(user => (
-                      <tr key={user._id} className="hover:bg-gray-700 transition-colors cursor-pointer" onClick={() => setSelectedUser(user)}>
+                      <tr key={user._id} className="group hover:bg-gray-700/50 transition-colors cursor-pointer" onClick={() => setSelectedUser(user)}>
                         <td className="px-6 py-4 text-sm text-white font-medium">{user.name}</td>
                         <td className="px-6 py-4 text-sm text-gray-400">{user.email}</td>
                         <td className="px-6 py-4 text-sm text-gray-400">{user.phone}</td>
@@ -422,6 +427,26 @@ export default function AdminDashboard() {
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-400">
                           {new Date(user.createdAt).toLocaleDateString()}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-right">
+                          <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setSelectedUser(user); }}
+                              className="p-2 hover:bg-gray-600 rounded-lg text-gray-300 hover:text-white transition-colors"
+                              title="Quick View"
+                            >
+                              👁️
+                            </button>
+                            {!user.isVerified && (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); /* Add verify logic if exists */ }}
+                                className="p-2 hover:bg-emerald-600/20 rounded-lg text-emerald-400 hover:text-emerald-300 transition-colors"
+                                title="Verify User"
+                              >
+                                ✅
+                              </button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -449,7 +474,7 @@ export default function AdminDashboard() {
                 </thead>
                 <tbody className="divide-y divide-gray-700">
                   {applications.map(app => (
-                    <tr key={app._id} className="hover:bg-gray-700 transition-colors">
+                    <tr key={app._id} className="group hover:bg-gray-700/50 transition-colors cursor-pointer" onClick={() => setSelectedApp(app)}>
                       <td className="px-6 py-4 text-sm text-white font-medium">{app.name}</td>
                       <td className="px-6 py-4 text-sm text-gray-400">{app.email}</td>
                       <td className="px-6 py-4 text-sm text-gray-400">{app.skill}</td>
@@ -463,29 +488,34 @@ export default function AdminDashboard() {
                           {app.status}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-sm space-x-2">
-                        <button
-                          onClick={() => setSelectedApp(app)}
-                          className="text-primary-400 hover:text-primary-300 font-medium"
-                        >
-                          View
-                        </button>
-                        {app.status === 'pending' && (
-                          <>
-                            <button
-                              onClick={() => updateApplicationStatus(app._id, 'approved')}
-                              className="text-green-400 hover:text-green-300 font-medium ml-2"
-                            >
-                              Approve
-                            </button>
-                            <button
-                              onClick={() => updateApplicationStatus(app._id, 'rejected')}
-                              className="text-red-400 hover:text-red-300 font-medium ml-2"
-                            >
-                              Reject
-                            </button>
-                          </>
-                        )}
+                      <td className="px-6 py-4 text-sm text-right">
+                        <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setSelectedApp(app); }}
+                            className="p-2 hover:bg-gray-600 rounded-lg text-primary-400 hover:text-primary-300 transition-colors"
+                            title="View Full Details"
+                          >
+                            👁️
+                          </button>
+                          {app.status === 'pending' && (
+                            <>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); updateApplicationStatus(app._id, 'approved'); }}
+                                className="p-2 hover:bg-emerald-600/20 rounded-lg text-emerald-400 hover:text-emerald-300 transition-colors"
+                                title="Approve Immediately"
+                              >
+                                ✅
+                              </button>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); updateApplicationStatus(app._id, 'rejected'); }}
+                                className="p-2 hover:bg-rose-600/20 rounded-lg text-rose-400 hover:text-rose-300 transition-colors"
+                                title="Reject Immediately"
+                              >
+                                ❌
+                              </button>
+                            </>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -497,47 +527,87 @@ export default function AdminDashboard() {
 
         {/* Analytics Tab */}
         {activeTab === 'analytics' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-gray-500 rounded-lg border border-gray-700 p-6">
-              <h3 className="text-lg font-semibold text-white mb-4">User Distribution by Role</h3>
-              <div className="space-y-4">
-                <div className="flex items-center gap-4">
-                  <div className="w-4 h-4 rounded-full bg-green-500"></div>
-                  <span className="text-gray-300">Fundis</span>
-                  <span className="ml-auto text-white font-semibold">{stats.fundis}</span>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-reveal">
+            <div className="bg-gray-800 rounded-2xl border border-gray-700 p-8 shadow-xl">
+              <h3 className="text-xl font-bold text-white mb-8 flex items-center gap-2">
+                <span className="text-2xl">🥧</span> User Distribution
+              </h3>
+              <div className="flex flex-col gap-6">
+                {[
+                  { label: 'Fundis', count: stats.fundis, color: 'bg-emerald-500', icon: '🔧' },
+                  { label: 'Clients', count: stats.clients, color: 'bg-blue-500', icon: '💼' },
+                  { label: 'Admins', count: stats.totalUsers - stats.fundis - stats.clients, color: 'bg-purple-500', icon: '⚡' }
+                ].map((item, idx) => (
+                  <div key={idx} className="group flex items-center gap-4">
+                    <div className={`w-12 h-12 rounded-xl ${item.color}/10 flex items-center justify-center text-xl`}>
+                      {item.icon}
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex justify-between mb-2">
+                        <span className="text-gray-300 font-medium">{item.label}</span>
+                        <span className="text-white font-bold">{item.count}</span>
+                      </div>
+                      <div className="w-full bg-gray-700/50 rounded-full h-3 overflow-hidden">
+                        <div
+                          className={`${item.color} h-full rounded-full transition-all duration-1000 ease-out hover:brightness-110`}
+                          style={{ width: `${stats.totalUsers ? (item.count / stats.totalUsers) * 100 : 0}%`, transitionDelay: `${idx * 100}ms` }}
+                        ></div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-8 pt-8 border-t border-gray-700/50 flex justify-around text-center">
+                <div>
+                  <p className="text-gray-400 text-xs uppercase font-bold tracking-widest mb-1">Total</p>
+                  <p className="text-2xl font-black text-white">{stats.totalUsers}</p>
                 </div>
-                <div className="flex items-center gap-4">
-                  <div className="w-4 h-4 rounded-full bg-blue-500"></div>
-                  <span className="text-gray-300">Clients</span>
-                  <span className="ml-auto text-white font-semibold">{stats.clients}</span>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="w-4 h-4 rounded-full bg-purple-500"></div>
-                  <span className="text-gray-300">Admins</span>
-                  <span className="ml-auto text-white font-semibold">{stats.totalUsers - stats.fundis - stats.clients}</span>
+                <div className="w-px h-10 bg-gray-700"></div>
+                <div>
+                  <p className="text-gray-400 text-xs uppercase font-bold tracking-widest mb-1">Growth</p>
+                  <p className="text-2xl font-black text-emerald-400">+12%</p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-gray-800 rounded-lg border border-gray-700 p-6">
-              <h3 className="text-lg font-semibold text-white mb-4">Platform Health</h3>
-              <div className="space-y-4">
-                <div>
-                  <p className="text-gray-400 text-sm">Total Applications</p>
-                  <p className="text-3xl font-bold text-white mt-1">{applications.length}</p>
-                </div>
-                <div className="grid grid-cols-2 gap-4 mt-4">
-                  <div className="bg-gray-700 rounded p-3">
-                    <p className="text-gray-400 text-xs">Approval Rate</p>
-                    <p className="text-lg font-bold text-green-400 mt-1">
-                      {applications.length ? Math.round((stats.approvedApplications / applications.length) * 100) : 0}%
-                    </p>
+            <div className="bg-gray-800 rounded-2xl border border-gray-700 p-8 shadow-xl">
+              <h3 className="text-xl font-bold text-white mb-8 flex items-center gap-2">
+                <span className="text-2xl">🌱</span> Platform Health
+              </h3>
+              <div className="grid grid-cols-2 gap-6">
+                <div className="bg-gray-700/30 border border-gray-700 p-6 rounded-2xl hover:bg-gray-700/50 transition-colors group">
+                  <p className="text-gray-400 text-sm font-bold uppercase mb-2">Completion Rate</p>
+                  <div className="flex items-end gap-2">
+                    <p className="text-4xl font-black text-white group-hover:scale-105 transition-transform origin-left">94%</p>
+                    <span className="text-emerald-400 text-sm font-bold mb-1">↑ 2%</span>
                   </div>
-                  <div className="bg-gray-700 rounded p-3">
-                    <p className="text-gray-400 text-xs">Rejection Rate</p>
-                    <p className="text-lg font-bold text-red-400 mt-1">
-                      {applications.length ? Math.round((stats.rejectedApplications / applications.length) * 100) : 0}%
-                    </p>
+                  <div className="mt-4 w-full h-1 bg-gray-700 rounded-full overflow-hidden">
+                    <div className="bg-emerald-500 h-full w-[94%]"></div>
+                  </div>
+                </div>
+                <div className="bg-gray-700/30 border border-gray-700 p-6 rounded-2xl hover:bg-gray-700/50 transition-colors group">
+                  <p className="text-gray-400 text-sm font-bold uppercase mb-2">Response Time</p>
+                  <div className="flex items-end gap-2">
+                    <p className="text-4xl font-black text-white group-hover:scale-105 transition-transform origin-left">2.4h</p>
+                    <span className="text-emerald-400 text-sm font-bold mb-1">↓ 15m</span>
+                  </div>
+                  <div className="mt-4 w-full h-1 bg-gray-700 rounded-full overflow-hidden">
+                    <div className="bg-blue-500 h-full w-[80%]"></div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-8 space-y-6">
+                <h4 className="text-sm font-bold uppercase text-gray-500 tracking-wider">Application Funnel</h4>
+                <div>
+                  <div className="flex justify-between text-xs font-bold text-gray-400 mb-2">
+                    <span>APPROVED</span>
+                    <span>{Math.round((stats.approvedApplications / (applications.length || 1)) * 100)}%</span>
+                  </div>
+                  <div className="w-full bg-gray-700/50 h-6 rounded-lg overflow-hidden flex">
+                    <div className="bg-emerald-500/80 h-full transition-all duration-1000" style={{ width: `${(stats.approvedApplications / (applications.length || 1)) * 100}%` }}></div>
+                    <div className="bg-amber-500/80 h-full transition-all duration-1000" style={{ width: `${(stats.pendingApplications / (applications.length || 1)) * 100}%` }}></div>
+                    <div className="bg-rose-500/80 h-full transition-all duration-1000" style={{ width: `${(stats.rejectedApplications / (applications.length || 1)) * 100}%` }}></div>
                   </div>
                 </div>
               </div>

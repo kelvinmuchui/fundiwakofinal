@@ -21,6 +21,9 @@ interface FundiProfile {
     reasonForJoining?: string;
     photoURL?: string;
     isVerified: boolean;
+    profileViews?: number;
+    contactClicks?: number;
+    notifications?: any[];
 }
 
 export default function FundiProfile() {
@@ -97,6 +100,9 @@ export default function FundiProfile() {
                     reasonForJoining: data.reasonForJoining || '',
                     photoURL: data.photoURL || undefined,
                     isVerified: data.isVerified ?? false,
+                    profileViews: data.profileViews || 0,
+                    contactClicks: data.contactClicks || 0,
+                    notifications: data.notifications || [],
                 };
 
                 setProfileData(mergedData as FundiProfile);
@@ -608,6 +614,72 @@ export default function FundiProfile() {
                                                 </svg>
                                                 <span className="text-gray-700">{displayData?.location}, {displayData?.neighborhood}</span>
                                             </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Performance Stats */}
+                                    <div className="bg-white border border-gray-200 rounded-lg p-6">
+                                        <h2 className="text-xl font-semibold text-gray-900 mb-4 font-heading">Profile Performance</h2>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="bg-primary-50 p-4 rounded-xl border border-primary-100 group">
+                                                <div className="flex items-center gap-3 mb-2">
+                                                    <span className="text-2xl group-hover:scale-110 transition-transform">👁️</span>
+                                                    <span className="text-xs font-bold text-primary-600 uppercase tracking-wider">Views</span>
+                                                </div>
+                                                <p className="text-3xl font-black text-primary-900">{combinedProfile.profileViews || 0}</p>
+                                                <p className="text-[10px] text-primary-600 mt-1">Total profile visits</p>
+                                            </div>
+                                            <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-100 group">
+                                                <div className="flex items-center gap-3 mb-2">
+                                                    <span className="text-2xl group-hover:scale-110 transition-transform">📞</span>
+                                                    <span className="text-xs font-bold text-emerald-600 uppercase tracking-wider">Leads</span>
+                                                </div>
+                                                <p className="text-3xl font-black text-emerald-900">{combinedProfile.contactClicks || 0}</p>
+                                                <p className="text-[10px] text-emerald-600 mt-1">Contact information clicks</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Notifications Section */}
+                                    <div className="bg-white border border-gray-200 rounded-lg p-6">
+                                        <div className="flex justify-between items-center mb-4">
+                                            <h2 className="text-xl font-semibold text-gray-900 font-heading">Notifications</h2>
+                                            {combinedProfile.notifications && combinedProfile.notifications.filter((n: any) => !n.isRead).length > 0 && (
+                                                <span className="bg-rose-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">
+                                                    {combinedProfile.notifications.filter((n: any) => !n.isRead).length} NEW
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                                            {combinedProfile.notifications && combinedProfile.notifications.length > 0 ? (
+                                                combinedProfile.notifications.map((notif: any, i: number) => (
+                                                    <div key={notif._id || i} className={`p-3 rounded-xl border transition-all ${notif.isRead ? 'bg-gray-50 border-gray-100' : 'bg-white border-primary-100 shadow-sm'}`}>
+                                                        <div className="flex items-start gap-3">
+                                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${notif.type === 'contact' ? 'bg-emerald-100 text-emerald-600' : 'bg-blue-100 text-blue-600'}`}>
+                                                                {notif.type === 'contact' ? '📞' : 'ℹ️'}
+                                                            </div>
+                                                            <div className="flex-1 min-w-0">
+                                                                <p className={`text-sm ${notif.isRead ? 'text-gray-600' : 'text-gray-900 font-medium'}`}>
+                                                                    {notif.message}
+                                                                </p>
+                                                                {notif.createdAt && (
+                                                                    <p className="text-[10px] text-gray-400 mt-1">
+                                                                        {new Date(notif.createdAt).toLocaleDateString()} at {new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                                    </p>
+                                                                )}
+                                                            </div>
+                                                            {!notif.isRead && (
+                                                                <div className="w-2 h-2 bg-primary-500 rounded-full shrink-0 mt-2 animate-pulse"></div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <div className="text-center py-8">
+                                                    <div className="text-4xl mb-2 opacity-20">📭</div>
+                                                    <p className="text-gray-400 text-sm">No notifications yet.</p>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
 
