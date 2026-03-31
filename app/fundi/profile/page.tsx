@@ -51,6 +51,12 @@ export default function FundiProfile() {
     const [newSkill, setNewSkill] = useState('');
     const [photoPreview, setPhotoPreview] = useState<string | null>(null);
     const [photoFile, setPhotoFile] = useState<File | null>(null);
+    const [showSkillSuggestions, setShowSkillSuggestions] = useState(false);
+    const [skillSuggestions] = useState([
+        'Plumbing', 'Electrical Work', 'Carpentry', 'Painting', 'Tiling', 'Masonry',
+        'Welding', 'Auto Repair', 'HVAC', 'Roofing', 'Flooring', 'Drywall',
+        'Landscaping', 'Pest Control', 'Locksmith', 'Appliance Repair'
+    ]);
 
     useEffect(() => {
         if (status === 'loading') return;
@@ -491,6 +497,72 @@ export default function FundiProfile() {
                                             </span>
                                         </div>
                                     </div>
+
+                                    {/* Ratings & Reviews */}
+                                    <div className="bg-white border border-gray-200 rounded-lg p-6">
+                                        <h2 className="text-xl font-semibold text-gray-900 mb-4">Ratings & Reviews</h2>
+                                        <div className="space-y-4">
+                                            {/* Overall Rating */}
+                                            <div className="flex items-center gap-3">
+                                                <div className="flex items-center">
+                                                    {[1, 2, 3, 4, 5].map((star) => (
+                                                        <svg
+                                                            key={star}
+                                                            className={`w-5 h-5 ${star <= 4.5 ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
+                                                            viewBox="0 0 20 20"
+                                                        >
+                                                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                                        </svg>
+                                                    ))}
+                                                </div>
+                                                <span className="text-lg font-semibold text-gray-900">4.5</span>
+                                                <span className="text-gray-600">(12 reviews)</span>
+                                            </div>
+
+                                            {/* Recent Reviews */}
+                                            <div className="space-y-3">
+                                                <div className="border-t border-gray-100 pt-3">
+                                                    <div className="flex items-center gap-2 mb-2">
+                                                        <div className="flex">
+                                                            {[1, 2, 3, 4, 5].map((star) => (
+                                                                <svg key={star} className="w-4 h-4 text-yellow-400 fill-current" viewBox="0 0 20 20">
+                                                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                                                </svg>
+                                                            ))}
+                                                        </div>
+                                                        <span className="text-sm font-medium text-gray-900">John M.</span>
+                                                        <span className="text-sm text-gray-500">2 weeks ago</span>
+                                                    </div>
+                                                    <p className="text-sm text-gray-700">"Excellent work on my kitchen plumbing. Very professional and completed the job on time. Highly recommended!"</p>
+                                                </div>
+
+                                                <div className="border-t border-gray-100 pt-3">
+                                                    <div className="flex items-center gap-2 mb-2">
+                                                        <div className="flex">
+                                                            {[1, 2, 3, 4].map((star) => (
+                                                                <svg key={star} className="w-4 h-4 text-yellow-400 fill-current" viewBox="0 0 20 20">
+                                                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                                                </svg>
+                                                            ))}
+                                                            <svg className="w-4 h-4 text-gray-300" viewBox="0 0 20 20">
+                                                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                                            </svg>
+                                                        </div>
+                                                        <span className="text-sm font-medium text-gray-900">Sarah K.</span>
+                                                        <span className="text-sm text-gray-500">1 month ago</span>
+                                                    </div>
+                                                    <p className="text-sm text-gray-700">"Good work overall, but there was a small delay in starting the project. The quality was satisfactory."</p>
+                                                </div>
+                                            </div>
+
+                                            {/* View All Reviews Link */}
+                                            <div className="border-t border-gray-100 pt-3">
+                                                <button className="text-primary-600 hover:text-primary-700 text-sm font-medium">
+                                                    View all 12 reviews →
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -657,22 +729,50 @@ export default function FundiProfile() {
 
                         {/* Skills Section */}
                         <div className="mt-8">
-                            <label className="block text-sm font-medium text-gray-700 mb-4">Additional Skills</label>
-                            <div className="flex gap-2 mb-4">
-                                <input
-                                    type="text"
-                                    value={newSkill}
-                                    onChange={(e) => setNewSkill(e.target.value)}
-                                    onKeyPress={(e) => e.key === 'Enter' && addSkill()}
-                                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                                    placeholder="Add a skill and press Enter"
-                                />
-                                <button
-                                    onClick={addSkill}
-                                    className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors font-medium"
-                                >
-                                    Add
-                                </button>
+                            <label className="block text-sm font-medium text-gray-700 mb-4">Skills & Expertise</label>
+                            <div className="relative">
+                                <div className="flex gap-2 mb-4">
+                                    <div className="flex-1 relative">
+                                        <input
+                                            type="text"
+                                            value={newSkill}
+                                            onChange={(e) => setNewSkill(e.target.value)}
+                                            onKeyPress={(e) => e.key === 'Enter' && addSkill()}
+                                            onFocus={() => setShowSkillSuggestions(true)}
+                                            onBlur={() => setTimeout(() => setShowSkillSuggestions(false), 200)}
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                                            placeholder="Add a skill (e.g., Plumbing, Electrical)"
+                                        />
+                                        {showSkillSuggestions && newSkill && (
+                                            <div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-lg shadow-lg z-10 max-h-40 overflow-y-auto">
+                                                {skillSuggestions
+                                                    .filter(skill => 
+                                                        skill.toLowerCase().includes(newSkill.toLowerCase()) && 
+                                                        !formData.skills?.includes(skill)
+                                                    )
+                                                    .slice(0, 5)
+                                                    .map((skill, idx) => (
+                                                        <button
+                                                            key={idx}
+                                                            onClick={() => {
+                                                                setNewSkill(skill);
+                                                                addSkill();
+                                                            }}
+                                                            className="w-full text-left px-4 py-2 hover:bg-gray-50 focus:bg-gray-50 focus:outline-none"
+                                                        >
+                                                            {skill}
+                                                        </button>
+                                                    ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <button
+                                        onClick={addSkill}
+                                        className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors font-medium"
+                                    >
+                                        Add
+                                    </button>
+                                </div>
                             </div>
                             <div className="flex flex-wrap gap-2">
                                 {formData.skills?.map((skill, idx) => (
@@ -680,13 +780,16 @@ export default function FundiProfile() {
                                         {skill}
                                         <button
                                             onClick={() => removeSkill(skill)}
-                                            className="text-primary-600 hover:text-primary-800 font-bold"
+                                            className="text-primary-600 hover:text-primary-800 font-bold text-xs"
                                         >
-                                            x
+                                            ×
                                         </button>
                                     </span>
                                 ))}
                             </div>
+                            {(!formData.skills || formData.skills.length === 0) && (
+                                <p className="text-sm text-gray-500 mt-2">Add your skills to showcase your expertise</p>
+                            )}
                         </div>
 
                         {/* Description */}
