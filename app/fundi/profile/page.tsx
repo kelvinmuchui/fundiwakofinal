@@ -283,14 +283,14 @@ export default function FundiProfile() {
                             <h1 className="text-2xl font-bold text-gray-900">Your Professional Profile</h1>
                             <p className="text-gray-600 text-sm">Manage and showcase your skills</p>
                         </div>
-                        <div className="flex gap-3">
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                             {!isEditing && (
                                 <button
                                     onClick={() => {
                                         setIsEditing(true);
                                         setFormData(profileData || formData);
                                     }}
-                                    className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-full transition-colors text-sm font-medium"
+                                    className="w-full sm:w-auto px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-full transition-colors text-sm font-medium"
                                 >
                                     Edit Profile
                                 </button>
@@ -299,14 +299,14 @@ export default function FundiProfile() {
                                 <>
                                     <button
                                         onClick={() => setIsEditing(false)}
-                                        className="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-900 rounded-full transition-colors text-sm font-medium"
+                                        className="w-full sm:w-auto px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-900 rounded-full transition-colors text-sm font-medium"
                                     >
                                         Cancel
                                     </button>
                                     <button
                                         onClick={saveProfile}
                                         disabled={saving}
-                                        className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white rounded-full transition-colors text-sm font-medium"
+                                        className="w-full sm:w-auto px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white rounded-full transition-colors text-sm font-medium"
                                     >
                                         {saving ? 'Saving...' : 'Save Changes'}
                                     </button>
@@ -314,10 +314,20 @@ export default function FundiProfile() {
                             )}
                             <button
                                 onClick={() => signOut()}
-                                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-full transition-colors text-sm font-medium"
+                                className="w-full sm:w-auto px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-full transition-colors text-sm font-medium"
                             >
                                 Sign Out
                             </button>
+                            {publicProfileId && (
+                              <a
+                                href={`/fundi/public/${publicProfileId}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="w-full sm:w-auto px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full transition-colors text-sm font-medium"
+                              >
+                                Public Profile
+                              </a>
+                            )}
                         </div>
                     </div>
 
@@ -407,7 +417,7 @@ export default function FundiProfile() {
                         </div>
 
                         {/* Main Content Grid */}
-                        <div className="px-8 pb-8">
+                            <div className="px-4 sm:px-8 pb-8">
                             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                                 {/* Left Column */}
                                 <div className="lg:col-span-2 space-y-6">
