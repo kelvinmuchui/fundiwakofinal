@@ -11,6 +11,11 @@ export interface Worker {
   photoURL: string;
   hourlyRate: string;
   description: string;
+  neighborhood?: string;
+  isVerified?: boolean;
+  experience?: string;
+  skills?: string[];
+  tvetInstitution?: string;
 }
 
 export const mockWorkers: Worker[] = [

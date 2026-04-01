@@ -24,16 +24,21 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     id: user._id?.toString() ?? "",
     name: user.name,
     skill: user.skill ?? "General",
-    location: user.location ?? user.neighborhood ?? "Unknown",
+    location: user.location || "Nairobi",
+    neighborhood: user.neighborhood || "",
     availability: user.availability ?? "Available Now",
     phone: user.phone,
     email: user.email,
-    rating: user.rating ?? 4.7,
+    rating: user.rating ?? 0,
     jobsCompleted: user.jobsCompleted ?? 0,
+    isVerified: user.isVerified || false,
+    experience: user.experience || "",
+    skills: user.skills || [],
+    tvetInstitution: user.tvetInstitution || "",
     photoURL:
       user.photoURL ||
       "https://images.unsplash.com/photo-1529101091764-c3526daf38fe?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
-    hourlyRate: user.hourlyRate ?? "KES 1,500/hr",
+    hourlyRate: user.hourlyRate ?? "Negotiable",
     description:
       user.description ?? "Experienced fundi ready to help with your project.",
   }));

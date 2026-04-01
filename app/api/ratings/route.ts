@@ -7,15 +7,8 @@ import { authOptions } from '../auth/[...nextauth]/route';
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const user = session.user as any;
-    if (!user.id) {
-      return NextResponse.json({ error: 'User ID not found' }, { status: 401 });
-    }
+    const user = session?.user as any;
+    const clientId = user?.id || 'guest';
 
     const { fundiId, rating, review } = await request.json();
 
@@ -34,16 +27,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Fundi not found' }, { status: 404 });
     }
 
-    // Check if user already rated this fundi
+    // Check if user already rated this fundi (skipped for guest users)
     const ratingsCollection = await getCollection('ratings');
-    const existingRating = await ratingsCollection.findOne({
-      fundiId,
-      clientId: user.id
-    });
+    let existingRating = null;
+    
+    if (clientId !== 'guest') {
+      existingRating = await ratingsCollection.findOne({
+        fundiId,
+        clientId
+      });
+    }
 
     const ratingData = {
       fundiId,
-      clientId: user.id,
+      clientId,
       rating: Number(rating),
       review: review?.trim() || undefined,
       updatedAt: new Date()

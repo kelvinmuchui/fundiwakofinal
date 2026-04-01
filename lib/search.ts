@@ -15,10 +15,25 @@ export async function searchFundis({ service, location }: SearchFilters) {
     const andClauses: any[] = [];
 
     if (service) {
-      const regex = new RegExp(service.trim(), "i");
+      let serviceSearchTerm = service.trim();
+      
+      // Map common variations (e.g., "Electrical" -> "Electrician")
+      const variations: Record<string, string> = {
+        "Electrical": "(Electrical|Electrician)",
+        "Plumbing": "(Plumbing|Plumber)",
+        "Carpentry": "(Carpentry|Carpenter)",
+        "Painting": "(Painting|Painter)",
+        "Masonry": "(Masonry|Mason)",
+        "Cleaning": "(Cleaning|Cleaner)"
+      };
+      
+      const pattern = variations[serviceSearchTerm] || serviceSearchTerm;
+      const regex = new RegExp(pattern, "i");
+      
       andClauses.push({
         $or: [
           { skill: regex },
+          { skills: regex },
           { description: regex },
           { businessName: regex },
           { businessRegistration: regex },

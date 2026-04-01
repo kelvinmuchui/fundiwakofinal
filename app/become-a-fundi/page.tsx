@@ -312,12 +312,12 @@ export default function BecomeAFundi() {
                                                 required
                                             >
                                                 <option value="">Select a service...</option>
-                                                <option value="Plumber">Plumbing</option>
-                                                <option value="Electrician">Electrical</option>
-                                                <option value="Carpenter">Carpentry</option>
-                                                <option value="Painter">Painting</option>
-                                                <option value="Mason">Masonry</option>
-                                                <option value="Cleaner">Cleaning</option>
+                                                <option value="Plumbing">Plumbing</option>
+                                                <option value="Electrical">Electrical</option>
+                                                <option value="Carpentry">Carpentry</option>
+                                                <option value="Painting">Painting</option>
+                                                <option value="Masonry">Masonry</option>
+                                                <option value="Cleaning">Cleaning</option>
                                                 <option value="Other">Other</option>
                                             </select>
                                         </div>

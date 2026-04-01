@@ -37,15 +37,18 @@ export async function getServices(): Promise<Service[]> {
     // Calculate dynamic fundi counts
     const servicesWithCounts = await Promise.all(
       services.map(async (service) => {
-        // Count fundis with this skill
+        // Count fundis with this skill in primary OR secondary skills
         const fundiCount = await usersCollection.countDocuments({
           role: 'fundi',
-          skill: service.title
+          $or: [
+            { skill: service.title },
+            { skills: service.title }
+          ]
         });
         
         return {
           ...service,
-          fundiCount: fundiCount || service.fundiCount // fallback to seeded count if no fundis found
+          fundiCount: fundiCount || 0
         };
       })
     );

@@ -70,18 +70,23 @@ export default function WorkerCard({ worker }: WorkerCardProps) {
         
         <div className="flex-1">
           <div className="flex justify-between items-start">
-            <div>
-              <h3 className="font-heading font-bold text-xl text-neutral-800">{worker.name}</h3>
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2">
+                <h3 className="font-heading font-bold text-xl text-neutral-800">{worker.name}</h3>
+                {worker.isVerified && (
+                  <span className="text-emerald-500" title="Verified Professional">
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                  </span>
+                )}
+              </div>
               <p className="text-sm font-semibold text-primary-600 mb-1">{worker.skill}</p>
+              {worker.experience && (
+                <p className="text-[10px] font-bold text-secondary-400 uppercase tracking-tight">{worker.experience} Experience</p>
+              )}
             </div>
-            <div className="flex items-center bg-neutral-50 px-2 py-1 rounded-lg">
-              <StarRating
-                currentRating={currentRating}
-                onRatingSubmit={handleRatingSubmit}
-                readonly={false}
-                showReviewInput={true}
-              />
-            </div>
+
           </div>
           
           <div className="flex flex-wrap items-center gap-2 mt-2 text-xs text-neutral-500">
@@ -90,7 +95,7 @@ export default function WorkerCard({ worker }: WorkerCardProps) {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
-              {worker.location}
+              {worker.location}{worker.neighborhood ? `, ${worker.neighborhood}` : ""}
             </span>
             <span className="w-1 h-1 rounded-full bg-neutral-300"></span>
             <span>{worker.jobsCompleted} jobs</span>
@@ -104,13 +109,30 @@ export default function WorkerCard({ worker }: WorkerCardProps) {
         {worker.description}
       </div>
 
+      {worker.skills && worker.skills.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mb-4">
+          {worker.skills.map((s, i) => (
+            <span key={i} className="px-2 py-0.5 bg-secondary-50 text-secondary-600 rounded text-[10px] font-medium border border-secondary-100">
+              {s}
+            </span>
+          ))}
+        </div>
+      )}
+
       <div className="mt-auto pt-4 border-t border-neutral-100">
         <div className="flex justify-between items-center mb-4">
           <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${getAvailabilityColor(worker.availability)}`}>
             {worker.availability}
           </span>
         </div>
-
+        <div className="mb-4">
+          <StarRating
+            currentRating={currentRating}
+            onRatingSubmit={handleRatingSubmit}
+            readonly={false}
+            showReviewInput={true}
+          />
+        </div>
         {/* Contact Reveal Section */}
         {showContact ? (
           <div className="bg-primary-50 rounded-2xl p-4 border border-primary-100 animate-fade-in shadow-inner">
