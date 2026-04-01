@@ -51,6 +51,9 @@ export default function FundiProfile() {
         tvetInstitution: '',
         reasonForJoining: '',
         isVerified: false,
+        profileViews: 0,
+        contactClicks: 0,
+        notifications: [],
     });
     const [newSkill, setNewSkill] = useState('');
     const [photoPreview, setPhotoPreview] = useState<string | null>(null);
@@ -125,6 +128,9 @@ export default function FundiProfile() {
                     reasonForJoining: '',
                     photoURL: undefined,
                     isVerified: false,
+                    profileViews: 0,
+                    contactClicks: 0,
+                    notifications: [],
                 };
                 setProfileData(fallback);
                 setFormData(fallback);
@@ -147,6 +153,9 @@ export default function FundiProfile() {
                 reasonForJoining: '',
                 photoURL: undefined,
                 isVerified: false,
+                profileViews: 0,
+                contactClicks: 0,
+                notifications: [],
             });
             setFormData({
                 name: (session?.user as any)?.name || '',
@@ -164,6 +173,9 @@ export default function FundiProfile() {
                 reasonForJoining: '',
                 photoURL: undefined,
                 isVerified: false,
+                profileViews: 0,
+                contactClicks: 0,
+                notifications: [],
             });
         } finally {
             setLoading(false);
@@ -362,6 +374,9 @@ export default function FundiProfile() {
         reasonForJoining: '',
         photoURL: undefined,
         isVerified: false,
+        profileViews: 0,
+        contactClicks: 0,
+        notifications: [],
     };
 
     const displayData = isEditing ? formData : combinedProfile;

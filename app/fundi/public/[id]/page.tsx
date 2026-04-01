@@ -32,7 +32,7 @@ export default function PublicFundiProfile() {
   const [isTracking, setIsTracking] = useState(false);
 
   useEffect(() => {
-    const id = params?.id;
+    const id = Array.isArray(params?.id) ? params.id[0] : params?.id;
     if (!id) {
       setError('Fundi ID missing');
       setLoading(false);

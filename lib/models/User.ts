@@ -30,6 +30,8 @@ export interface User {
   rating?: number;
   jobsCompleted?: number;
   
+  skills?: string[];
+  
   // Client-specific fields
   homeAddress?: string;
   city?: string;
@@ -78,6 +80,7 @@ export interface WorkerApplication {
   bankAccountNumber?: string;
   availability?: string;
   reasonForJoining?: string;
+  skills?: string[];
   status: 'pending' | 'approved' | 'rejected';
   createdAt: Date;
   submittedAt: Date;
