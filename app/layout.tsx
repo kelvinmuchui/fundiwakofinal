@@ -39,7 +39,7 @@ export default function RootLayout({
       <body className="font-body antialiased">
         <Providers>
           <Navbar />
-          <main>{children}</main>
+          <main className="pt-28">{children}</main>
           <Footer />
         </Providers>
       </body>

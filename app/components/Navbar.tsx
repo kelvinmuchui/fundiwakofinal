@@ -8,6 +8,8 @@ import { usePathname } from "next/navigation";
 const navLinks = [
     { name: "Home", href: "#" },
     { name: "Services", href: "#services" },
+    { name: "Hire Fundis", href: "/hire-fundis" },
+    { name: "Internship", href: "/internship" },
     { name: "How It Works", href: "#how-it-works" },
     { name: "Testimonials", href: "#testimonials" },
 ];
@@ -37,8 +39,8 @@ export default function Navbar() {
     return (
         <nav
             className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${isScrolled
-                ? "glass-light shadow-lg py-3"
-                : "bg-transparent py-5"
+                ? "glass-light shadow-lg backdrop-blur-xl border-b border-white/10 bg-slate-950/95 py-3"
+                : "backdrop-blur-xl border-b border-white/10 bg-slate-950/80 py-5"
                 }`}
         >
             <div className="container-max px-4 sm:px-6 lg:px-8">
@@ -88,12 +90,32 @@ export default function Navbar() {
                     {/* Desktop CTAs */}
                     <div className="hidden md:flex items-center gap-3">
                         {status === 'loading' ? (
-                            <div className="w-8 h-8 bg-gray-200 rounded-full animate-pulse"></div>
+                            <div className="w-10 h-10 bg-gray-200/20 rounded-full animate-pulse"></div>
                         ) : session ? (
                             <div className="flex items-center gap-3">
-                                <span className={`text-sm ${isScrolled ? "text-neutral-600" : "text-white/90"}`}>
-                                    Welcome, {(session.user as any)?.name || 'User'}
-                                </span>
+                                <Link
+                                    href="/profile"
+                                    className={`flex items-center gap-2 px-3 py-2 rounded-xl transition-all duration-300 ${isScrolled ? "hover:bg-primary-50 text-neutral-700" : "hover:bg-white/10 text-white"}`}
+                                >
+                                    <div className="w-8 h-8 rounded-lg bg-primary-500/20 flex items-center justify-center text-xs font-bold text-primary-500">
+                                        {(session.user as any)?.name?.charAt(0) || 'U'}
+                                    </div>
+                                    <span className="text-sm font-medium">Profile</span>
+                                </Link>
+                                <Link
+                                    href="/dashboard"
+                                    className={`px-4 py-2 rounded-xl text-sm font-heading font-semibold transition-all duration-300 border-2 ${isScrolled
+                                        ? "border-primary-500 text-primary-500 hover:bg-primary-500 hover:text-white"
+                                        : "border-white/30 text-white hover:bg-white/10"
+                                        }`}
+                                >
+                                    Dashboard
+                                </Link>
+                                {(session.user as any)?.role === 'fundi' && (
+                                    <Link href="/fundi/profile" className="px-4 py-2 rounded-xl text-sm font-heading font-semibold bg-emerald-600 text-white hover:bg-emerald-700 transition-all duration-300 shadow-lg shadow-emerald-600/20">
+                                        Fundi Panel
+                                    </Link>
+                                )}
                                 {(session.user as any)?.role === 'admin' && (
                                     <Link href="/admin/dashboard" className="px-4 py-2 rounded-xl text-sm font-heading font-semibold bg-purple-600 text-white hover:bg-purple-700 transition-all duration-300">
                                         Admin
@@ -101,12 +123,12 @@ export default function Navbar() {
                                 )}
                                 <button
                                     onClick={() => signOut()}
-                                    className={`px-4 py-2 rounded-xl text-sm font-heading font-semibold transition-all duration-300 border-2 ${isScrolled
-                                        ? "border-red-500 text-red-500 hover:bg-red-500 hover:text-white"
-                                        : "border-white/30 text-white hover:bg-white/10"
-                                        }`}
+                                    className={`p-2 rounded-xl transition-all duration-300 ${isScrolled ? "text-neutral-400 hover:text-red-500 hover:bg-red-50" : "text-white/60 hover:text-white hover:bg-white/10"}`}
+                                    title="Sign Out"
                                 >
-                                    Sign Out
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                                    </svg>
                                 </button>
                             </div>
                         ) : (
@@ -162,16 +184,45 @@ export default function Navbar() {
                         ))}
                         <div className="pt-3 space-y-2 border-t border-neutral-200">
                             {status === 'loading' ? (
-                                <div className="px-4 py-3 text-center text-black">Loading...</div>
+                                 <div className="px-4 py-3 text-center text-black">Loading...</div>
                             ) : session ? (
                                 <>
-                                    <div className="px-4 py-3 text-black font-medium">
-                                        Welcome, {(session.user as any)?.name || 'User'}
+                                    <div className="px-4 py-3 flex items-center gap-3 border-b border-neutral-100 mb-2">
+                                         <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center text-primary-600 font-bold">
+                                             {(session.user as any)?.name?.charAt(0) || 'U'}
+                                         </div>
+                                         <div>
+                                             <div className="text-black font-bold">{(session.user as any)?.name || 'User'}</div>
+                                             <div className="text-xs text-gray-500 uppercase tracking-wider">{(session.user as any)?.role}</div>
+                                         </div>
                                     </div>
+                                    <Link
+                                        href="/profile"
+                                        className="block px-4 py-3 rounded-xl text-black font-medium hover:bg-primary-50 hover:text-primary-600 transition-all duration-200"
+                                        onClick={() => setIsMobileMenuOpen(false)}
+                                    >
+                                        My Profile
+                                    </Link>
+                                    <Link
+                                        href="/dashboard"
+                                        className="block px-4 py-3 rounded-xl text-black font-medium hover:bg-primary-50 hover:text-primary-600 transition-all duration-200"
+                                        onClick={() => setIsMobileMenuOpen(false)}
+                                    >
+                                        My Bookings
+                                    </Link>
+                                    {(session.user as any)?.role === 'fundi' && (
+                                        <Link
+                                            href="/fundi/profile"
+                                            className="block px-4 py-3 rounded-xl text-emerald-600 font-medium hover:bg-emerald-50 transition-all duration-200"
+                                            onClick={() => setIsMobileMenuOpen(false)}
+                                        >
+                                            Fundi Panel
+                                        </Link>
+                                    )}
                                     {(session.user as any)?.role === 'admin' && (
                                         <Link
                                             href="/admin/dashboard"
-                                            className="block w-full text-center btn-primary"
+                                            className="block px-4 py-3 rounded-xl text-purple-600 font-medium hover:bg-purple-50 transition-all duration-200"
                                             onClick={() => setIsMobileMenuOpen(false)}
                                         >
                                             Admin Dashboard
@@ -182,7 +233,7 @@ export default function Navbar() {
                                             signOut();
                                             setIsMobileMenuOpen(false);
                                         }}
-                                        className="block w-full text-center px-4 py-3 rounded-xl border-2 border-red-500 text-red-500 font-heading font-semibold hover:bg-red-500 hover:text-white transition-all duration-200"
+                                        className="block w-full text-left px-4 py-3 rounded-xl text-red-500 font-medium hover:bg-red-50 transition-all duration-200 mt-2"
                                     >
                                         Sign Out
                                     </button>
@@ -190,7 +241,7 @@ export default function Navbar() {
                             ) : (
                                 <>
                                     <Link
-                                        href="/auth/signin"
+                                        href="/auth"
                                         className="block w-full text-center px-4 py-3 rounded-xl border-2 border-primary-500 text-primary-500 font-heading font-semibold hover:bg-primary-500 hover:text-white transition-all duration-200"
                                         onClick={() => setIsMobileMenuOpen(false)}
                                     >
@@ -198,7 +249,7 @@ export default function Navbar() {
                                     </Link>
                                     <Link
                                         href="/become-a-fundi"
-                                        className="block w-full text-center btn-primary"
+                                        className="block w-full text-center btn-primary mt-2"
                                         onClick={() => setIsMobileMenuOpen(false)}
                                     >
                                         Become a Fundi

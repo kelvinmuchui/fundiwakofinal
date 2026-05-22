@@ -16,6 +16,7 @@ export interface Worker {
   experience?: string;
   skills?: string[];
   tvetInstitution?: string;
+  distance?: number;
 }
 
 export const mockWorkers: Worker[] = [

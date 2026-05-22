@@ -13,7 +13,7 @@ const footerLinks = {
         { name: "About Us", href: "#" },
         { name: "How It Works", href: "#how-it-works" },
         { name: "Pricing", href: "#" },
-        { name: "Careers", href: "#" },
+        { name: "Careers", href: "/hire-fundis" },
         { name: "Blog", href: "#" },
     ],
     support: [

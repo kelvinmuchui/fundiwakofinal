@@ -58,7 +58,8 @@ export async function PUT(request: NextRequest) {
       hourlyRate,
       tvetInstitution,
       reasonForJoining,
-      photoURL
+      photoURL,
+      showcasePhotos
     } = body;
 
     // Validate required fields
@@ -87,6 +88,7 @@ export async function PUT(request: NextRequest) {
           tvetInstitution,
           reasonForJoining,
           photoURL,
+          showcasePhotos: showcasePhotos || [],
           updatedAt: new Date()
         }
       },

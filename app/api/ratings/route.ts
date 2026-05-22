@@ -3,9 +3,10 @@ import { ObjectId } from 'mongodb';
 import { getCollection } from '@/lib/db';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../auth/[...nextauth]/route';
+import { ApiErrorHandler, createSuccessResponse } from '@/lib/errorHandler';
 
 export async function POST(request: NextRequest) {
-  try {
+  return ApiErrorHandler.withErrorHandler(async () => {
     const session = await getServerSession(authOptions);
     const user = session?.user as any;
     const clientId = user?.id || 'guest';
@@ -30,7 +31,7 @@ export async function POST(request: NextRequest) {
     // Check if user already rated this fundi (skipped for guest users)
     const ratingsCollection = await getCollection('ratings');
     let existingRating = null;
-    
+
     if (clientId !== 'guest') {
       existingRating = await ratingsCollection.findOne({
         fundiId,
@@ -76,14 +77,9 @@ export async function POST(request: NextRequest) {
       }
     );
 
-    return NextResponse.json({
-      success: true,
-      message: existingRating ? 'Rating updated successfully' : 'Rating submitted successfully',
-      averageRating: Math.round(averageRating * 10) / 10
-    });
-
-  } catch (error) {
-    console.error('Error submitting rating:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
+    return createSuccessResponse(
+      existingRating ? 'Rating updated successfully' : 'Rating submitted successfully',
+      { averageRating: Math.round(averageRating * 10) / 10 }
+    );
+  }, 'POST /api/ratings');
 }

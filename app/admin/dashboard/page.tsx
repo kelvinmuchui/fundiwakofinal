@@ -32,6 +32,25 @@ interface WorkerApplication {
   submittedAt?: string;
 }
 
+interface CorporatePosting {
+  _id: string;
+  companyName: string;
+  contactName: string;
+  contactEmail: string;
+  contactPhone: string;
+  companyWebsite?: string;
+  location: string;
+  postingType: string;
+  serviceCategory: string;
+  positions: number;
+  preferredStartDate?: string;
+  duration?: string;
+  description: string;
+  status: 'new' | 'reviewed' | 'approved' | 'rejected';
+  createdAt: string;
+  updatedAt: string;
+}
+
 export default function AdminDashboard() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -40,6 +59,8 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [selectedApp, setSelectedApp] = useState<WorkerApplication | null>(null);
+  const [selectedPost, setSelectedPost] = useState<CorporatePosting | null>(null);
+  const [postings, setPostings] = useState<CorporatePosting[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterRole, setFilterRole] = useState<string>('all');
   const [loading, setLoading] = useState(true);
@@ -61,9 +82,10 @@ export default function AdminDashboard() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [usersRes, appsRes] = await Promise.all([
+      const [usersRes, appsRes, postingsRes] = await Promise.all([
         fetch('/api/admin/users', { credentials: 'include' }),
         fetch('/api/admin/applications', { credentials: 'include' }),
+        fetch('/api/admin/corporate-postings', { credentials: 'include' }),
       ]);
 
       if (usersRes.ok) {
@@ -74,6 +96,11 @@ export default function AdminDashboard() {
       if (appsRes.ok) {
         const appsData = await appsRes.json();
         setApplications(appsData);
+      }
+
+      if (postingsRes.ok) {
+        const postsData = await postingsRes.json();
+        setPostings(postsData);
       }
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -109,6 +136,32 @@ export default function AdminDashboard() {
     }
   };
 
+  const updatePostingStatus = async (id: string, newStatus: string) => {
+    try {
+      setErrorMessage('');
+      setSuccessMessage('');
+      const res = await fetch(`/api/admin/corporate-postings/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ status: newStatus })
+      });
+
+      if (res.ok) {
+        setSelectedPost(null);
+        setSuccessMessage(`Posting ${newStatus} successfully!`);
+        fetchData();
+        setTimeout(() => setSuccessMessage(''), 3000);
+      } else {
+        const errorData = await res.json();
+        setErrorMessage(errorData.error || `Failed to ${newStatus} posting`);
+      }
+    } catch (error) {
+      console.error('Error updating posting:', error);
+      setErrorMessage('Error updating posting. Please try again.');
+    }
+  };
+
   // Filter functions
   const filteredUsers = users.filter(user => {
     const matchesSearch = user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -125,6 +178,9 @@ export default function AdminDashboard() {
     pendingApplications: applications.filter(a => a.status === 'pending').length,
     approvedApplications: applications.filter(a => a.status === 'approved').length,
     rejectedApplications: applications.filter(a => a.status === 'rejected').length,
+    newPostings: postings.filter(p => p.status === 'new').length,
+    approvedPostings: postings.filter(p => p.status === 'approved').length,
+    rejectedPostings: postings.filter(p => p.status === 'rejected').length,
   };
 
   if (status === 'loading' || loading) {
@@ -176,7 +232,7 @@ export default function AdminDashboard() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Floating Toast Notifications */}
-        <div className="fixed bottom-8 right-8 z-[100] flex flex-col gap-3 pointer-events-none">
+        <div className="fixed bottom-8 right-8 z-100 flex flex-col gap-3 pointer-events-none">
           {successMessage && (
             <div className="animate-reveal glass-light bg-emerald-500 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 pointer-events-auto border-none">
               <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center font-bold text-sm">✓</div>
@@ -249,6 +305,7 @@ export default function AdminDashboard() {
               { id: 'overview', label: 'Overview', icon: '📊' },
               { id: 'users', label: 'Users', icon: '👥' },
               { id: 'applications', label: 'Applications', icon: '📋' },
+              { id: 'postings', label: 'Corporate Postings', icon: '🏢' },
               { id: 'analytics', label: 'Analytics', icon: '📈' }
             ].map(tab => (
               <button
@@ -510,6 +567,81 @@ export default function AdminDashboard() {
                                 onClick={(e) => { e.stopPropagation(); updateApplicationStatus(app._id, 'rejected'); }}
                                 className="p-2 hover:bg-rose-600/20 rounded-lg text-rose-400 hover:text-rose-300 transition-colors"
                                 title="Reject Immediately"
+                              >
+                                ❌
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'postings' && (
+          <div className="bg-gray-800 border border-gray-700 rounded-lg overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-900 border-b border-gray-700">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-300">Company</th>
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-300">Contact</th>
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-300">Service</th>
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-300">Positions</th>
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-300">Status</th>
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-300">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-700">
+                  {postings.map(post => (
+                    <tr key={post._id} className="group hover:bg-gray-700/50 transition-colors cursor-pointer" onClick={() => setSelectedPost(post)}>
+                      <td className="px-6 py-4 text-sm text-white font-medium">{post.companyName}</td>
+                      <td className="px-6 py-4 text-sm text-gray-400">{post.contactName} · {post.contactEmail}</td>
+                      <td className="px-6 py-4 text-sm text-gray-400">{post.serviceCategory}</td>
+                      <td className="px-6 py-4 text-sm text-gray-400">{post.positions}</td>
+                      <td className="px-6 py-4 text-sm">
+                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                          post.status === 'new' ? 'bg-blue-500/20 text-blue-400' :
+                          post.status === 'reviewed' ? 'bg-yellow-500/20 text-yellow-400' :
+                          post.status === 'approved' ? 'bg-green-500/20 text-green-400' :
+                          'bg-rose-500/20 text-rose-400'
+                        }`}>
+                          {post.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-right">
+                        <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setSelectedPost(post); }}
+                            className="p-2 hover:bg-gray-600 rounded-lg text-primary-400 hover:text-primary-300 transition-colors"
+                            title="View details"
+                          >
+                            👁️
+                          </button>
+                          {post.status === 'new' && (
+                            <>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); updateApplicationStatus(post._id, 'reviewed'); }}
+                                className="p-2 hover:bg-yellow-600/20 rounded-lg text-yellow-400 hover:text-yellow-300 transition-colors"
+                                title="Mark Reviewed"
+                              >
+                                📝
+                              </button>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); updateApplicationStatus(post._id, 'approved'); }}
+                                className="p-2 hover:bg-emerald-600/20 rounded-lg text-emerald-400 hover:text-emerald-300 transition-colors"
+                                title="Approve"
+                              >
+                                ✅
+                              </button>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); updateApplicationStatus(post._id, 'rejected'); }}
+                                className="p-2 hover:bg-rose-600/20 rounded-lg text-rose-400 hover:text-rose-300 transition-colors"
+                                title="Reject"
                               >
                                 ❌
                               </button>

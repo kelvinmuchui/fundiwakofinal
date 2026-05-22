@@ -2,40 +2,38 @@ import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { getCollection } from '@/lib/db';
 import type { User } from '@/lib/models/User';
+import { registerSchema, getValidationErrorMessages } from '@/lib/validation';
+import { generateVerificationToken, sendVerificationEmail } from '@/lib/emailService';
+import { logAuditAction, logComplianceAction } from '@/lib/auditLog';
+import { encryptData } from '@/lib/encryption';
 
 export async function POST(request: NextRequest) {
   try {
     let body: any;
     const contentType = request.headers.get('content-type');
+    const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
 
     // Handle both JSON and FormData requests
     if (contentType?.includes('application/json')) {
       body = await request.json();
     } else if (contentType?.includes('multipart/form-data')) {
       const formData = await request.formData();
+      const getValue = (key: string) => (formData as any).get(key)?.toString() || '';
       body = {
-        name: formData.get('name'),
-        phone: formData.get('phone'),
-        idNumber: formData.get('idNumber'),
-        email: formData.get('email'),
-        password: formData.get('password'),
-        skill: formData.get('skill'),
-        experience: formData.get('experience'),
-        tvetInstitution: formData.get('tvetInstitution'),
-        description: formData.get('description'),
-        location: formData.get('location'),
-        neighborhood: formData.get('neighborhood'),
-        businessName: formData.get('businessName'),
-        businessRegistration: formData.get('businessRegistration'),
-        mpesaNumber: formData.get('mpesaNumber'),
-        bankName: formData.get('bankName'),
-        bankAccountName: formData.get('bankAccountName'),
-        bankAccountNumber: formData.get('bankAccountNumber'),
-        reasonForJoining: formData.get('reasonForJoining'),
-        availability: formData.get('availability'),
-        role: formData.get('role'),
-        certificates: formData.getAll('certificates'),
-        skills: formData.getAll('skills'),
+        name: getValue('name'),
+        email: getValue('email'),
+        password: getValue('password'),
+        role: getValue('role'),
+        acceptTerms: getValue('acceptTerms') === 'true',
+        // Fundi-specific fields
+        phone: getValue('phone'),
+        skill: getValue('skill'),
+        experience: getValue('experience'),
+        description: getValue('description'),
+        location: getValue('location'),
+        tvetInstitution: getValue('tvetInstitution'),
+        hourlyRate: getValue('hourlyRate'),
+        yearsOfExperience: parseInt(getValue('yearsOfExperience') || '0'),
       };
     } else {
       return NextResponse.json(
@@ -44,71 +42,36 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Extract required fields
-    const { name, phone, idNumber, email, password, role } = body;
-
-    const requiredFields: Record<string, any> = { name, phone, idNumber, email, password, role };
-
-    for (const [field, value] of Object.entries(requiredFields)) {
-      if (typeof value !== 'string' || value.trim() === '') {
-        return NextResponse.json(
-          { error: `${field} is required` },
-          { status: 400 }
-        );
-      }
-    }
-
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    // Validate input with Zod schema
+    const validation = registerSchema.safeParse(body);
+    if (!validation.success) {
+      const errors = getValidationErrorMessages(validation.error);
       return NextResponse.json(
-        { error: 'Invalid email format' },
+        { error: 'Validation failed', details: errors },
         { status: 400 }
       );
     }
 
-    // Validate phone number
-    const phoneRegex = /^(\+254|0)[17]\d{8}$/;
-    if (!phoneRegex.test(phone)) {
-      return NextResponse.json(
-        { error: 'Invalid phone number format. Use +254XXXXXXXXX or 07XXXXXXXX' },
-        { status: 400 }
-      );
-    }
+    const { email, password, name, role, acceptTerms } = validation.data;
 
-    // Validate role
-    if (!['client', 'fundi', 'admin'].includes(role)) {
-      return NextResponse.json(
-        { error: 'Invalid role' },
-        { status: 400 }
-      );
-    }
-
-    // Check if user already exists (only include non-empty fields)
-    const existingQuery: Record<string, string>[] = [];
-    if (email) existingQuery.push({ email });
-    if (phone) existingQuery.push({ phone });
-    if (idNumber) existingQuery.push({ idNumber });
-
+    // Check if user already exists
     const usersCollection = await getCollection<User>('users');
-    let existingUser = null;
-
-    if (existingQuery.length > 0) {
-      existingUser = await usersCollection.findOne({ $or: existingQuery });
-    }
+    const existingUser = await usersCollection.findOne({ 
+      $or: [
+        { email: email.toLowerCase() }
+      ]
+    });
 
     if (existingUser) {
-      const conflictField =
-        existingUser.email === email
-          ? 'email'
-          : existingUser.phone === phone
-          ? 'phone'
-          : existingUser.idNumber === idNumber
-          ? 'id number'
-          : 'credentials';
+      await logAuditAction('register', 'unknown', {
+        status: 'failure',
+        statusCode: 400,
+        errorMessage: 'User already exists',
+        metadata: { email, role, ipAddress }
+      });
 
       return NextResponse.json(
-        { error: `User with this ${conflictField} already exists` },
+        { error: 'User with this email already exists' },
         { status: 400 }
       );
     }
@@ -116,92 +79,78 @@ export async function POST(request: NextRequest) {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    // Handle certificate uploads (simplified - in production, upload to cloud storage)
-    const certificates: string[] = [];
-    if (body.certificates && Array.isArray(body.certificates)) {
-      for (const file of body.certificates) {
-        if (file instanceof File && file.size > 5 * 1024 * 1024) {
-          return NextResponse.json(
-            { error: 'Certificate file size must be less than 5MB' },
-            { status: 400 }
-          );
-        }
-        if (file instanceof File) {
-          certificates.push(file.name);
-        }
-      }
-    }
+    // Generate email verification token
+    const { token: verificationToken, expiresAt: verificationTokenExpires } = generateVerificationToken();
 
-    // Create user with role-specific data
-    const baseUser = {
+    // Create base user object
+    const baseUser: Omit<User, '_id'> = {
       name,
-      email,
-      phone,
+      email: email.toLowerCase(),
       password: hashedPassword,
       role,
-      idNumber,
+      idNumber: '',
       isVerified: false,
+      emailVerified: false,
+      verificationToken,
+      verificationTokenExpires,
       createdAt: new Date(),
       updatedAt: new Date(),
+      phone: body.phone || '',
     };
 
-    let newUser: Omit<User, '_id'>;
+    let newUser: Omit<User, '_id'> = baseUser;
 
+    // Add role-specific fields
     if (role === 'fundi') {
-      // Fundi-specific fields
-      const requiredFundiFields = { skill: body.skill, experience: body.experience, description: body.description, location: body.location, neighborhood: body.neighborhood };
-      for (const [field, value] of Object.entries(requiredFundiFields)) {
-        if (!value) {
-          return NextResponse.json(
-            { error: `${field} is required for Fundi registration` },
-            { status: 400 }
-          );
-        }
-      }
-
       newUser = {
         ...baseUser,
         skill: body.skill,
         experience: body.experience,
-        tvetInstitution: body.tvetInstitution || undefined,
         description: body.description,
         location: body.location,
-        neighborhood: body.neighborhood,
-        businessName: body.businessName || undefined,
-        businessRegistration: body.businessRegistration || undefined,
-        mpesaNumber: body.mpesaNumber || undefined,
-        bankName: body.bankName || undefined,
-        bankAccountName: body.bankAccountName || undefined,
-        bankAccountNumber: body.bankAccountNumber || undefined,
-        availability: body.availability || 'flexible',
-        reasonForJoining: body.reasonForJoining || undefined,
-        certificates: certificates.length > 0 ? certificates : undefined,
-        skills: body.skills || [],
+        tvetInstitution: body.tvetInstitution,
+        hourlyRate: body.hourlyRate || '0',
+        availability: 'flexible',
       };
-    } else {
-      // Client or Admin
-      newUser = baseUser as any;
     }
 
+    // Insert user into database
     const result = await usersCollection.insertOne(newUser);
+    const userId = result.insertedId.toString();
 
-    // If registering as fundi, create a worker application
+    // Log compliance action (terms acceptance)
+    await logComplianceAction(userId, 'accept_terms', {
+      ipAddress
+    });
+
+    // Send verification email
+    const verificationEmailSent = await sendVerificationEmail(email, name, verificationToken);
+
+    // Log registration audit
+    await logAuditAction('register', userId, {
+      status: 'success',
+      statusCode: 201,
+      metadata: {
+        role,
+        emailVerificationSent: verificationEmailSent,
+        ipAddress
+      }
+    });
+
+    // If registering as fundi, create worker application
     if (role === 'fundi') {
       const applicationsCollection = await getCollection('worker_applications');
       await applicationsCollection.insertOne({
+        userId,
         name,
-        phone,
-        idNumber,
-        email,
+        email: email.toLowerCase(),
+        phone: body.phone || '',
         skill: body.skill,
         experience: body.experience,
-        tvetInstitution: body.tvetInstitution || undefined,
         description: body.description,
         location: body.location,
-        neighborhood: body.neighborhood,
-        availability: body.availability || 'flexible',
-        reasonForJoining: body.reasonForJoining || undefined,
-        skills: body.skills || [],
+        tvetInstitution: body.tvetInstitution,
+        yearsOfExperience: body.yearsOfExperience,
         status: 'pending',
         createdAt: new Date(),
         submittedAt: new Date(),
@@ -209,15 +158,17 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({
-      message: 'Account created successfully',
-      userId: result.insertedId,
-    });
+      message: acceptTerms ? 'Account created successfully. Please check your email to verify your account.' : 'Account created but terms not accepted',
+      userId,
+      requiresEmailVerification: true,
+      verificationEmailSent,
+    }, { status: 201 });
 
   } catch (error) {
     console.error('Registration error:', error);
-    
+
     const errorMessage = error instanceof Error ? error.message : 'Internal server error';
-    
+
     // Handle MongoDB connection errors
     if (errorMessage.includes('ENOTFOUND') || errorMessage.includes('MongoNetworkError') || errorMessage.includes('connect')) {
       console.error('MongoDB connection failed:', errorMessage);
@@ -226,7 +177,7 @@ export async function POST(request: NextRequest) {
         { status: 503 }
       );
     }
-    
+
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

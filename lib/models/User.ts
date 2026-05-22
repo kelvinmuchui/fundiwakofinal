@@ -41,13 +41,35 @@ export interface User {
   adminLevel?: 'super' | 'moderator';
   permissions?: string[];
   
+  // Email verification & security
+  emailVerified: boolean;
+  emailVerifiedAt?: Date;
+  verificationToken?: string;
+  verificationTokenExpires?: Date;
+  
+  // Password reset
+  resetToken?: string;
+  resetTokenExpires?: Date;
+  lastPasswordChange?: Date;
+  
   // Common fields
   isVerified: boolean;
   profileViews?: number;
   contactClicks?: number;
   notifications?: Notification[];
+  
+  // Encrypted sensitive fields (stored as encrypted strings)
+  // These fields are encrypted in database and decrypted when needed
+  bankAccountNumberEncrypted?: string;
+  bankAccountNameEncrypted?: string;
+  mpesaNumberEncrypted?: string;
+  idNumberEncrypted?: string;
+  phoneEncrypted?: string;
+  
+  // Timestamps
   createdAt: Date;
   updatedAt: Date;
+  lastLogin?: Date;
 }
 
 export interface Notification {

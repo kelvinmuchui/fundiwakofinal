@@ -13,7 +13,7 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
     const usersCollection = await getCollection('users');
     const fundi = await usersCollection.findOne(
       { _id: new ObjectId(id), role: 'fundi' },
-      { projection: { password: 0 } }
+      { projection: { password: 0, resetToken: 0, resetTokenExpires: 0, verificationToken: 0, verificationTokenExpires: 0, bankAccountNumberEncrypted: 0, mpesaNumberEncrypted: 0, idNumberEncrypted: 0 } }
     );
 
     if (!fundi) {

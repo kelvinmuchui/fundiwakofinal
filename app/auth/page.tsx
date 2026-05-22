@@ -26,6 +26,7 @@ export default function AuthPage() {
     password: '',
     confirmPassword: '',
     idNumber: '',
+    acceptTerms: false,
   });
 
   const handleSignIn = async (e: React.FormEvent) => {
@@ -72,8 +73,27 @@ export default function AuthPage() {
       return;
     }
 
-    if (signUpData.password.length < 6) {
-      setError('Password must be at least 6 characters long');
+    if (signUpData.password.length < 8) {
+      setError('Password must be at least 8 characters long');
+      setIsLoading(false);
+      return;
+    }
+
+    // Check for number and special character
+    if (!/[0-9]/.test(signUpData.password)) {
+      setError('Password must contain at least one number');
+      setIsLoading(false);
+      return;
+    }
+
+    if (!/[!@#$%^&*]/.test(signUpData.password)) {
+      setError('Password must contain at least one special character (!@#$%^&*)');
+      setIsLoading(false);
+      return;
+    }
+
+    if (!signUpData.acceptTerms) {
+      setError('You must accept the Terms and Privacy Policy');
       setIsLoading(false);
       return;
     }
@@ -110,6 +130,7 @@ export default function AuthPage() {
         password: '',
         confirmPassword: '',
         idNumber: '',
+        acceptTerms: false,
       });
       setSelectedRole(null);
     } catch (error: any) {
@@ -378,6 +399,24 @@ export default function AuthPage() {
                         placeholder="••••••••"
                       />
                     </div>
+                  </div>
+
+                  {/* Terms Acceptance */}
+                  <div className="flex items-start gap-3">
+                    <input
+                      id="accept-terms"
+                      type="checkbox"
+                      required
+                      checked={signUpData.acceptTerms}
+                      onChange={(e) => setSignUpData({ ...signUpData, acceptTerms: e.target.checked })}
+                      className="mt-1 w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                    />
+                    <label htmlFor="accept-terms" className="text-sm text-gray-600">
+                      I agree to the{' '}
+                      <Link href="/legal/terms" className="text-primary-600 hover:underline">Terms of Service</Link>
+                      {' '}and{' '}
+                      <Link href="/legal/privacy" className="text-primary-600 hover:underline">Privacy Policy</Link>
+                    </label>
                   </div>
 
                   {/* For Fundis - Additional Message */}

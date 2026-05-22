@@ -197,9 +197,9 @@ export default async function Home() {
             <Link href="/become-a-fundi" className="btn-white">
               Apply to be a Fundi
             </Link>
-            <button className="inline-flex items-center justify-center px-6 py-3 rounded-xl font-heading font-semibold text-white border-2 border-white hover:bg-white hover:text-primary-500 transition-all duration-300">
+            <Link href="/hire-fundis" className="inline-flex items-center justify-center px-6 py-3 rounded-xl font-heading font-semibold text-white border-2 border-white hover:bg-white hover:text-primary-500 transition-all duration-300">
               Learn More
-            </button>
+            </Link>
           </div>
         </div>
       </section>
