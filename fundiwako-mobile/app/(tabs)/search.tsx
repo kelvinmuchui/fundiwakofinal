@@ -194,6 +194,12 @@ const styles = StyleSheet.create({
     marginVertical: 8,
     paddingHorizontal: 16,
   },
+  loadingText: {
+    fontSize: 16,
+    color: '#333',
+    textAlign: 'center',
+    marginVertical: 12,
+  },
   listContainer: {
     padding: 16,
   },

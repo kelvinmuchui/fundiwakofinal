@@ -16,7 +16,7 @@ interface InternshipPosition {
 
 const positions: InternshipPosition[] = [
   {
-    id: 1,
+    id: '1',
     title: "Field Operations Intern",
     description: "Support our artisan vetting process and maintain service quality standards across the region.",
     department: "Operations",
@@ -26,7 +26,7 @@ const positions: InternshipPosition[] = [
     icon: "👷"
   },
   {
-    id: 2,
+    id: '2',
     title: "Technical Product Intern",
     description: "Assist in developing the Kenyan Reliability System backend and improving mobile UX for local fundis.",
     department: "Engineering",
@@ -36,22 +36,24 @@ const positions: InternshipPosition[] = [
     icon: "💻"
   },
   {
-    id: 3,
+    id: '3',
     title: "Growth & Marketing Intern",
     description: "Help us scale our presence in local residential hubs through data-driven outreach and community events.",
     department: "Marketing",
     duration: "3 Months",
     tags: ["Marketing"],
-    trustLevel: ""
+    trustLevel: "",
+    icon: "📣"
   },
   {
-    id: 4,
+    id: '4',
     title: "Trust & Safety Intern",
     description: "Review artisan documentation and help resolve community disputes to maintain our verified trust ecosystem.",
     department: "Trust & Safety",
     duration: "4 Months",
     tags: ["Trust"],
-    trustLevel: ""
+    trustLevel: "",
+    icon: "🛡️"
   }
 ];
 
