@@ -1,8 +1,9 @@
 'use client';
 
 import { useSession, signOut } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import CorporateRecruitmentForm from '../../components/CorporateRecruitmentForm';
 
 interface User {
   _id: string;
@@ -51,9 +52,21 @@ interface CorporatePosting {
   updatedAt: string;
 }
 
+interface InternshipApplication {
+  _id: string;
+  applicantName: string;
+  applicantEmail: string;
+  postingCompany: string;
+  institution: string;
+  yearOfStudy: string;
+  status: string;
+  submittedAt: string;
+}
+
 export default function AdminDashboard() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [users, setUsers] = useState<User[]>([]);
   const [applications, setApplications] = useState<WorkerApplication[]>([]);
   const [activeTab, setActiveTab] = useState('overview');
@@ -61,6 +74,7 @@ export default function AdminDashboard() {
   const [selectedApp, setSelectedApp] = useState<WorkerApplication | null>(null);
   const [selectedPost, setSelectedPost] = useState<CorporatePosting | null>(null);
   const [postings, setPostings] = useState<CorporatePosting[]>([]);
+  const [internshipApplications, setInternshipApplications] = useState<InternshipApplication[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterRole, setFilterRole] = useState<string>('all');
   const [loading, setLoading] = useState(true);
@@ -79,13 +93,21 @@ export default function AdminDashboard() {
     fetchData();
   }, [session, status, router]);
 
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab && ['overview', 'users', 'applications', 'postings', 'internships', 'analytics'].includes(tab)) {
+      setActiveTab(tab);
+    }
+  }, [searchParams]);
+
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [usersRes, appsRes, postingsRes] = await Promise.all([
+      const [usersRes, appsRes, postingsRes, internshipAppsRes] = await Promise.all([
         fetch('/api/admin/users', { credentials: 'include' }),
         fetch('/api/admin/applications', { credentials: 'include' }),
         fetch('/api/admin/corporate-postings', { credentials: 'include' }),
+        fetch('/api/internship-applications', { credentials: 'include' }),
       ]);
 
       if (usersRes.ok) {
@@ -101,6 +123,11 @@ export default function AdminDashboard() {
       if (postingsRes.ok) {
         const postsData = await postingsRes.json();
         setPostings(postsData);
+      }
+
+      if (internshipAppsRes.ok) {
+        const internshipAppsData = await internshipAppsRes.json();
+        setInternshipApplications(internshipAppsData);
       }
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -178,7 +205,8 @@ export default function AdminDashboard() {
     pendingApplications: applications.filter(a => a.status === 'pending').length,
     approvedApplications: applications.filter(a => a.status === 'approved').length,
     rejectedApplications: applications.filter(a => a.status === 'rejected').length,
-    newPostings: postings.filter(p => p.status === 'new').length,
+    internshipPostings: postings.filter(p => p.postingType === 'internship').length,
+    internshipApplications: internshipApplications.length,
     approvedPostings: postings.filter(p => p.status === 'approved').length,
     rejectedPostings: postings.filter(p => p.status === 'rejected').length,
   };
@@ -200,38 +228,64 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900">
-      {/* Header */}
-      <div className="bg-gray-800 border-b border-gray-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div>
-              <h1 className="text-3xl font-bold text-white">Admin Dashboard</h1>
-              <p className="text-gray-400 text-sm mt-1">Manage users, applications, and platform settings</p>
-            </div>
-            <div className="flex items-center gap-4">
-              <span className="text-gray-400">
-                Welcome, <span className="text-white font-semibold">{session.user.name}</span>
-              </span>
-              <button
-                onClick={() => router.push('/')}
-                className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors text-sm"
-              >
-                Back to Home
-              </button>
-              <button
-                onClick={() => signOut()}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors text-sm"
-              >
-                Sign Out
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
+    <div className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Floating Toast Notifications */}
+        <div className="grid gap-6">
+          <section className="rounded-[2.5rem] bg-slate-950 text-white shadow-2xl border border-white/10 overflow-hidden">
+            <div className="bg-[radial-gradient(circle_at_top_left,rgba(249,115,22,0.18),transparent_35%),linear-gradient(90deg,#0f172a,#111827)] px-8 py-8 sm:px-12 sm:py-10">
+              <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+                <div className="max-w-2xl">
+                  <p className="text-xs uppercase tracking-[0.45em] text-primary/80">Admin Workspace</p>
+                  <h1 className="mt-3 text-4xl font-extrabold text-white">FundiWako Admin Dashboard</h1>
+                  <p className="mt-3 text-sm leading-7 text-slate-300">A polished admin console for guests, service providers, and corporate postings — built to manage everything from one modern surface.</p>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+                  <div className="rounded-[1.75rem] bg-slate-900/80 border border-white/10 p-5 shadow-xl shadow-slate-950/20">
+                    <p className="text-xs uppercase tracking-[0.35em] text-slate-400">Signed in as</p>
+                    <p className="mt-3 text-lg font-semibold text-white">{session.user.name}</p>
+                  </div>
+                  <div className="flex gap-3 rounded-[1.75rem] border border-white/10 bg-slate-900/80 p-4 shadow-xl shadow-slate-950/20">
+                    <button
+                      onClick={() => router.push('/')}
+                      className="flex-1 rounded-full border border-primary/40 bg-primary/10 px-4 py-2 text-sm font-semibold text-primary transition hover:bg-primary/20"
+                    >
+                      Back to Home
+                    </button>
+                    <button
+                      onClick={() => signOut()}
+                      className="flex-1 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-600"
+                    >
+                      Sign Out
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="grid gap-4 p-6 sm:grid-cols-2 lg:grid-cols-4 bg-slate-900/80">
+              <div className="rounded-[1.75rem] bg-slate-900 border border-white/10 p-6 shadow-xl shadow-slate-950/10">
+                <p className="text-xs uppercase tracking-[0.35em] text-slate-400">Users</p>
+                <p className="mt-4 text-3xl font-semibold text-white">{stats.totalUsers}</p>
+                <p className="mt-2 text-sm text-slate-400">Total platform users</p>
+              </div>
+              <div className="rounded-[1.75rem] bg-slate-900 border border-white/10 p-6 shadow-xl shadow-slate-950/10">
+                <p className="text-xs uppercase tracking-[0.35em] text-slate-400">Fundis</p>
+                <p className="mt-4 text-3xl font-semibold text-white">{stats.fundis}</p>
+                <p className="mt-2 text-sm text-slate-400">Active fundi accounts</p>
+              </div>
+              <div className="rounded-[1.75rem] bg-slate-900 border border-white/10 p-6 shadow-xl shadow-slate-950/10">
+                <p className="text-xs uppercase tracking-[0.35em] text-slate-400">Pending</p>
+                <p className="mt-4 text-3xl font-semibold text-white">{stats.pendingApplications}</p>
+                <p className="mt-2 text-sm text-slate-400">Open applications</p>
+              </div>
+              <div className="rounded-[1.75rem] bg-slate-900 border border-white/10 p-6 shadow-xl shadow-slate-950/10">
+                <p className="text-xs uppercase tracking-[0.35em] text-slate-400">Verified</p>
+                <p className="mt-4 text-3xl font-semibold text-white">{stats.verified}</p>
+                <p className="mt-2 text-sm text-slate-400">Verified users</p>
+              </div>
+            </div>
+          </section>
+
+          {/* Floating Toast Notifications */}
         <div className="fixed bottom-8 right-8 z-100 flex flex-col gap-3 pointer-events-none">
           {successMessage && (
             <div className="animate-reveal glass-light bg-emerald-500 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 pointer-events-auto border-none">
@@ -247,74 +301,24 @@ export default function AdminDashboard() {
           )}
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="group bg-gray-800 rounded-2xl p-6 border border-gray-700 hover:border-primary-500 transition-all duration-300 hover:shadow-2xl hover:shadow-primary-500/10 hover:-translate-y-1">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-400 text-xs font-bold uppercase tracking-wider">Total Users</p>
-                <p className="text-4xl font-extrabold text-white mt-1">{stats.totalUsers}</p>
-              </div>
-              <div className="w-14 h-14 bg-blue-500/10 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                <span className="text-3xl">👥</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="group bg-gray-800 rounded-2xl p-6 border border-gray-700 hover:border-emerald-500 transition-all duration-300 hover:shadow-2xl hover:shadow-emerald-500/10 hover:-translate-y-1">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-400 text-xs font-bold uppercase tracking-wider">Fundis</p>
-                <p className="text-4xl font-extrabold text-emerald-400 mt-1">{stats.fundis}</p>
-              </div>
-              <div className="w-14 h-14 bg-emerald-500/10 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                <span className="text-3xl">🔧</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="group bg-gray-800 rounded-2xl p-6 border border-gray-700 hover:border-blue-500 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/10 hover:-translate-y-1">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-400 text-xs font-bold uppercase tracking-wider">Clients</p>
-                <p className="text-4xl font-extrabold text-blue-400 mt-1">{stats.clients}</p>
-              </div>
-              <div className="w-14 h-14 bg-blue-500/10 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                <span className="text-3xl">💼</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="group bg-gray-800 rounded-2xl p-6 border border-gray-700 hover:border-amber-500 transition-all duration-300 hover:shadow-2xl hover:shadow-amber-500/10 hover:-translate-y-1">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-400 text-xs font-bold uppercase tracking-wider">Pending Apps</p>
-                <p className="text-4xl font-extrabold text-amber-400 mt-1">{stats.pendingApplications}</p>
-              </div>
-              <div className="w-14 h-14 bg-amber-500/10 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                <span className="text-3xl animate-pulse">📋</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
         {/* Tabs */}
-        <div className="mb-6 border-b border-gray-700">
-          <nav className="flex gap-8">
+        <div className="mb-6 rounded-full bg-slate-900/80 p-2 shadow-inner border border-white/10">
+          <nav className="flex flex-wrap gap-2">
             {[
               { id: 'overview', label: 'Overview', icon: '📊' },
               { id: 'users', label: 'Users', icon: '👥' },
               { id: 'applications', label: 'Applications', icon: '📋' },
-              { id: 'postings', label: 'Corporate Postings', icon: '🏢' },
+              { id: 'postings', label: 'Postings', icon: '🏢' },
+              { id: 'internships', label: 'Internships', icon: '🎓' },
               { id: 'analytics', label: 'Analytics', icon: '📈' }
             ].map(tab => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
                   activeTab === tab.id
-                    ? 'border-primary-500 text-primary-400'
-                    : 'border-transparent text-gray-400 hover:text-gray-300'
+                    ? 'bg-primary text-white shadow-lg shadow-primary/20'
+                    : 'text-slate-300 hover:bg-white/10 hover:text-white'
                 }`}
               >
                 {tab.icon} {tab.label}
@@ -325,98 +329,136 @@ export default function AdminDashboard() {
 
         {/* Overview Tab */}
         {activeTab === 'overview' && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 space-y-6">
-              {/* Recent Activity */}
-              <div className="bg-gray-800 rounded-lg border border-gray-700 p-6">
-                <h3 className="text-lg font-semibold text-white mb-4">Recent Applications</h3>
-                <div className="space-y-3 max-h-96 overflow-y-auto">
-                  {applications.slice(0, 5).map(app => (
-                    <div key={app._id} className="bg-gray-700 rounded p-4 flex items-center justify-between hover:bg-gray-600 transition-colors">
-                      <div className="flex-1">
-                        <p className="text-white font-medium">{app.name}</p>
-                        <p className="text-gray-400 text-sm">{app.skill} • {app.email}</p>
+          <div className="grid gap-6 lg:grid-cols-[1.8fr_1fr]">
+            <div className="space-y-6">
+              <div className="rounded-4xl border border-surface-container-high shadow-sm bg-white p-6">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                  <div>
+                    <p className="text-sm font-semibold uppercase tracking-[0.3em] text-secondary">Latest activity</p>
+                    <h2 className="mt-3 text-2xl font-extrabold text-on-background">Applications & updates</h2>
+                    <p className="mt-2 text-sm text-secondary">Review the most recent work applications and keep the platform moving.</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                    <div className="rounded-3xl bg-surface-container-low p-4 text-center">
+                      <p className="text-sm text-secondary">Open</p>
+                      <p className="mt-2 text-xl font-bold text-on-background">{stats.pendingApplications}</p>
+                    </div>
+                    <div className="rounded-3xl bg-surface-container-low p-4 text-center">
+                      <p className="text-sm text-secondary">Approved</p>
+                      <p className="mt-2 text-xl font-bold text-on-background">{stats.approvedApplications}</p>
+                    </div>
+                    <div className="rounded-3xl bg-surface-container-low p-4 text-center">
+                      <p className="text-sm text-secondary">Rejected</p>
+                      <p className="mt-2 text-xl font-bold text-on-background">{stats.rejectedApplications}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-4xl border border-surface-container-high shadow-sm bg-white p-6">
+                <div className="flex items-center justify-between mb-5">
+                  <div>
+                    <h3 className="text-xl font-semibold text-on-background">Recent Applications</h3>
+                    <p className="text-sm text-secondary">Quick access to the most recent submissions.</p>
+                  </div>
+                  <span className="rounded-full bg-primary/10 px-3 py-1 text-sm font-semibold text-primary">Real-time</span>
+                </div>
+                <div className="divide-y divide-surface-container p-1">
+                  {applications.slice(0, 5).map((app) => (
+                    <div key={app._id} className="flex flex-col gap-3 p-4 rounded-3xl transition hover:bg-surface-container-low cursor-pointer" onClick={() => setSelectedApp(app)}>
+                      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                        <div>
+                          <p className="text-base font-semibold text-on-background">{app.name}</p>
+                          <p className="text-sm text-secondary">{app.skill} · {app.email}</p>
+                        </div>
+                        <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
+                          app.status === 'pending' ? 'bg-yellow-500/15 text-yellow-500' :
+                          app.status === 'approved' ? 'bg-emerald-500/15 text-emerald-500' :
+                          'bg-rose-500/15 text-rose-500'
+                        }`}>
+                          {app.status}
+                        </span>
                       </div>
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                        app.status === 'pending' ? 'bg-yellow-500/20 text-yellow-400' :
-                        app.status === 'approved' ? 'bg-green-500/20 text-green-400' :
-                        'bg-red-500/20 text-red-400'
-                      }`}>
-                        {app.status}
-                      </span>
+                      <div className="grid grid-cols-2 gap-3 text-sm text-secondary">
+                        <span>{app.experience} experience</span>
+                        <span>{app.phone}</span>
+                      </div>
                     </div>
                   ))}
                 </div>
               </div>
 
-              {/* Application Status Distribution */}
-              <div className="bg-gray-800 rounded-lg border border-gray-700 p-6">
-                <h3 className="text-lg font-semibold text-white mb-4">Application Status</h3>
+              <div className="rounded-4xl border border-surface-container-high shadow-sm bg-white p-6">
+                <h3 className="text-xl font-semibold text-on-background mb-4">Application status distribution</h3>
                 <div className="space-y-4">
-                  <div>
-                    <div className="flex justify-between mb-2">
-                      <span className="text-gray-400">Pending</span>
-                      <span className="text-yellow-400 font-semibold">{stats.pendingApplications}</span>
+                  {[
+                    { label: 'Pending', value: stats.pendingApplications, color: 'bg-yellow-500' },
+                    { label: 'Approved', value: stats.approvedApplications, color: 'bg-emerald-500' },
+                    { label: 'Rejected', value: stats.rejectedApplications, color: 'bg-rose-500' },
+                  ].map((item) => (
+                    <div key={item.label}>
+                      <div className="flex justify-between text-sm text-secondary mb-2">
+                        <span>{item.label}</span>
+                        <span className="font-semibold text-on-background">{item.value}</span>
+                      </div>
+                      <div className="h-3 w-full rounded-full bg-surface-container-low">
+                        <div
+                          className={`${item.color} h-full rounded-full`}
+                          style={{ width: `${applications.length ? (item.value / applications.length) * 100 : 0}%` }}
+                        ></div>
+                      </div>
                     </div>
-                    <div className="w-full bg-gray-700 rounded-full h-2">
-                      <div
-                        className="bg-yellow-500 h-2 rounded-full"
-                        style={{ width: `${applications.length ? (stats.pendingApplications / applications.length) * 100 : 0}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                  <div>
-                    <div className="flex justify-between mb-2">
-                      <span className="text-gray-400">Approved</span>
-                      <span className="text-green-400 font-semibold">{stats.approvedApplications}</span>
-                    </div>
-                    <div className="w-full bg-gray-700 rounded-full h-2">
-                      <div
-                        className="bg-green-500 h-2 rounded-full"
-                        style={{ width: `${applications.length ? (stats.approvedApplications / applications.length) * 100 : 0}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                  <div>
-                    <div className="flex justify-between mb-2">
-                      <span className="text-gray-400">Rejected</span>
-                      <span className="text-red-400 font-semibold">{stats.rejectedApplications}</span>
-                    </div>
-                    <div className="w-full bg-gray-700 rounded-full h-2">
-                      <div
-                        className="bg-red-500 h-2 rounded-full"
-                        style={{ width: `${applications.length ? (stats.rejectedApplications / applications.length) * 100 : 0}%` }}
-                      ></div>
-                    </div>
-                  </div>
+                  ))}
                 </div>
               </div>
             </div>
 
-            {/* Verification Stats */}
-            <div className="bg-gray-800 rounded-lg border border-gray-700 p-6">
-              <h3 className="text-lg font-semibold text-white mb-4">Verification Status</h3>
-              <div className="space-y-4">
-                <div className="bg-gray-700 rounded p-4">
-                  <div className="flex justify-between mb-2">
-                    <span className="text-gray-300">Verified Users</span>
-                    <span className="text-green-400 font-semibold">{stats.verified}</span>
+            <aside className="space-y-6">
+              <div className="rounded-4xl border border-surface-container-high shadow-sm bg-white p-6">
+                <h3 className="text-xl font-semibold text-on-background mb-4">Team snapshot</h3>
+                <div className="grid gap-4">
+                  <div className="rounded-3xl bg-surface-container-low p-4">
+                    <p className="text-xs uppercase tracking-[0.3em] text-secondary">Clients</p>
+                    <p className="mt-2 text-3xl font-bold text-on-background">{stats.clients}</p>
                   </div>
-                  <div className="text-sm text-gray-400">
-                    {users.length ? Math.round((stats.verified / users.length) * 100) : 0}% of total
+                  <div className="rounded-3xl bg-surface-container-low p-4">
+                    <p className="text-xs uppercase tracking-[0.3em] text-secondary">Verification</p>
+                    <p className="mt-2 text-3xl font-bold text-on-background">{users.length ? Math.round((stats.verified / users.length) * 100) : 0}%</p>
                   </div>
-                </div>
-                <div className="bg-gray-700 rounded p-4">
-                  <div className="flex justify-between mb-2">
-                    <span className="text-gray-300">Unverified Users</span>
-                    <span className="text-yellow-400 font-semibold">{users.length - stats.verified}</span>
-                  </div>
-                  <div className="text-sm text-gray-400">
-                    {users.length ? Math.round(((users.length - stats.verified) / users.length) * 100) : 0}% of total
+                  <div className="rounded-3xl bg-surface-container-low p-4">
+                    <p className="text-xs uppercase tracking-[0.3em] text-secondary">Active postings</p>
+                    <p className="mt-2 text-3xl font-bold text-on-background">{postings.length}</p>
                   </div>
                 </div>
               </div>
-            </div>
+
+              <div className="rounded-4xl border border-surface-container-high shadow-sm bg-white p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xl font-semibold text-on-background">Quick actions</h3>
+                  <span className="rounded-full bg-primary/10 px-3 py-1 text-sm font-semibold text-primary">Smart</span>
+                </div>
+                <div className="space-y-3 text-sm text-secondary">
+                  <button
+                    onClick={() => setActiveTab('users')}
+                    className="w-full rounded-3xl border border-surface-container-high px-4 py-3 text-left transition hover:border-primary hover:bg-primary/5"
+                  >
+                    Manage users
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('applications')}
+                    className="w-full rounded-3xl border border-surface-container-high px-4 py-3 text-left transition hover:border-primary hover:bg-primary/5"
+                  >
+                    Review applications
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('postings')}
+                    className="w-full rounded-3xl border border-surface-container-high px-4 py-3 text-left transition hover:border-primary hover:bg-primary/5"
+                  >
+                    Review postings
+                  </button>
+                </div>
+              </div>
+            </aside>
           </div>
         )}
 
@@ -625,21 +667,21 @@ export default function AdminDashboard() {
                           {post.status === 'new' && (
                             <>
                               <button
-                                onClick={(e) => { e.stopPropagation(); updateApplicationStatus(post._id, 'reviewed'); }}
+                                onClick={(e) => { e.stopPropagation(); updatePostingStatus(post._id, 'reviewed'); }}
                                 className="p-2 hover:bg-yellow-600/20 rounded-lg text-yellow-400 hover:text-yellow-300 transition-colors"
                                 title="Mark Reviewed"
                               >
                                 📝
                               </button>
                               <button
-                                onClick={(e) => { e.stopPropagation(); updateApplicationStatus(post._id, 'approved'); }}
+                                onClick={(e) => { e.stopPropagation(); updatePostingStatus(post._id, 'approved'); }}
                                 className="p-2 hover:bg-emerald-600/20 rounded-lg text-emerald-400 hover:text-emerald-300 transition-colors"
                                 title="Approve"
                               >
                                 ✅
                               </button>
                               <button
-                                onClick={(e) => { e.stopPropagation(); updateApplicationStatus(post._id, 'rejected'); }}
+                                onClick={(e) => { e.stopPropagation(); updatePostingStatus(post._id, 'rejected'); }}
                                 className="p-2 hover:bg-rose-600/20 rounded-lg text-rose-400 hover:text-rose-300 transition-colors"
                                 title="Reject"
                               >
@@ -653,6 +695,98 @@ export default function AdminDashboard() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'internships' && (
+          <div className="space-y-8">
+            <div className="bg-gray-800 border border-gray-700 rounded-lg p-6">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h3 className="text-xl font-semibold text-white">Internship overview</h3>
+                  <p className="text-sm text-gray-400">Review internship posts and the candidates who applied.</p>
+                </div>
+                <div className="flex flex-wrap gap-3">
+                  <span className="inline-flex items-center rounded-full bg-slate-900/80 px-4 py-2 text-sm font-semibold text-slate-200">Internship posts: {stats.internshipPostings}</span>
+                  <span className="inline-flex items-center rounded-full bg-slate-900/80 px-4 py-2 text-sm font-semibold text-slate-200">Applications: {stats.internshipApplications}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-4xl border border-surface-container-high bg-white p-6">
+              <div className="mb-6">
+                <h3 className="text-xl font-semibold text-on-background">Create a new internship posting</h3>
+                <p className="mt-2 text-sm text-secondary">Submit an internship posting directly from the admin dashboard.</p>
+              </div>
+              <CorporateRecruitmentForm onSuccess={fetchData} />
+            </div>
+
+            <div className="bg-gray-800 border border-gray-700 rounded-lg overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-900 border-b border-gray-700">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-sm font-semibold text-gray-300">Company</th>
+                      <th className="px-6 py-3 text-left text-sm font-semibold text-gray-300">Category</th>
+                      <th className="px-6 py-3 text-left text-sm font-semibold text-gray-300">Location</th>
+                      <th className="px-6 py-3 text-left text-sm font-semibold text-gray-300">Positions</th>
+                      <th className="px-6 py-3 text-left text-sm font-semibold text-gray-300">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-700">
+                    {postings.filter(post => post.postingType === 'internship').map(post => (
+                      <tr key={post._id} className="hover:bg-gray-700/50 transition-colors">
+                        <td className="px-6 py-4 text-sm text-white font-medium">{post.companyName}</td>
+                        <td className="px-6 py-4 text-sm text-gray-400">{post.serviceCategory}</td>
+                        <td className="px-6 py-4 text-sm text-gray-400">{post.location}</td>
+                        <td className="px-6 py-4 text-sm text-gray-400">{post.positions}</td>
+                        <td className="px-6 py-4 text-sm">
+                          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                            post.status === 'new' ? 'bg-blue-500/20 text-blue-400' :
+                            post.status === 'reviewed' ? 'bg-yellow-500/20 text-yellow-400' :
+                            post.status === 'approved' ? 'bg-green-500/20 text-green-400' :
+                            'bg-rose-500/20 text-rose-400'
+                          }`}>
+                            {post.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div className="bg-gray-800 border border-gray-700 rounded-lg overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-900 border-b border-gray-700">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-sm font-semibold text-gray-300">Applicant</th>
+                      <th className="px-6 py-3 text-left text-sm font-semibold text-gray-300">Email</th>
+                      <th className="px-6 py-3 text-left text-sm font-semibold text-gray-300">Company</th>
+                      <th className="px-6 py-3 text-left text-sm font-semibold text-gray-300">Institution</th>
+                      <th className="px-6 py-3 text-left text-sm font-semibold text-gray-300">Year</th>
+                      <th className="px-6 py-3 text-left text-sm font-semibold text-gray-300">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-700">
+                    {internshipApplications.map(app => (
+                      <tr key={app._id} className="hover:bg-gray-700/50 transition-colors">
+                        <td className="px-6 py-4 text-sm text-white font-medium">{app.applicantName}</td>
+                        <td className="px-6 py-4 text-sm text-gray-400">{app.applicantEmail}</td>
+                        <td className="px-6 py-4 text-sm text-gray-400">{app.postingCompany}</td>
+                        <td className="px-6 py-4 text-sm text-gray-400">{app.institution}</td>
+                        <td className="px-6 py-4 text-sm text-gray-400">{app.yearOfStudy}</td>
+                        <td className="px-6 py-4 text-sm">
+                          <span className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">{app.status}</span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         )}
@@ -888,5 +1022,6 @@ export default function AdminDashboard() {
         </div>
       )}
     </div>
+  </div>
   );
 }

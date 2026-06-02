@@ -5,6 +5,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '../auth/[...nextauth]/route';
 import { ApiErrorHandler, createSuccessResponse } from '@/lib/errorHandler';
 import { bookingSchema, getValidationErrorMessages } from '@/lib/validation';
+import { logActivity } from '@/lib/activityLogger';
 
 export async function POST(request: NextRequest) {
   return ApiErrorHandler.withErrorHandler(async () => {
@@ -53,6 +54,27 @@ export async function POST(request: NextRequest) {
     };
 
     const result = await bookingsCollection.insertOne(bookingData);
+
+    // Log booking activity
+    try {
+      await logActivity(
+        clientId,
+        'booking_created',
+        'Booking Requested',
+        `Requested ${serviceType} service from ${fundi.name}`,
+        {
+          bookingId: result.insertedId.toString(),
+          fundiId,
+          fundiName: fundi.name,
+          serviceType,
+          location,
+          preferredDate
+        }
+      );
+    } catch (logError) {
+      console.error('Error logging activity:', logError);
+      // Don't fail booking creation if activity logging fails
+    }
 
     return createSuccessResponse('Booking created successfully', {
       bookingId: result.insertedId
@@ -148,10 +170,56 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Clients may only cancel bookings' }, { status: 403 });
     }
 
+    // Get booking details for activity logging
+    const usersCollection = await getCollection('users');
+    const fundi = await usersCollection.findOne({ _id: new ObjectId(booking.fundiId) });
+
     await bookingsCollection.updateOne(
       { _id: new ObjectId(bookingId) },
       { $set: { status, updatedAt: new Date() } }
     );
+
+    // Log booking status change activity
+    try {
+      const statusDescriptions: Record<string, string> = {
+        accepted: 'Booking Accepted',
+        in_progress: 'Booking In Progress',
+        completed: 'Job Completed',
+        cancelled: 'Booking Cancelled',
+        declined: 'Booking Declined'
+      };
+
+      if (status === 'completed') {
+        // Log for both fundi and client
+        await logActivity(
+          booking.fundiId,
+          'job_completed',
+          'Job Completed',
+          `Completed booking for ${booking.serviceType}`,
+          {
+            bookingId,
+            clientId: booking.clientId,
+            serviceType: booking.serviceType,
+            completedDate: new Date()
+          }
+        );
+      }
+
+      await logActivity(
+        userId,
+        'booking_status_updated',
+        statusDescriptions[status] || 'Booking Updated',
+        `${status.replace(/_/g, ' ')} - ${booking.serviceType}`,
+        {
+          bookingId,
+          newStatus: status,
+          fundiName: fundi?.name
+        }
+      );
+    } catch (logError) {
+      console.error('Error logging activity:', logError);
+      // Don't fail status update if activity logging fails
+    }
 
     return createSuccessResponse('Booking status updated successfully');
   }, 'PATCH /api/bookings');

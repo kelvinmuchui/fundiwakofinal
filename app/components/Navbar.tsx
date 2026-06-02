@@ -63,7 +63,7 @@ export default function Navbar() {
                             </svg>
                         </div>
                         <div>
-                            <span className={`text-xl font-heading font-bold transition-colors duration-300 ${isScrolled ? "text-secondary-500" : "text-white"}`}>
+                            <span className={`text-xl font-heading font-bold transition-colors duration-300 ${isScrolled ? "text-gray-900" : "text-white"}`}>
                                 Fundi
                             </span>
                             <span className="text-xl font-heading font-bold gradient-text">
@@ -78,7 +78,7 @@ export default function Navbar() {
                             <a
                                 key={link.name}
                                 href={link.href}
-                                className={`text-sm font-medium transition-all duration-300 hover:text-primary-500 relative group ${isScrolled ? "text-neutral-600" : "text-white/90"
+                                className={`text-sm font-medium transition-all duration-300 hover:text-primary-500 relative group ${isScrolled ? "text-gray-800 hover:text-primary-600" : "text-white/90"
                                     }`}
                             >
                                 {link.name}
@@ -95,7 +95,7 @@ export default function Navbar() {
                             <div className="flex items-center gap-3">
                                 <Link
                                     href="/profile"
-                                    className={`flex items-center gap-2 px-3 py-2 rounded-xl transition-all duration-300 ${isScrolled ? "hover:bg-primary-50 text-neutral-700" : "hover:bg-white/10 text-white"}`}
+                                    className={`flex items-center gap-2 px-3 py-2 rounded-xl transition-all duration-300 ${isScrolled ? "hover:bg-primary-50 text-gray-800 hover:text-primary-600" : "hover:bg-white/10 text-white"}`}
                                 >
                                     <div className="w-8 h-8 rounded-lg bg-primary-500/20 flex items-center justify-center text-xs font-bold text-primary-500">
                                         {(session.user as any)?.name?.charAt(0) || 'U'}
@@ -123,7 +123,7 @@ export default function Navbar() {
                                 )}
                                 <button
                                     onClick={() => signOut()}
-                                    className={`p-2 rounded-xl transition-all duration-300 ${isScrolled ? "text-neutral-400 hover:text-red-500 hover:bg-red-50" : "text-white/60 hover:text-white hover:bg-white/10"}`}
+                                    className={`p-2 rounded-xl transition-all duration-300 ${isScrolled ? "text-gray-600 hover:text-red-600 hover:bg-red-50" : "text-white/60 hover:text-white hover:bg-white/10"}`}
                                     title="Sign Out"
                                 >
                                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -152,7 +152,7 @@ export default function Navbar() {
                     {/* Mobile Menu Button */}
                     <button
                         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                        className={`md:hidden p-2 rounded-lg transition-colors ${isScrolled ? "text-white bg-black/20 hover:bg-black/30" : "text-white"
+                        className={`md:hidden p-2 rounded-lg transition-colors ${isScrolled ? "text-gray-800 hover:bg-gray-100" : "text-white hover:bg-white/10"
                             }`}
                         aria-label="Toggle menu"
                     >

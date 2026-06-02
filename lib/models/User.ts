@@ -9,6 +9,39 @@ export interface User {
   role: 'fundi' | 'admin' | 'client';
   idNumber: string;
   
+  // Professional Profile Fields (Phase 1)
+  headline?: string; // e.g., "Master Electrician • 12 years experience"
+  about?: string; // Professional bio/summary
+  coverImage?: string; // Cover photo URL
+  profileCompleteness?: number; // 0-100 percentage
+  
+  // Verification & Badges (Phase 1)
+  verificationBadges?: ('email_verified' | 'id_verified' | 'background_checked' | 'certified' | 'phone_verified')[];
+  backgroundCheckStatus?: 'pending' | 'approved' | 'rejected' | 'none';
+  backgroundCheckDate?: Date;
+  
+  // Skills with endorsements (Phase 1)
+  endorsedSkills?: Array<{
+    skillId?: string;
+    name: string;
+    yearsOfExperience?: number;
+    endorsementCount: number;
+    endorsedBy?: string[]; // Array of user IDs
+    isPrimary?: boolean;
+  }>;
+  
+  // Network Fields (Phase 1)
+  connections?: string[]; // Array of user IDs (accepted connections)
+  connectionRequests?: {
+    pending?: Array<{ userId: string; requestedAt: Date; requestedBy: string }>;
+    sent?: Array<{ userId: string; sentAt: Date }>;
+  };
+  blocked?: string[]; // Blocked users
+  
+  // Profile stats (Phase 1)
+  profileViews?: Array<{ viewerId: string; viewedAt: Date }>;
+  profileViewCount?: number;
+  
   // Fundi-specific fields
   skill?: string;
   experience?: string;
@@ -54,7 +87,6 @@ export interface User {
   
   // Common fields
   isVerified: boolean;
-  profileViews?: number;
   contactClicks?: number;
   notifications?: Notification[];
   

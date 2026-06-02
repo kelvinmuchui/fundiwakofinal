@@ -1,5 +1,6 @@
 import Link from "next/link";
 import CorporateRecruitmentForm from "../components/CorporateRecruitmentForm";
+import CorporateInternshipManager from "../components/CorporateInternshipManager";
 
 export default function HireFundisPage() {
   return (
@@ -142,6 +143,12 @@ export default function HireFundisPage() {
             </div>
             <CorporateRecruitmentForm />
           </div>
+        </div>
+      </section>
+
+      <section className="bg-gray-50 section-padding">
+        <div className="container-max">
+          <CorporateInternshipManager />
         </div>
       </section>
     </div>

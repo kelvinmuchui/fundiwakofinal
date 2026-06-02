@@ -50,7 +50,11 @@ const serviceOptions = [
   { value: "general", label: "General / Multi-skill" },
 ];
 
-export default function CorporateRecruitmentForm() {
+type Props = {
+  onSuccess?: () => void;
+};
+
+export default function CorporateRecruitmentForm({ onSuccess }: Props) {
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [errors, setErrors] = useState<FormErrors>({});
   const [statusMessage, setStatusMessage] = useState<string>("");
@@ -93,6 +97,7 @@ export default function CorporateRecruitmentForm() {
         setStatusType("success");
         setStatusMessage(data.message || "Your request has been submitted successfully.");
         setFormData(initialFormData);
+        if (onSuccess) onSuccess();
       }
     } catch (error) {
       setStatusType("error");
@@ -108,7 +113,9 @@ export default function CorporateRecruitmentForm() {
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.26em] text-primary-500">Recruitment request</p>
-          <h3 className="mt-3 text-2xl font-semibold text-secondary-700">Corporate application form</h3>
+          <h3 className="mt-3 text-2xl font-semibold text-secondary-700">
+            {formData.postingType === 'internship' ? 'Internship request form' : 'Corporate application form'}
+          </h3>
           <p className="mt-2 text-sm text-neutral-500">
             Share the details of your hiring or internship needs and we&apos;ll save it in our recruitment queue.
           </p>

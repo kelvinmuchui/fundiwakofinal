@@ -4,12 +4,14 @@ import { useState } from "react";
 import Link from "next/link";
 import { Worker } from "../data/mockWorkers";
 import BookingModal from "./BookingModal";
+import ConnectionButton from "./ConnectionButton";
 
 interface WorkerCardProps {
   worker: Worker;
+  workerId?: string;
 }
 
-export default function WorkerCard({ worker }: WorkerCardProps) {
+export default function WorkerCard({ worker, workerId }: WorkerCardProps) {
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [currentRating, setCurrentRating] = useState(worker.rating);
 
@@ -101,13 +103,20 @@ export default function WorkerCard({ worker }: WorkerCardProps) {
         )}
 
         <div className="mt-auto pt-6 border-t border-neutral-100">
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-3 sm:grid-cols-3">
             <Link
               href={`/fundi/public/${worker.id}`}
               className="inline-flex items-center justify-center rounded-2xl border border-neutral-200 bg-white py-3 text-sm font-semibold text-secondary-900 transition hover:bg-neutral-50"
             >
               View Profile
             </Link>
+            {workerId && (
+              <ConnectionButton
+                targetUserId={workerId}
+                status="not_connected"
+                size="md"
+              />
+            )}
             <button
               type="button"
               onClick={() => setShowBookingModal(true)}

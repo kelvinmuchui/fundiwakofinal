@@ -4,6 +4,7 @@ import { getCollection } from '@/lib/db';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../auth/[...nextauth]/route';
 import { ApiErrorHandler, createSuccessResponse } from '@/lib/errorHandler';
+import { logActivity } from '@/lib/activityLogger';
 
 export async function POST(request: NextRequest) {
   return ApiErrorHandler.withErrorHandler(async () => {
@@ -76,6 +77,24 @@ export async function POST(request: NextRequest) {
         }
       }
     );
+
+    // Log rating activity for fundi
+    try {
+      await logActivity(
+        fundiId,
+        'rating_received',
+        'Rating Received',
+        `Received ${rating}★ rating${review ? ' with review' : ''}`,
+        {
+          ratingValue: rating,
+          review: review?.substring(0, 100), // Truncate long reviews
+          averageRating: Math.round(averageRating * 10) / 10
+        }
+      );
+    } catch (logError) {
+      console.error('Error logging activity:', logError);
+      // Don't fail rating creation if activity logging fails
+    }
 
     return createSuccessResponse(
       existingRating ? 'Rating updated successfully' : 'Rating submitted successfully',

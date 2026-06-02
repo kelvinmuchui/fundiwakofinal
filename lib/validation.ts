@@ -83,6 +83,20 @@ export const corporatePostingSchema = z.object({
 });
 
 export type CorporatePostingInput = z.infer<typeof corporatePostingSchema>;
+
+export const internshipApplicationSchema = z.object({
+  postingId: z.string().min(1, 'Internship posting ID is required'),
+  applicantName: z.string().min(2, 'Name must be at least 2 characters'),
+  applicantEmail: z.string().email('Invalid email address'),
+  applicantPhone: z.string().min(7, 'Invalid phone number'),
+  institution: z.string().min(2, 'Institution must be at least 2 characters'),
+  yearOfStudy: z.string().min(1, 'Year of study is required'),
+  areaOfInterest: z.string().min(2, 'Area of interest is required'),
+  motivation: z.string().min(10, 'Motivation must be at least 10 characters').max(1000, 'Motivation must be 1000 characters or fewer'),
+  resumeUrl: z.string().url('Invalid resume URL').optional().or(z.literal('')),
+});
+
+export type InternshipApplicationInput = z.infer<typeof internshipApplicationSchema>;
 export const fundiProfileUpdateSchema = z.object({
   hourlyRate: z.number().positive().min(100).max(50000).optional(),
   description: z.string().min(10).max(500).optional(),
