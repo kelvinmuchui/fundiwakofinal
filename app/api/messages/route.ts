@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
     // Find or create conversation
     let conversation = await conversationsCollection.findOne({
       participants: [user1, user2]
-    });
+    }) as (Conversation & { _id: ObjectId }) | null;
 
     if (!conversation) {
       const result = await conversationsCollection.insertOne({
@@ -83,12 +83,12 @@ export async function POST(request: NextRequest) {
         createdAt: new Date(),
         updatedAt: new Date()
       });
-      conversation = { _id: result.insertedId } as any;
+      conversation = { _id: result.insertedId } as Conversation & { _id: ObjectId };
     }
 
     // Create message
     const message: Message = {
-      conversationId: conversation._id?.toString() || '',
+      conversationId: conversation._id.toString(),
       fromUserId: senderId,
       toUserId,
       content,
@@ -117,13 +117,15 @@ export async function POST(request: NextRequest) {
     );
 
     // Log audit action
-    await logAuditAction({
-      actionType: 'message_sent',
-      userId: senderId,
-      affectedUserId: toUserId,
-      status: 'success',
-      details: { conversationId: conversation._id?.toString() }
-    });
+    await logAuditAction(
+      'message_sent',
+      senderId,
+      {
+        targetUserId: toUserId,
+        status: 'success',
+        metadata: { conversationId: conversation._id?.toString() }
+      }
+    );
 
     return NextResponse.json(
       {

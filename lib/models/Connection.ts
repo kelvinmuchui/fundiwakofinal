@@ -1,7 +1,7 @@
 import { ObjectId } from 'mongodb';
 
 export interface Connection {
-  _id?: string | ObjectId;
+  _id?: ObjectId;
   userId: string; // The user initiating the connection
   connectedUserId: string; // The user being connected with
   status: 'accepted' | 'pending' | 'rejected' | 'blocked';
@@ -22,7 +22,7 @@ export interface Connection {
 }
 
 export interface ConnectionRequest {
-  _id?: string | ObjectId;
+  _id?: ObjectId;
   fromUserId: string;
   toUserId: string;
   message?: string;

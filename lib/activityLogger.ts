@@ -1,5 +1,6 @@
 import { getCollection } from '@/lib/db';
 import { Activity, ActivityType } from '@/lib/models/Activity';
+import { ObjectId } from 'mongodb';
 
 export async function logActivity(
   userId: string,
@@ -51,7 +52,7 @@ export async function getActivityFeed(
     const activitiesCollection = await getCollection('activities');
 
     // Get user's connections
-    const user = await usersCollection.findOne({ _id: userId });
+    const user = await usersCollection.findOne({ _id: new ObjectId(userId) });
     const connections = user?.connections || [];
 
     // Build query

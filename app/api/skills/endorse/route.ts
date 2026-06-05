@@ -47,7 +47,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if users are connected
-    const connection = await getCollection('connections').findOne({
+    const connectionsCollection = await getCollection('connections');
+    const connection = await connectionsCollection.findOne({
       $or: [
         { userId: currentUser._id?.toString(), connectedUserId: targetUserId, status: 'accepted' },
         { userId: targetUserId, connectedUserId: currentUser._id?.toString(), status: 'accepted' }
@@ -116,7 +117,7 @@ export async function POST(request: NextRequest) {
           }
         },
         $set: { updatedAt: new Date(), lastEndorsedAt: new Date() }
-      }
+      } as any
     );
 
     // Update user's endorsed skills count
@@ -128,21 +129,22 @@ export async function POST(request: NextRequest) {
       },
       {
         arrayFilters: [{ 'elem.name': { $regex: new RegExp(skillName, 'i') } }]
-      }
+      } as any
     );
 
     // Log audit action
-    await logAuditAction({
-      actionType: 'skill_endorsed',
-      userId: currentUser._id?.toString() || '',
-      affectedUserId: targetUserId,
-      status: 'success',
-      details: {
+    await logAuditAction(
+      'skill_endorsed',
+      currentUser._id?.toString() || '',
+      {
         targetUserId,
-        skillName,
-        endorsementId: endorsementResult.insertedId
+        status: 'success',
+        metadata: {
+          skillName,
+          endorsementId: endorsementResult.insertedId
+        }
       }
-    });
+    );
 
     return NextResponse.json(
       {

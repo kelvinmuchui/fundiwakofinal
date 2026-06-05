@@ -1,7 +1,7 @@
 import { ObjectId } from 'mongodb';
 
 export interface Message {
-  _id?: string | ObjectId;
+  _id?: ObjectId;
   conversationId: string; // Reference to Conversation
   fromUserId: string; // Sender
   toUserId: string; // Recipient
@@ -38,7 +38,7 @@ export interface Message {
 }
 
 export interface Conversation {
-  _id?: string | ObjectId;
+  _id?: ObjectId;
   participants: [string, string]; // Two user IDs
   
   // Metadata
@@ -77,7 +77,7 @@ export interface Conversation {
 }
 
 export interface Notification {
-  _id?: string | ObjectId;
+  _id?: ObjectId;
   userId: string; // Recipient
   type: 'message' | 'typing' | 'call' | 'reaction';
   

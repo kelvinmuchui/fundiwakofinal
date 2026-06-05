@@ -86,9 +86,11 @@ export async function POST(request: NextRequest) {
         'Rating Received',
         `Received ${rating}★ rating${review ? ' with review' : ''}`,
         {
-          ratingValue: rating,
-          review: review?.substring(0, 100), // Truncate long reviews
-          averageRating: Math.round(averageRating * 10) / 10
+          metadata: {
+            ratingValue: rating,
+            review: review?.substring(0, 100), // Truncate long reviews
+            averageRating: Math.round(averageRating * 10) / 10
+          }
         }
       );
     } catch (logError) {

@@ -63,12 +63,14 @@ export async function POST(request: NextRequest) {
         'Booking Requested',
         `Requested ${serviceType} service from ${fundi.name}`,
         {
-          bookingId: result.insertedId.toString(),
-          fundiId,
-          fundiName: fundi.name,
-          serviceType,
-          location,
-          preferredDate
+          relatedUserId: fundiId,
+          metadata: {
+            bookingId: result.insertedId.toString(),
+            fundiName: fundi.name,
+            serviceType,
+            location,
+            preferredDate
+          }
         }
       );
     } catch (logError) {
@@ -197,10 +199,13 @@ export async function PATCH(request: NextRequest) {
           'Job Completed',
           `Completed booking for ${booking.serviceType}`,
           {
-            bookingId,
-            clientId: booking.clientId,
-            serviceType: booking.serviceType,
-            completedDate: new Date()
+            relatedUserId: booking.clientId,
+            metadata: {
+              bookingId,
+              clientId: booking.clientId,
+              serviceType: booking.serviceType,
+              completedDate: new Date()
+            }
           }
         );
       }
@@ -211,9 +216,11 @@ export async function PATCH(request: NextRequest) {
         statusDescriptions[status] || 'Booking Updated',
         `${status.replace(/_/g, ' ')} - ${booking.serviceType}`,
         {
-          bookingId,
-          newStatus: status,
-          fundiName: fundi?.name
+          metadata: {
+            bookingId,
+            newStatus: status,
+            fundiName: fundi?.name
+          }
         }
       );
     } catch (logError) {

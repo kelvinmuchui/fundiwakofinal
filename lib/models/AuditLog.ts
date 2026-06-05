@@ -1,7 +1,7 @@
 import { ObjectId } from 'mongodb';
 
 export interface AuditLog {
-  _id?: string | ObjectId;
+  _id?: ObjectId;
   action: 'register' | 'login' | 'logout' | 'approve_application' | 'reject_application' | 'verify_identity' | 'update_profile' | 'create_booking' | 'complete_booking' | 'submit_rating' | 'admin_user_action' | string;
   userId: string; // Who performed the action
   targetUserId?: string; // Who was affected (optional)
@@ -18,7 +18,7 @@ export interface AuditLog {
 }
 
 export interface ComplianceLog {
-  _id?: string | ObjectId;
+  _id?: ObjectId;
   userId: string;
   action: 'accept_terms' | 'accept_privacy_policy' | 'accept_data_protection';
   accepted: boolean;
@@ -28,7 +28,7 @@ export interface ComplianceLog {
 }
 
 export interface IdentityVerification {
-  _id?: string | ObjectId;
+  _id?: ObjectId;
   userId: string;
   status: 'pending' | 'verified' | 'rejected';
   documentType: 'national_id' | 'passport' | 'driver_license';

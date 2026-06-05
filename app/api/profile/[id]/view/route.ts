@@ -48,7 +48,7 @@ export async function POST(
       {
         $push: { profileViews: profileView },
         $inc: { profileViewCount: 1 }
-      }
+      } as any
     );
 
     return NextResponse.json({

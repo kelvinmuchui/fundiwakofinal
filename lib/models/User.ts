@@ -1,7 +1,7 @@
 import { ObjectId } from 'mongodb';
 
 export interface User {
-  _id?: string | ObjectId;
+  _id?: ObjectId;
   name: string;
   email: string;
   phone: string;
@@ -105,7 +105,7 @@ export interface User {
 }
 
 export interface Notification {
-  _id?: string | ObjectId;
+  _id?: ObjectId;
   type: 'view' | 'contact' | 'rating' | 'system';
   message: string;
   senderName?: string;
@@ -114,7 +114,7 @@ export interface Notification {
 }
 
 export interface WorkerApplication {
-  _id?: string | ObjectId;
+  _id?: ObjectId;
   name: string;
   phone: string;
   idNumber: string;
@@ -141,7 +141,7 @@ export interface WorkerApplication {
 }
 
 export interface Rating {
-  _id?: string | ObjectId;
+  _id?: ObjectId;
   fundiId: string; // ID of the fundi being rated
   clientId: string; // ID of the client giving the rating
   rating: number; // 1-5 stars

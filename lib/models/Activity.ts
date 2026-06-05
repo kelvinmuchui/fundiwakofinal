@@ -9,10 +9,12 @@ export type ActivityType =
   | 'profile_updated'
   | 'connection_made'
   | 'milestone_reached'
-  | 'rating_received';
+  | 'rating_received'
+  | 'booking_created'
+  | 'booking_status_updated';
 
 export interface Activity {
-  _id?: string | ObjectId;
+  _id?: ObjectId;
   userId: string; // User who performed the activity
   type: ActivityType;
   title: string; // Short title for the activity

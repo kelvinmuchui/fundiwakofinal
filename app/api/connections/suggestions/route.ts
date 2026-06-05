@@ -54,9 +54,9 @@ export async function GET(request: NextRequest) {
             _id: { 
               $nin: [
                 new ObjectId(userId),
-                ...currentConnections.map(id => new ObjectId(id)),
-                ...pendingIds.map(id => new ObjectId(id)),
-                ...blockedUsers.map(id => new ObjectId(id))
+                ...currentConnections.map((id: string) => new ObjectId(id)),
+                ...pendingIds.map((id: string) => new ObjectId(id)),
+                ...blockedUsers.map((id: string) => new ObjectId(id))
               ]
             },
             role: { $in: ['fundi', 'client'] },

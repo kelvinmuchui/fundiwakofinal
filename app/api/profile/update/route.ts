@@ -109,12 +109,14 @@ export async function PUT(request: NextRequest) {
     }
 
     // Log audit action
-    await logAuditAction({
-      actionType: 'profile_updated',
-      userId: userId || '',
-      status: 'success',
-      details: updateData
-    });
+    await logAuditAction(
+      'profile_updated',
+      userId || '',
+      {
+        status: 'success',
+        metadata: updateData
+      }
+    );
 
     return NextResponse.json({
       success: true,

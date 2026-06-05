@@ -78,16 +78,17 @@ export async function POST(request: NextRequest) {
     const result = await connectionsCollection.insertOne(connection);
 
     // Log audit action
-    await logAuditAction({
-      actionType: 'connection_request_sent',
-      userId: currentUser._id?.toString() || '',
-      affectedUserId: targetUserId,
-      status: 'success',
-      details: {
+    await logAuditAction(
+      'connection_request_sent',
+      currentUser._id?.toString() || '',
+      {
         targetUserId,
-        relationship
+        status: 'success',
+        metadata: {
+          relationship
+        }
       }
-    });
+    );
 
     return NextResponse.json(
       {

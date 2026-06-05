@@ -66,7 +66,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if users are connected
-    const connection = await getCollection('connections').findOne({
+    const connectionsCollection = await getCollection('connections');
+    const connection = await connectionsCollection.findOne({
       $or: [
         { userId: currentUser._id?.toString(), connectedUserId: toUserId, status: 'accepted' },
         { userId: toUserId, connectedUserId: currentUser._id?.toString(), status: 'accepted' }
@@ -113,18 +114,19 @@ export async function POST(request: NextRequest) {
     }
 
     // Log audit action
-    await logAuditAction({
-      actionType: 'recommendation_given',
-      userId: currentUser._id?.toString() || '',
-      affectedUserId: toUserId,
-      status: 'success',
-      details: {
-        toUserId,
-        rating,
-        relationship,
-        recommendationId: result.insertedId
+    await logAuditAction(
+      'recommendation_given',
+      currentUser._id?.toString() || '',
+      {
+        targetUserId: toUserId,
+        status: 'success',
+        metadata: {
+          rating,
+          relationship,
+          recommendationId: result.insertedId
+        }
       }
-    });
+    );
 
     return NextResponse.json(
       {

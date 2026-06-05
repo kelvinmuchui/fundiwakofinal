@@ -1,7 +1,7 @@
 import { ObjectId } from 'mongodb';
 
 export interface Skill {
-  _id?: string | ObjectId;
+  _id?: ObjectId;
   userId: string; // User who has the skill
   name: string; // Skill name (e.g., "Plumbing", "Electrical Wiring")
   category?: string; // Category (e.g., "Plumbing", "Electrical")
@@ -49,7 +49,7 @@ export interface Skill {
 }
 
 export interface SkillEndorsement {
-  _id?: string | ObjectId;
+  _id?: ObjectId;
   endorserId: string; // User doing the endorsing
   skillOwnerId: string; // User who has the skill
   skillId: string; // Skill being endorsed
@@ -61,7 +61,7 @@ export interface SkillEndorsement {
 }
 
 export interface SkillCategory {
-  _id?: string | ObjectId;
+  _id?: ObjectId;
   name: string;
   description?: string;
   icon?: string;

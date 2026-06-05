@@ -1,7 +1,7 @@
 import { ObjectId } from 'mongodb';
 
 export interface Recommendation {
-  _id?: string | ObjectId;
+  _id?: ObjectId;
   fromUserId: string; // User giving the recommendation
   toUserId: string; // User receiving the recommendation
   content: string; // The recommendation text
@@ -28,7 +28,7 @@ export interface Recommendation {
 }
 
 export interface RecommendationRequest {
-  _id?: string | ObjectId;
+  _id?: ObjectId;
   fromUserId: string; // User requesting the recommendation
   toUserId: string; // User who should give it
   message?: string; // Optional message with the request
