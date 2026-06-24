@@ -135,9 +135,9 @@ export default function PublicFundiProfile() {
 
             <div className="flex-1 pb-2">
               <div className="flex flex-col md:flex-row md:items-center gap-3 mb-2">
-                <h1 className="text-4xl md:text-5xl font-heading font-black text-white drop-shadow-lg">{profile.name}</h1>
+                <h1 className="text-4xl md:text-5xl font-heading font-black text-secondary-900 drop-shadow-sm">{profile.name}</h1>
                 <div className="flex items-center gap-2 justify-center md:justify-start">
-                  <span className="px-4 py-1.5 bg-white/20 backdrop-blur-md border border-white/30 rounded-full text-white text-sm font-bold uppercase tracking-wider">
+                  <span className="px-4 py-1.5 bg-white/60 backdrop-blur-md border border-white/50 rounded-full text-secondary-900 text-sm font-bold uppercase tracking-wider">
                     {profile.skill || 'Professional'}
                   </span>
                   <span className={`px-3 py-1.5 ${avail.bg} rounded-full text-xs font-bold ${avail.text} flex items-center gap-1.5`}>
@@ -146,8 +146,8 @@ export default function PublicFundiProfile() {
                   </span>
                 </div>
               </div>
-              <p className="flex items-center justify-center md:justify-start gap-2 text-white/90 text-lg">
-                <svg className="w-5 h-5 text-accent-400" fill="currentColor" viewBox="0 0 20 20">
+              <p className="flex items-center justify-center md:justify-start gap-2 text-secondary-700 text-lg">
+                <svg className="w-5 h-5 text-primary-500" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
                 </svg>
                 {profile.neighborhood}, {profile.location}
@@ -155,7 +155,7 @@ export default function PublicFundiProfile() {
             </div>
 
             <button onClick={() => router.back()}
-              className="absolute top-0 right-0 mt-8 mr-4 px-6 py-2 bg-white/10 backdrop-blur-md hover:bg-white/20 text-white rounded-xl border border-white/20 transition-all font-bold text-sm">
+              className="absolute top-0 right-0 mt-8 mr-4 px-6 py-2 bg-white/80 backdrop-blur-md hover:bg-white text-secondary-900 rounded-xl border border-white/50 transition-all font-bold text-sm shadow-sm">
               ← Back
             </button>
           </div>
@@ -286,10 +286,10 @@ export default function PublicFundiProfile() {
           {/* Sidebar Actions */}
           <div className="space-y-6">
             {/* Booking Card */}
-            <div className="bg-secondary-900 rounded-[2rem] p-8 shadow-2xl text-white sticky top-24">
+            <div className="bg-inverse-surface rounded-[2rem] p-8 shadow-2xl text-white sticky top-24">
               <div className="flex items-center justify-between mb-8">
                 <div>
-                  <p className="text-primary-400 font-bold text-xs uppercase tracking-widest mb-1">Starting From</p>
+                  <p className="text-primary-fixed font-bold text-xs uppercase tracking-widest mb-1">Starting From</p>
                   <h3 className="text-3xl font-heading font-black">
                     KES {profile.hourlyRate?.replace(/[^0-9]/g, '') || "1,200"}
                     <span className="text-sm font-normal text-white/60">/hr</span>
@@ -297,7 +297,7 @@ export default function PublicFundiProfile() {
                 </div>
                 <div className="bg-white/10 p-3 rounded-2xl backdrop-blur-md">
                   <div className="flex items-center gap-1">
-                    <span className="text-accent-400">★</span>
+                    <span className="text-rating-gold">★</span>
                     <span className="font-black text-xl">{profile.rating?.toFixed(1) || '—'}</span>
                   </div>
                   <p className="text-[10px] text-white/50 text-center uppercase font-bold">{profile.jobsCompleted || 0} Jobs</p>
@@ -325,7 +325,7 @@ export default function PublicFundiProfile() {
 
               <div className="flex flex-col gap-3">
                 <button onClick={() => setShowBookingModal(true)}
-                  className="w-full py-4 bg-primary-600 hover:bg-primary-500 text-white rounded-2xl font-heading font-black text-lg transition-all shadow-xl shadow-primary-600/30 flex items-center justify-center gap-2 group">
+                  className="w-full py-4 btn-primary rounded-2xl font-heading font-black text-lg flex items-center justify-center gap-2 group">
                   <span className="group-hover:scale-125 transition-transform">📅</span> Book Appointment
                 </button>
                 <button onClick={handleContact} disabled={contactClicked || isTracking}
@@ -343,17 +343,17 @@ export default function PublicFundiProfile() {
                 <div id="contact-info" className="mt-6 p-6 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20">
                   <div className="space-y-4">
                     <a href={`tel:${profile.phone}`} className="flex items-center gap-4 group">
-                      <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center group-hover:bg-primary-600 transition-colors">📱</div>
+                      <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center group-hover:bg-primary transition-colors">📱</div>
                       <div>
                         <p className="text-[10px] font-bold text-white/40 uppercase">Mobile Number</p>
-                        <p className="text-lg font-bold group-hover:text-primary-400 transition-colors">{profile.phone}</p>
+                        <p className="text-lg font-bold group-hover:text-primary-fixed transition-colors">{profile.phone}</p>
                       </div>
                     </a>
                     <a href={`mailto:${profile.email}`} className="flex items-center gap-4 group">
-                      <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center group-hover:bg-primary-600 transition-colors">✉️</div>
+                      <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center group-hover:bg-primary transition-colors">✉️</div>
                       <div>
                         <p className="text-[10px] font-bold text-white/40 uppercase">Email Address</p>
-                        <p className="text-sm font-bold group-hover:text-primary-400 transition-colors">{profile.email}</p>
+                        <p className="text-sm font-bold group-hover:text-primary-fixed transition-colors">{profile.email}</p>
                       </div>
                     </a>
                   </div>

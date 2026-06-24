@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Worker } from "../data/mockWorkers";
+import { Worker } from "../types/worker";
 import BookingModal from "./BookingModal";
 import ConnectionButton from "./ConnectionButton";
 
@@ -38,13 +38,13 @@ export default function WorkerCard({ worker, workerId }: WorkerCardProps) {
   const displaySkills = worker.skills?.slice(0, 4) ?? [];
 
   return (
-    <div className="bg-white rounded-3xl border border-neutral-200 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col h-full">
+    <div className="group relative bg-white/90 backdrop-blur-xl rounded-3xl border border-white/40 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_20px_40px_rgb(0,0,0,0.12)] transition-all duration-500 overflow-hidden flex flex-col h-full hover:-translate-y-2">
       <div className="relative">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={worker.photoURL}
           alt={worker.name}
-          className="h-56 w-full object-cover"
+          className="h-56 w-full object-cover transition-transform duration-700 group-hover:scale-110"
         />
         <div className="absolute inset-x-0 bottom-0 h-28 bg-linear-to-t from-black/50 to-transparent" />
 
@@ -69,7 +69,7 @@ export default function WorkerCard({ worker, workerId }: WorkerCardProps) {
       <div className="p-6 flex-1 flex flex-col">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <h3 className="text-lg md:text-xl font-heading font-bold text-secondary-900 leading-tight">
+            <h3 className="text-lg md:text-xl font-heading font-bold text-secondary-900 leading-tight group-hover:text-primary-600 transition-colors duration-300">
               {worker.name}
             </h3>
             <p className="mt-2 text-sm text-neutral-500">{worker.skill}</p>

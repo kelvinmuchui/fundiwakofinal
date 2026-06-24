@@ -39,5 +39,6 @@ export const config = {
     '/fundi/profile/:path*',
     '/dashboard/:path*',
     '/profile/:path*',
+    '/payments/:path*',
   ],
 };

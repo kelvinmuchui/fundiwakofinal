@@ -79,7 +79,7 @@ export default function ServiceCard({
 }: ServiceCardProps) {
   return (
     <Link href={`/search?service=${encodeURIComponent(title)}`}>
-      <div className="group relative bg-white rounded-2xl p-6 card-hover border border-neutral-100 overflow-hidden cursor-pointer">
+      <div className="group relative bg-white/90 backdrop-blur-xl rounded-3xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_20px_40px_rgb(0,0,0,0.12)] border border-white/40 overflow-hidden cursor-pointer hover:-translate-y-2 transition-all duration-500">
       {/* Gradient overlay on hover */}
       <div
         className={`absolute inset-0 opacity-0 group-hover:opacity-5 transition-opacity duration-500 ${color}`}

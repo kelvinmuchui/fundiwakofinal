@@ -111,6 +111,16 @@ export default function Navbar() {
                                 >
                                     Dashboard
                                 </Link>
+                                <Link
+                                    href="/payments"
+                                    className={`px-4 py-2 rounded-xl text-sm font-heading font-semibold transition-all duration-300 ${isScrolled
+                                        ? "text-gray-700 hover:text-primary-600 hover:bg-primary-50"
+                                        : "text-white/80 hover:text-white hover:bg-white/10"
+                                        }`}
+                                    title="Escrow Wallet"
+                                >
+                                    💰 Wallet
+                                </Link>
                                 {(session.user as any)?.role === 'fundi' && (
                                     <Link href="/fundi/profile" className="px-4 py-2 rounded-xl text-sm font-heading font-semibold bg-emerald-600 text-white hover:bg-emerald-700 transition-all duration-300 shadow-lg shadow-emerald-600/20">
                                         Fundi Panel
@@ -209,6 +219,13 @@ export default function Navbar() {
                                         onClick={() => setIsMobileMenuOpen(false)}
                                     >
                                         My Bookings
+                                    </Link>
+                                    <Link
+                                        href="/payments"
+                                        className="block px-4 py-3 rounded-xl text-orange-600 font-medium hover:bg-orange-50 transition-all duration-200"
+                                        onClick={() => setIsMobileMenuOpen(false)}
+                                    >
+                                        💰 Escrow Wallet
                                     </Link>
                                     {(session.user as any)?.role === 'fundi' && (
                                         <Link

@@ -72,7 +72,7 @@ export default function FundiProfile() {
 
     useEffect(() => {
         if (status === 'loading') return;
-        
+
         if (!session || !session.user) {
             router.push('/auth');
             return;
@@ -211,7 +211,7 @@ export default function FundiProfile() {
             reader.onloadend = async () => {
                 const base64 = reader.result as string;
                 setPhotoPreview(base64);
-                
+
                 // If not in editing mode, ask if they want to save it immediately
                 if (!isEditing) {
                     if (confirm('Update profile picture?')) {
@@ -469,14 +469,14 @@ export default function FundiProfile() {
                                 Sign Out
                             </button>
                             {publicProfileId && (
-                              <a
-                                href={`/fundi/public/${publicProfileId}`}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="w-full sm:w-auto px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full transition-colors text-sm font-medium"
-                              >
-                                Public Profile
-                              </a>
+                                <a
+                                    href={`/fundi/public/${publicProfileId}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="w-full sm:w-auto px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full transition-colors text-sm font-medium"
+                                >
+                                    Public Profile
+                                </a>
                             )}
                         </div>
                     </div>
@@ -532,7 +532,7 @@ export default function FundiProfile() {
                                                 <span className="text-4xl">👤</span>
                                             </div>
                                         )}
-                                        
+
                                         {/* Camera Overlay */}
                                         <label
                                             htmlFor="quick-photo-change"
@@ -544,7 +544,7 @@ export default function FundiProfile() {
                                             </svg>
                                         </label>
                                     </div>
-                                    
+
                                     {saving && (
                                         <div className="absolute inset-0 flex items-center justify-center bg-white/60 rounded-full">
                                             <div className="w-8 h-8 border-4 border-primary-600 border-t-transparent rounded-full animate-spin"></div>
@@ -561,21 +561,21 @@ export default function FundiProfile() {
                                         Sign Out
                                     </button>
                                     {publicProfileId && (
-                                      <a
-                                        href={`/fundi/public/${publicProfileId}`}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className="px-6 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-full transition-colors font-medium"
-                                      >
-                                        Public Profile
-                                      </a>
+                                        <a
+                                            href={`/fundi/public/${publicProfileId}`}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="px-6 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-full transition-colors font-medium"
+                                        >
+                                            Public Profile
+                                        </a>
                                     )}
                                 </div>
                             </div>
 
                             {/* Profile Info */}
                             <div className="mt-4">
-                                <h1 className="text-3xl font-bold text-gray-900 mb-1">{displayData?.name}</h1>
+                                <h1 className="text-3xl font-bold text- black-900 mb-1">{displayData?.name}</h1>
                                 <p className="text-xl text-gray-600 mb-2">{displayData?.skill}</p>
                                 <div className="flex items-center gap-4 text-gray-500 mb-3">
                                     <span>{displayData?.location}, {displayData?.neighborhood}</span>
@@ -593,7 +593,7 @@ export default function FundiProfile() {
                         </div>
 
                         {/* Main Content Grid */}
-                            <div className="px-4 sm:px-8 pb-8">
+                        <div className="px-4 sm:px-8 pb-8">
                             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                                 {/* Left Column */}
                                 <div className="lg:col-span-2 space-y-6">
@@ -685,9 +685,9 @@ export default function FundiProfile() {
                                             <div className="bg-primary-50 p-4 rounded-xl border border-primary-100 group">
                                                 <div className="flex items-center gap-3 mb-2">
                                                     <span className="text-2xl group-hover:scale-110 transition-transform">👁️</span>
-                                                    <span className="text-xs font-bold text-primary-600 uppercase tracking-wider">Views</span>
+                                                    <span className="text-xs font-bold text-black-600 uppercase tracking-wider">Views</span>
                                                 </div>
-                                                <p className="text-3xl font-black text-primary-900">{combinedProfile.profileViews || 0}</p>
+                                                <p className="text-3xl font-black text-black">{combinedProfile.profileViews || 0}</p>
                                                 <p className="text-[10px] text-primary-600 mt-1">Total profile visits</p>
                                             </div>
                                             <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-100 group">
@@ -756,13 +756,12 @@ export default function FundiProfile() {
                                             <select
                                                 value={displayData?.availability || 'flexible'}
                                                 onChange={(e) => saveStatusOnly(e.target.value)}
-                                                className={`w-full appearance-none px-4 py-2 rounded-lg border-2 font-medium transition-all cursor-pointer ${
-                                                    displayData?.availability === 'available' || displayData?.availability === 'Available Now'
-                                                        ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
-                                                        : displayData?.availability === 'busy' || displayData?.availability === 'Busy'
+                                                className={`w-full appearance-none px-4 py-2 rounded-lg border-2 font-medium transition-all cursor-pointer ${displayData?.availability === 'available' || displayData?.availability === 'Available Now'
+                                                    ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                                                    : displayData?.availability === 'busy' || displayData?.availability === 'Busy'
                                                         ? 'bg-rose-50 border-rose-200 text-rose-700'
                                                         : 'bg-amber-50 border-amber-200 text-amber-700'
-                                                }`}
+                                                    }`}
                                             >
                                                 <option value="available">Available Now</option>
                                                 <option value="busy">Busy / Fully Booked</option>
@@ -873,219 +872,219 @@ export default function FundiProfile() {
                                 </div>
                             </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {/* Personal Information */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
-                                <input
-                                    type="text"
-                                    name="name"
-                                    value={formData.name}
-                                    onChange={handleInputChange}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                                />
-                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {/* Personal Information */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+                                    <input
+                                        type="text"
+                                        name="name"
+                                        value={formData.name}
+                                        onChange={handleInputChange}
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                                    />
+                                </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                                <input
-                                    type="email"
-                                    name="email"
-                                    value={formData.email}
-                                    disabled
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed"
-                                />
-                            </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                                    <input
+                                        type="email"
+                                        name="email"
+                                        value={formData.email}
+                                        disabled
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed"
+                                    />
+                                </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
-                                <input
-                                    type="tel"
-                                    name="phone"
-                                    value={formData.phone}
-                                    onChange={handleInputChange}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                                />
-                            </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
+                                    <input
+                                        type="tel"
+                                        name="phone"
+                                        value={formData.phone}
+                                        onChange={handleInputChange}
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                                    />
+                                </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Primary Skill</label>
-                                <input
-                                    type="text"
-                                    name="skill"
-                                    value={formData.skill}
-                                    onChange={handleInputChange}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                                    placeholder="e.g., Plumbing"
-                                />
-                            </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Primary Skill</label>
+                                    <input
+                                        type="text"
+                                        name="skill"
+                                        value={formData.skill}
+                                        onChange={handleInputChange}
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                                        placeholder="e.g., Plumbing"
+                                    />
+                                </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Experience Level</label>
-                                <input
-                                    type="text"
-                                    name="experience"
-                                    value={formData.experience}
-                                    onChange={handleInputChange}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                                    placeholder="e.g., 5+ years"
-                                />
-                            </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Experience Level</label>
+                                    <input
+                                        type="text"
+                                        name="experience"
+                                        value={formData.experience}
+                                        onChange={handleInputChange}
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                                        placeholder="e.g., 5+ years"
+                                    />
+                                </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Hourly Rate (KES)</label>
-                                <input
-                                    type="number"
-                                    name="hourlyRate"
-                                    value={formData.hourlyRate}
-                                    onChange={handleInputChange}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                                    placeholder="e.g., 500"
-                                />
-                            </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Hourly Rate (KES)</label>
+                                    <input
+                                        type="number"
+                                        name="hourlyRate"
+                                        value={formData.hourlyRate}
+                                        onChange={handleInputChange}
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                                        placeholder="e.g., 500"
+                                    />
+                                </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
-                                <input
-                                    type="text"
-                                    name="location"
-                                    value={formData.location}
-                                    onChange={handleInputChange}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                                    placeholder="e.g., Nairobi"
-                                />
-                            </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
+                                    <input
+                                        type="text"
+                                        name="location"
+                                        value={formData.location}
+                                        onChange={handleInputChange}
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                                        placeholder="e.g., Nairobi"
+                                    />
+                                </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Neighborhood</label>
-                                <input
-                                    type="text"
-                                    name="neighborhood"
-                                    value={formData.neighborhood}
-                                    onChange={handleInputChange}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                                    placeholder="e.g., Westlands"
-                                />
-                            </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Neighborhood</label>
+                                    <input
+                                        type="text"
+                                        name="neighborhood"
+                                        value={formData.neighborhood}
+                                        onChange={handleInputChange}
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                                        placeholder="e.g., Westlands"
+                                    />
+                                </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Availability</label>
-                                <select
-                                    name="availability"
-                                    value={formData.availability}
-                                    onChange={handleInputChange}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                                >
-                                    <option value="flexible">Flexible</option>
-                                    <option value="fulltime">Full Time</option>
-                                    <option value="parttime">Part Time</option>
-                                    <option value="weekends">Weekends Only</option>
-                                </select>
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">TVET Institution (Optional)</label>
-                                <input
-                                    type="text"
-                                    name="tvetInstitution"
-                                    value={formData.tvetInstitution}
-                                    onChange={handleInputChange}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                                    placeholder="e.g., Technical Training Institute"
-                                />
-                            </div>
-                        </div>
-
-                        {/* Skills Section */}
-                        <div className="mt-8">
-                            <label className="block text-sm font-medium text-gray-700 mb-4">Skills & Expertise</label>
-                            <div className="relative">
-                                <div className="flex gap-2 mb-4">
-                                    <div className="flex-1 relative">
-                                        <input
-                                            type="text"
-                                            value={newSkill}
-                                            onChange={(e) => setNewSkill(e.target.value)}
-                                            onKeyPress={(e) => e.key === 'Enter' && addSkill()}
-                                            onFocus={() => setShowSkillSuggestions(true)}
-                                            onBlur={() => setTimeout(() => setShowSkillSuggestions(false), 200)}
-                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                                            placeholder="Add a skill (e.g., Plumbing, Electrical)"
-                                        />
-                                        {showSkillSuggestions && newSkill && (
-                                            <div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-lg shadow-lg z-10 max-h-40 overflow-y-auto">
-                                                {skillSuggestions
-                                                    .filter(skill => 
-                                                        skill.toLowerCase().includes(newSkill.toLowerCase()) && 
-                                                        !formData.skills?.includes(skill)
-                                                    )
-                                                    .slice(0, 5)
-                                                    .map((skill, idx) => (
-                                                        <button
-                                                            key={idx}
-                                                            onClick={() => {
-                                                                setNewSkill(skill);
-                                                                addSkill();
-                                                            }}
-                                                            className="w-full text-left px-4 py-2 hover:bg-gray-50 focus:bg-gray-50 focus:outline-none"
-                                                        >
-                                                            {skill}
-                                                        </button>
-                                                    ))}
-                                            </div>
-                                        )}
-                                    </div>
-                                    <button
-                                        onClick={addSkill}
-                                        className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors font-medium"
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Availability</label>
+                                    <select
+                                        name="availability"
+                                        value={formData.availability}
+                                        onChange={handleInputChange}
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                                     >
-                                        Add
-                                    </button>
+                                        <option value="flexible">Flexible</option>
+                                        <option value="fulltime">Full Time</option>
+                                        <option value="parttime">Part Time</option>
+                                        <option value="weekends">Weekends Only</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">TVET Institution (Optional)</label>
+                                    <input
+                                        type="text"
+                                        name="tvetInstitution"
+                                        value={formData.tvetInstitution}
+                                        onChange={handleInputChange}
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                                        placeholder="e.g., Technical Training Institute"
+                                    />
                                 </div>
                             </div>
-                            <div className="flex flex-wrap gap-2">
-                                {formData.skills?.map((skill, idx) => (
-                                    <span key={idx} className="bg-primary-100 text-primary-800 px-3 py-1 rounded-full text-sm font-medium flex items-center gap-2">
-                                        {skill}
+
+                            {/* Skills Section */}
+                            <div className="mt-8">
+                                <label className="block text-sm font-medium text-gray-700 mb-4">Skills & Expertise</label>
+                                <div className="relative">
+                                    <div className="flex gap-2 mb-4">
+                                        <div className="flex-1 relative">
+                                            <input
+                                                type="text"
+                                                value={newSkill}
+                                                onChange={(e) => setNewSkill(e.target.value)}
+                                                onKeyPress={(e) => e.key === 'Enter' && addSkill()}
+                                                onFocus={() => setShowSkillSuggestions(true)}
+                                                onBlur={() => setTimeout(() => setShowSkillSuggestions(false), 200)}
+                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                                                placeholder="Add a skill (e.g., Plumbing, Electrical)"
+                                            />
+                                            {showSkillSuggestions && newSkill && (
+                                                <div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-lg shadow-lg z-10 max-h-40 overflow-y-auto">
+                                                    {skillSuggestions
+                                                        .filter(skill =>
+                                                            skill.toLowerCase().includes(newSkill.toLowerCase()) &&
+                                                            !formData.skills?.includes(skill)
+                                                        )
+                                                        .slice(0, 5)
+                                                        .map((skill, idx) => (
+                                                            <button
+                                                                key={idx}
+                                                                onClick={() => {
+                                                                    setNewSkill(skill);
+                                                                    addSkill();
+                                                                }}
+                                                                className="w-full text-left px-4 py-2 hover:bg-gray-50 focus:bg-gray-50 focus:outline-none"
+                                                            >
+                                                                {skill}
+                                                            </button>
+                                                        ))}
+                                                </div>
+                                            )}
+                                        </div>
                                         <button
-                                            onClick={() => removeSkill(skill)}
-                                            className="text-primary-600 hover:text-primary-800 font-bold text-xs"
+                                            onClick={addSkill}
+                                            className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors font-medium"
                                         >
-                                            ×
+                                            Add
                                         </button>
-                                    </span>
-                                ))}
+                                    </div>
+                                </div>
+                                <div className="flex flex-wrap gap-2">
+                                    {formData.skills?.map((skill, idx) => (
+                                        <span key={idx} className="bg-primary-100 text-primary-800 px-3 py-1 rounded-full text-sm font-medium flex items-center gap-2">
+                                            {skill}
+                                            <button
+                                                onClick={() => removeSkill(skill)}
+                                                className="text-primary-600 hover:text-primary-800 font-bold text-xs"
+                                            >
+                                                ×
+                                            </button>
+                                        </span>
+                                    ))}
+                                </div>
+                                {(!formData.skills || formData.skills.length === 0) && (
+                                    <p className="text-sm text-gray-500 mt-2">Add your skills to showcase your expertise</p>
+                                )}
                             </div>
-                            {(!formData.skills || formData.skills.length === 0) && (
-                                <p className="text-sm text-gray-500 mt-2">Add your skills to showcase your expertise</p>
-                            )}
-                        </div>
 
-                        {/* Description */}
-                        <div className="mt-8">
-                            <label className="block text-sm font-medium text-gray-700 mb-2">About You</label>
-                            <textarea
-                                name="description"
-                                value={formData.description}
-                                onChange={handleInputChange}
-                                rows={5}
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                                placeholder="Tell clients about yourself, your experience, and why you're great at what you do..."
-                            />
-                        </div>
+                            {/* Description */}
+                            <div className="mt-8">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">About You</label>
+                                <textarea
+                                    name="description"
+                                    value={formData.description}
+                                    onChange={handleInputChange}
+                                    rows={5}
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                                    placeholder="Tell clients about yourself, your experience, and why you're great at what you do..."
+                                />
+                            </div>
 
-                        {/* Reason for Joining (Optional) */}
-                        <div className="mt-8">
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Why are you joining? (Optional)</label>
-                            <textarea
-                                name="reasonForJoining"
-                                value={formData.reasonForJoining}
-                                onChange={handleInputChange}
-                                rows={3}
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                                placeholder="Share your motivation for joining FundiWako..."
-                            />
-                        </div>                    </div>                    </div>
+                            {/* Reason for Joining (Optional) */}
+                            <div className="mt-8">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Why are you joining? (Optional)</label>
+                                <textarea
+                                    name="reasonForJoining"
+                                    value={formData.reasonForJoining}
+                                    onChange={handleInputChange}
+                                    rows={3}
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                                    placeholder="Share your motivation for joining FundiWako..."
+                                />
+                            </div>                    </div>                    </div>
                 )}
             </div>
         </div>

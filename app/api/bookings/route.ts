@@ -146,7 +146,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { bookingId, status } = body;
+    const { bookingId, status, quoteAmount } = body;
     const allowedStatuses = ['accepted', 'in_progress', 'completed', 'cancelled', 'declined'];
 
     if (!bookingId || !status || !allowedStatuses.includes(status)) {
@@ -176,9 +176,15 @@ export async function PATCH(request: NextRequest) {
     const usersCollection = await getCollection('users');
     const fundi = await usersCollection.findOne({ _id: new ObjectId(booking.fundiId) });
 
+    const updateFields: any = { status, updatedAt: new Date() };
+    if (status === 'accepted' && quoteAmount) {
+      updateFields.quoteAmount = Number(quoteAmount);
+      updateFields.paymentStatus = 'unpaid';
+    }
+
     await bookingsCollection.updateOne(
       { _id: new ObjectId(bookingId) },
-      { $set: { status, updatedAt: new Date() } }
+      { $set: updateFields }
     );
 
     // Log booking status change activity

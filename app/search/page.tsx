@@ -5,7 +5,7 @@ import Link from "next/link";
 import WorkerCard from "@/app/components/WorkerCard";
 import SearchBar from "@/app/components/SearchBar";
 import { useGeolocation } from "@/lib/geolocation";
-import type { Worker } from "@/app/data/mockWorkers";
+import type { Worker } from "@/app/types/worker";
 
 type SearchPageProps = {
   searchParams: Promise<{
