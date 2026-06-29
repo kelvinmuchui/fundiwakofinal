@@ -94,6 +94,17 @@ export default function PaymentsPage() {
   const [updatingQuoteId, setUpdatingQuoteId] = useState<string | null>(null);
   const [isMockMode, setIsMockMode] = useState(false);
 
+  // Wallet Top-Up State
+  const [walletBalance, setWalletBalance] = useState(0);
+  const [topUpModalOpen, setTopUpModalOpen] = useState(false);
+  const [topUpAmount, setTopUpAmount] = useState("");
+  const [topUpPhone, setTopUpPhone] = useState("");
+  const [topUpLoading, setTopUpLoading] = useState(false);
+  const [topUpError, setTopUpError] = useState("");
+  const [topUpStep, setTopUpStep] = useState<"form" | "polling" | "success" | "failed">("form");
+  const [topUpRequestId, setTopUpRequestId] = useState("");
+  const [disputeLoadingId, setDisputeLoadingId] = useState<string | null>(null);
+
   useEffect(() => {
     if (status === "authenticated") {
       fetchData();
@@ -113,8 +124,10 @@ export default function PaymentsPage() {
     let timer: NodeJS.Timeout;
     let countdownTimer: NodeJS.Timeout;
 
-    if (paymentStep === "polling" && checkoutRequestId) {
+    if ((paymentStep === "polling" && checkoutRequestId) || (topUpStep === "polling" && topUpRequestId)) {
       setPollCountdown(30);
+      const activeRequestId = checkoutRequestId || topUpRequestId;
+      const isTopUp = !!topUpRequestId;
 
       countdownTimer = setInterval(() => {
         setPollCountdown((prev) => {
@@ -128,16 +141,22 @@ export default function PaymentsPage() {
 
       const pollStatus = async () => {
         try {
-          const res = await fetch(`/api/payments/status?checkoutRequestID=${checkoutRequestId}`);
+          const res = await fetch(`/api/payments/status?checkoutRequestID=${activeRequestId}`);
           if (res.ok) {
             const data = await res.json();
-            if (data.status === "held") {
-              setPaymentStep("success");
+            if (data.status === "held" || data.status === "completed") {
+              if (isTopUp) setTopUpStep("success");
+              else setPaymentStep("success");
               clearInterval(countdownTimer);
               fetchData();
             } else if (data.status === "failed") {
-              setPaymentStep("failed");
-              setPaymentError("Payment failed. Please check your phone status or try again.");
+              if (isTopUp) {
+                setTopUpStep("failed");
+                setTopUpError("Top-up failed. Please try again.");
+              } else {
+                setPaymentStep("failed");
+                setPaymentError("Payment failed. Please check your phone status or try again.");
+              }
               clearInterval(countdownTimer);
             }
           }
@@ -154,7 +173,7 @@ export default function PaymentsPage() {
       if (timer) clearInterval(timer);
       if (countdownTimer) clearInterval(countdownTimer);
     };
-  }, [paymentStep, checkoutRequestId]);
+  }, [paymentStep, checkoutRequestId, topUpStep, topUpRequestId]);
 
   const fetchData = async () => {
     try {
@@ -173,6 +192,15 @@ export default function PaymentsPage() {
       if (txRes.ok) {
         const json = await txRes.json();
         setTransactions(json.data || []);
+      }
+
+      // Fetch Wallet Balance
+      const walletRes = await fetch("/api/wallet");
+      if (walletRes.ok) {
+        const json = await walletRes.json();
+        if (json.data && json.data.balance !== undefined) {
+          setWalletBalance(json.data.balance);
+        }
       }
     } catch (error) {
       console.error("Error fetching payment data:", error);
@@ -225,6 +253,74 @@ export default function PaymentsPage() {
       setPaymentError(err.message || "An error occurred");
     } finally {
       setPaymentLoading(false);
+    }
+  };
+
+  const handleInitiateTopUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!topUpAmount) return;
+
+    setTopUpLoading(true);
+    setTopUpError("");
+
+    try {
+      const res = await fetch("/api/wallet/topup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          phone: topUpPhone,
+          amount: Number(topUpAmount),
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to initiate top-up");
+      }
+
+      setTopUpRequestId(data.checkoutRequestID);
+      setTopUpStep("polling");
+    } catch (err: any) {
+      setTopUpError(err.message || "An error occurred");
+    } finally {
+      setTopUpLoading(false);
+    }
+  };
+
+  const handleRaiseDispute = async (bookingId: string) => {
+    const tx = transactions.find(t => t.bookingId === bookingId && t.status === "held");
+    if (!tx) {
+      alert("No active escrow transaction found for this booking.");
+      return;
+    }
+
+    const reason = prompt("Please provide a reason for disputing this escrow (e.g., poor quality, incomplete work):");
+    if (!reason) return;
+
+    setDisputeLoadingId(bookingId);
+    try {
+      const res = await fetch("/api/disputes/raise", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          transactionId: tx._id,
+          bookingId: bookingId,
+          reason: "other",
+          description: reason,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to raise dispute");
+      }
+
+      alert("Dispute raised successfully. Escrow funds are frozen.");
+      fetchData();
+    } catch (err: any) {
+      alert(`Error raising dispute: ${err.message}`);
+    } finally {
+      setDisputeLoadingId(null);
     }
   };
 
@@ -427,6 +523,21 @@ export default function PaymentsPage() {
               <RefreshCw className="w-5 h-5" />
             </button>
             
+            <button
+              onClick={() => {
+                const userPhone = user?.phone || "";
+                setTopUpPhone(userPhone.replace(/^254/, "0") || "07");
+                setTopUpAmount("");
+                setTopUpError("");
+                setTopUpRequestId("");
+                setTopUpStep("form");
+                setTopUpModalOpen(true);
+              }}
+              className="px-5 py-3 bg-orange-500 hover:bg-orange-600 transition rounded-xl text-sm font-semibold text-white flex items-center gap-2"
+            >
+              <Wallet className="w-4 h-4" /> Top Up Wallet
+            </button>
+
             <Link 
               href="/dashboard"
               className="px-5 py-3 bg-slate-900 border border-slate-800 hover:bg-slate-800 transition rounded-xl text-sm font-semibold text-white"
@@ -437,9 +548,24 @@ export default function PaymentsPage() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mb-10">
-          <div className="rounded-3xl bg-slate-900/40 border border-slate-800 p-6 shadow-xl backdrop-blur-md relative overflow-hidden group">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-10">
+          <div className="rounded-3xl bg-slate-900/40 border border-orange-500/30 p-6 shadow-xl backdrop-blur-md relative overflow-hidden group">
             <div className="absolute right-6 top-6 text-orange-500/10 group-hover:text-orange-500/20 transition-all">
+              <Wallet className="w-16 h-16" />
+            </div>
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider text-orange-500">
+              My Wallet Balance
+            </p>
+            <h3 className="mt-3 text-3xl font-black text-white">
+              KES {walletBalance.toLocaleString()}
+            </h3>
+            <p className="mt-2 text-xs text-slate-500">
+              Available for payments or withdrawal
+            </p>
+          </div>
+
+          <div className="rounded-3xl bg-slate-900/40 border border-slate-800 p-6 shadow-xl backdrop-blur-md relative overflow-hidden group">
+            <div className="absolute right-6 top-6 text-slate-500/10 group-hover:text-slate-500/20 transition-all">
               <Lock className="w-16 h-16" />
             </div>
             <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
@@ -449,7 +575,7 @@ export default function PaymentsPage() {
               KES {stats.val1.toLocaleString()}
             </h3>
             <p className="mt-2 text-xs text-slate-500 flex items-center gap-1">
-              <Info className="w-3.5 h-3.5 text-orange-500" /> Safe in intermediate bank account
+              <Info className="w-3.5 h-3.5 text-slate-500" /> Safe in intermediate bank account
             </p>
           </div>
 
@@ -642,7 +768,7 @@ export default function PaymentsPage() {
                                 <button
                                   onClick={() => handleReleaseFunds(booking._id)}
                                   disabled={payoutLoadingId === booking._id}
-                                  className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-bold flex items-center justify-center gap-2 text-sm shadow-lg shadow-emerald-600/10 transition"
+                                  className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-bold flex items-center justify-center gap-2 text-sm shadow-lg shadow-emerald-600/10 transition mb-3"
                                 >
                                   {payoutLoadingId === booking._id ? (
                                     <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
@@ -653,13 +779,25 @@ export default function PaymentsPage() {
                                   )}
                                 </button>
                               ) : (
-                                <div className="rounded-xl bg-slate-900 border border-slate-800/60 p-3.5 text-xs text-slate-400 flex gap-2 items-start">
+                                <div className="rounded-xl bg-slate-900 border border-slate-800/60 p-3.5 text-xs text-slate-400 flex gap-2 items-start mb-3">
                                   <Info className="w-4 h-4 text-orange-500 flex-shrink-0 mt-0.5" />
                                   <span>
                                     Funds are safely locked. Once the Fundi completes the task and marks it finished, you can release the payment.
                                   </span>
                                 </div>
                               )}
+
+                              <button
+                                onClick={() => handleRaiseDispute(booking._id)}
+                                disabled={disputeLoadingId === booking._id}
+                                className="w-full py-3 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 border border-rose-500/20 rounded-2xl font-bold flex items-center justify-center gap-2 text-sm transition"
+                              >
+                                {disputeLoadingId === booking._id ? "..." : (
+                                  <>
+                                    <AlertCircle className="w-4 h-4" /> Report Issue (Freeze Escrow)
+                                  </>
+                                )}
+                              </button>
                             </div>
                           </div>
                         );
@@ -1117,6 +1255,156 @@ export default function PaymentsPage() {
               </div>
             )}
 
+          </div>
+        </div>
+      )}
+
+      {/* Wallet Top-Up Modal */}
+      {topUpModalOpen && (
+        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-md flex items-center justify-center z-[100] p-4">
+          <div className="bg-slate-900 border border-slate-850 rounded-[2.5rem] p-8 max-w-md w-full shadow-2xl relative overflow-hidden animate-in zoom-in-95 duration-300">
+            
+            <div className="flex justify-between items-start mb-6">
+              <div>
+                <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                  <Wallet className="w-5 h-5 text-orange-500" /> Top Up Wallet
+                </h3>
+                <p className="text-xs text-slate-400 mt-1">Add funds securely via M-Pesa</p>
+              </div>
+              <button 
+                onClick={() => setTopUpModalOpen(false)}
+                className="p-1 hover:bg-slate-800 text-slate-400 hover:text-white rounded-lg transition"
+              >
+                <XCircle className="w-6 h-6" />
+              </button>
+            </div>
+
+            {topUpStep === "form" && (
+              <form onSubmit={handleInitiateTopUp} className="space-y-5">
+                <div>
+                  <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">
+                    Top-Up Amount (KES)
+                  </label>
+                  <input
+                    type="number"
+                    value={topUpAmount}
+                    onChange={(e) => setTopUpAmount(e.target.value)}
+                    placeholder="Enter amount"
+                    className="w-full px-5 py-4 bg-slate-950 border border-slate-850 rounded-2xl text-white outline-none focus:border-orange-500 font-medium"
+                    required
+                    min="10"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">
+                    M-Pesa Phone Number
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-bold">
+                      <Phone className="w-4 h-4" />
+                    </span>
+                    <input
+                      type="text"
+                      value={topUpPhone}
+                      onChange={(e) => setTopUpPhone(e.target.value)}
+                      placeholder="e.g. 0712345678"
+                      className="w-full pl-12 pr-5 py-4 bg-slate-950 border border-slate-850 rounded-2xl text-white outline-none focus:border-orange-500 font-medium"
+                      required
+                    />
+                  </div>
+                </div>
+
+                {topUpError && (
+                  <div className="p-4 bg-rose-500/10 border border-rose-500/20 text-rose-500 rounded-xl text-xs flex gap-2 items-center">
+                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                    <span>{topUpError}</span>
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={topUpLoading}
+                  className="w-full py-4 bg-orange-500 hover:bg-orange-600 text-white rounded-2xl font-bold flex items-center justify-center gap-2 transition"
+                >
+                  {topUpLoading ? (
+                    <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                  ) : (
+                    <>Add KES {Number(topUpAmount || 0).toLocaleString()} to Wallet</>
+                  )}
+                </button>
+              </form>
+            )}
+
+            {topUpStep === "polling" && (
+              <div className="space-y-6 text-center py-6">
+                <div className="relative w-24 h-24 mx-auto">
+                  <div className="absolute inset-0 rounded-full border-4 border-orange-500/20"></div>
+                  <div className="absolute inset-0 rounded-full border-4 border-orange-500 border-t-transparent animate-spin"></div>
+                  <div className="absolute inset-0 flex items-center justify-center font-bold text-white text-lg">
+                    {pollCountdown}s
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <h4 className="text-lg font-bold text-white">M-Pesa STK Push Sent</h4>
+                  <p className="text-xs text-slate-400 max-w-xs mx-auto leading-relaxed">
+                    We've initiated an M-Pesa request on your phone. Please check your screen, enter your M-Pesa PIN to top up your wallet.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {topUpStep === "success" && (
+              <div className="space-y-6 text-center py-6">
+                <div className="w-20 h-20 bg-emerald-500/10 text-emerald-500 rounded-full flex items-center justify-center text-4xl mx-auto border border-emerald-500/20 animate-bounce">
+                  ✓
+                </div>
+                <div className="space-y-2">
+                  <h4 className="text-xl font-bold text-white">Top-Up Successful!</h4>
+                  <p className="text-xs text-slate-400 max-w-xs mx-auto leading-relaxed">
+                    Your wallet balance has been updated with KES {Number(topUpAmount).toLocaleString()}.
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    setTopUpModalOpen(false);
+                    fetchData();
+                  }}
+                  className="w-full py-3 bg-slate-900 border border-slate-800 hover:bg-slate-800 text-white rounded-2xl font-bold transition text-sm"
+                >
+                  Done
+                </button>
+              </div>
+            )}
+
+            {topUpStep === "failed" && (
+              <div className="space-y-6 text-center py-6">
+                <div className="w-20 h-20 bg-rose-500/10 text-rose-500 rounded-full flex items-center justify-center text-3xl mx-auto border border-rose-500/20">
+                  ✕
+                </div>
+                <div className="space-y-2">
+                  <h4 className="text-xl font-bold text-white">Top-Up Failed</h4>
+                  <p className="text-xs text-rose-450 max-w-xs mx-auto leading-relaxed">
+                    {topUpError || "The transaction request could not be processed. Please try again."}
+                  </p>
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setTopUpStep("form")}
+                    className="flex-1 py-3 bg-slate-900 border border-slate-800 text-white rounded-2xl font-bold transition text-sm"
+                  >
+                    Try Again
+                  </button>
+                  <button
+                    onClick={() => setTopUpModalOpen(false)}
+                    className="flex-1 py-3 bg-slate-850 hover:bg-slate-800 text-slate-350 rounded-2xl font-bold transition text-sm"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

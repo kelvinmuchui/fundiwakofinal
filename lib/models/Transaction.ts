@@ -9,7 +9,8 @@ export interface Transaction {
   clientId: string;                  // Initiating user ID
   fundiId?: string;                  // Only set for booking_escrow transactions
   amount: number;                    // Transaction amount in KES
-  status: 'pending' | 'held' | 'released' | 'refunded' | 'failed' | 'completed';
+  status: 'pending' | 'held' | 'released' | 'refunded' | 'failed' | 'completed' | 'disputed';
+  disputeId?: ObjectId;              // ID of associated dispute if one is raised
 
   // STK Push details
   mpesaPhoneNumber: string;

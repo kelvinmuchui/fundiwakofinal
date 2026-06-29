@@ -127,7 +127,7 @@ export const bookingSchema = z.object({
 export type BookingInput = z.infer<typeof bookingSchema>;
 
 export const bookingStatusUpdateSchema = z.object({
-  status: z.enum(['pending', 'accepted', 'in_progress', 'completed', 'cancelled'], {
+  status: z.enum(['pending', 'accepted', 'in_progress', 'completed', 'cancelled', 'disputed'], {
     errorMap: () => ({ message: 'Invalid status' })
   }),
   notes: z.string().max(500).optional()
@@ -167,6 +167,28 @@ export const identityVerificationSchema = z.object({
 });
 
 export type IdentityVerificationInput = z.infer<typeof identityVerificationSchema>;
+
+// ============= DISPUTE VALIDATION SCHEMAS =============
+
+export const raiseDisputeSchema = z.object({
+  transactionId: z.string().min(1, 'Transaction ID is required'),
+  bookingId: z.string().optional(),
+  reason: z.enum(['work_incomplete', 'poor_quality', 'no_show', 'unresponsive', 'other'], {
+    errorMap: () => ({ message: 'Invalid reason' })
+  }),
+  description: z.string().min(10, 'Description must be at least 10 characters').max(1000),
+  evidenceUrls: z.array(z.string().url('Invalid evidence URL')).max(5, 'Maximum 5 evidence files allowed').optional()
+});
+
+export type RaiseDisputeInput = z.infer<typeof raiseDisputeSchema>;
+
+export const resolveDisputeSchema = z.object({
+  resolutionNotes: z.string().min(10, 'Resolution notes must be at least 10 characters'),
+  status: z.enum(['resolved_refunded', 'resolved_released', 'resolved_split']),
+  splitPercentageClient: z.number().min(0).max(100).optional()
+});
+
+export type ResolveDisputeInput = z.infer<typeof resolveDisputeSchema>;
 
 // ============= UTILITY FUNCTIONS =============
 

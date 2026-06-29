@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { ObjectId } from 'mongodb';
 import { getCollection } from '@/lib/db';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '../../auth/[...nextauth]/route';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { MpesaClient } from '@/lib/mpesa';
 import { decryptDataSafe } from '@/lib/encryption';
 import { logActivity } from '@/lib/activityLogger';
