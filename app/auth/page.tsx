@@ -289,12 +289,11 @@ export default function AuthPage() {
                       {[
                         { value: 'client', label: 'Client', icon: '👤' },
                         { value: 'fundi', label: 'Fundi', icon: '🔧' },
-                        { value: 'admin', label: 'Admin', icon: '⚙️' },
                       ].map((role) => (
                         <button
                           key={role.value}
                           type="button"
-                          onClick={() => setSelectedRole(role.value as 'client' | 'fundi' | 'admin')}
+                          onClick={() => setSelectedRole(role.value as 'client' | 'fundi')}
                           className={`p-4 rounded-lg border-2 text-center transition-all ${
                             selectedRole === role.value
                               ? 'border-primary-600 bg-primary-50'
@@ -445,6 +444,14 @@ export default function AuthPage() {
                     </button>
                   </p>
                 </form>
+              )}
+
+              {activeTab === 'signin' && (
+                <div className="mt-6 text-center">
+                  <Link href="/auth/forgot-password" className="text-sm text-primary-600 hover:underline">
+                    Forgot your password?
+                  </Link>
+                </div>
               )}
             </div>
           </div>

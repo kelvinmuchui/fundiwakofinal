@@ -10,18 +10,18 @@ const footerLinks = {
         { name: "Cleaning", href: "#" },
     ],
     company: [
-        { name: "About Us", href: "#" },
+        { name: "About Us", href: "/" },
         { name: "How It Works", href: "#how-it-works" },
-        { name: "Pricing", href: "#" },
+        { name: "Pricing", href: "/pricing" },
         { name: "Careers", href: "/hire-fundis" },
-        { name: "Blog", href: "#" },
+        { name: "Blog", href: "/blog" },
     ],
     support: [
-        { name: "Help Center", href: "#" },
-        { name: "Safety", href: "#" },
-        { name: "Terms of Service", href: "#" },
-        { name: "Privacy Policy", href: "#" },
-        { name: "Contact Us", href: "#" },
+        { name: "Help Center", href: "/faq" },
+        { name: "Safety", href: "/faq" },
+        { name: "Terms of Service", href: "/legal/terms" },
+        { name: "Privacy Policy", href: "/legal/privacy-policy" },
+        { name: "Contact Us", href: "/contact" },
     ],
 };
 

@@ -93,6 +93,7 @@ export default function PaymentsPage() {
   const [quoteInputId, setQuoteInputId] = useState<string | null>(null);
   const [quoteValue, setQuoteValue] = useState("");
   const [updatingQuoteId, setUpdatingQuoteId] = useState<string | null>(null);
+  const [jobActionLoadingId, setJobActionLoadingId] = useState<string | null>(null);
   const [isMockMode, setIsMockMode] = useState(false);
 
   // Wallet Top-Up State
@@ -402,13 +403,43 @@ export default function PaymentsPage() {
     }
   };
 
+  // Fundi updates job status to in_progress
+  const handleMarkInProgress = async (bookingId: string) => {
+    if (!confirm("Mark this job as started? This lets the client know work is now in progress.")) {
+      return;
+    }
+
+    setJobActionLoadingId(bookingId);
+    try {
+      const res = await fetch("/api/bookings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          bookingId,
+          status: "in_progress",
+        }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Failed to update status");
+      }
+
+      fetchData();
+    } catch (error: any) {
+      alert(error.message);
+    } finally {
+      setJobActionLoadingId(null);
+    }
+  };
+
   // Fundi updates job status to completed
   const handleMarkCompleted = async (bookingId: string) => {
     if (!confirm("Have you completed the work? This will notify the client to release the payment.")) {
       return;
     }
 
-    setUpdatingQuoteId(bookingId);
+    setJobActionLoadingId(bookingId);
     try {
       const res = await fetch("/api/bookings", {
         method: "PATCH",
@@ -428,7 +459,7 @@ export default function PaymentsPage() {
     } catch (error: any) {
       alert(error.message);
     } finally {
-      setUpdatingQuoteId(null);
+      setJobActionLoadingId(null);
     }
   };
 
@@ -554,7 +585,7 @@ export default function PaymentsPage() {
             <div className="absolute right-6 top-6 text-orange-500/10 group-hover:text-orange-500/20 transition-all">
               <Wallet className="w-16 h-16" />
             </div>
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider text-orange-500">
+            <p className="text-xs font-semibold uppercase tracking-wider text-orange-500">
               My Wallet Balance
             </p>
             <h3 className="mt-3 text-3xl font-black text-white">
@@ -682,11 +713,14 @@ export default function PaymentsPage() {
                                 <h3 className="text-lg font-bold text-white mt-2">
                                   Artisan: {booking.fundi?.name || "Professional"}
                                 </h3>
+                                <div className="mt-3 inline-flex items-center rounded-full bg-orange-500/10 text-orange-200 text-[10px] font-semibold uppercase tracking-wider px-3 py-1">
+                                  Quote accepted — pay escrow
+                                </div>
                               </div>
                               <div className="text-right">
                                 <p className="text-[10px] text-slate-500 uppercase tracking-widest font-black">Agreed Quote</p>
                                 <p className="text-xl font-black text-orange-500">
-                                  KES {booking.quoteAmount || "1,000" || "1,000"}
+                                  KES {booking.quoteAmount?.toLocaleString() ?? "1,000"}
                                 </p>
                               </div>
                             </div>
@@ -726,7 +760,7 @@ export default function PaymentsPage() {
                         return (
                           <div key={booking._id} className="rounded-3xl bg-slate-900/30 border border-slate-800/80 p-6 flex flex-col justify-between hover:border-slate-700 transition relative overflow-hidden">
                             <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-bl-full flex items-center justify-center text-emerald-500/20">
-                              <Lock className="w-6 h-6 mr-[-10px] mt-[-10px]" />
+                              <Lock className="w-6 h-6 -mr-2.5 -mt-2.5" />
                             </div>
 
                             <div>
@@ -736,17 +770,30 @@ export default function PaymentsPage() {
                                     <span className="bg-slate-800 text-slate-300 text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-md">
                                       {booking.serviceType}
                                     </span>
-                                    <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-md flex items-center gap-1 ${
-                                      isCompleted 
+                                    <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-md inline-flex items-center gap-1 ${
+                                      booking.status === "completed"
                                         ? "bg-emerald-500/10 text-emerald-500"
+                                        : booking.status === "in_progress"
+                                        ? "bg-sky-500/10 text-sky-400"
                                         : "bg-amber-500/10 text-amber-500"
                                     }`}>
-                                      {isCompleted ? "Completed (Ready)" : "In Progress (Working)"}
+                                      {booking.status === "completed"
+                                        ? "Completed"
+                                        : booking.status === "in_progress"
+                                        ? "Work In Progress"
+                                        : "Escrowed / Awaiting Start"}
                                     </span>
                                   </div>
                                   <h3 className="text-lg font-bold text-white mt-2">
                                     Artisan: {booking.fundi?.name || "Professional"}
                                   </h3>
+                                  <div className="mt-3 inline-flex items-center rounded-full bg-slate-900/60 text-slate-200 text-[10px] uppercase tracking-wider px-3 py-1">
+                                    {booking.status === "completed"
+                                      ? "Ready for payout"
+                                      : booking.status === "in_progress"
+                                      ? "Work in progress"
+                                      : "Awaiting start"}
+                                  </div>
                                 </div>
                                 <div className="text-right">
                                   <p className="text-[10px] text-slate-500 uppercase tracking-widest font-black">Escrowed</p>
@@ -759,7 +806,7 @@ export default function PaymentsPage() {
                               <p className="mt-3 text-slate-400 text-xs line-clamp-2">{booking.description}</p>
                               
                               <div className="mt-4 pt-4 border-t border-slate-800/50 flex flex-wrap gap-x-4 gap-y-2 text-[11px] text-slate-500">
-                                <p>M-Pesa Status: <span className="text-emerald-500 font-semibold flex items-center gap-1 inline-flex"><CheckCircle className="w-3 h-3" /> Secured</span></p>
+                                <p>M-Pesa Status: <span className="text-emerald-500 font-semibold inline-flex items-center gap-1"><CheckCircle className="w-3 h-3" /> Secured</span></p>
                                 <p>Phone: <span className="text-slate-300">{booking.fundi?.phone}</span></p>
                               </div>
                             </div>
@@ -781,7 +828,7 @@ export default function PaymentsPage() {
                                 </button>
                               ) : (
                                 <div className="rounded-xl bg-slate-900 border border-slate-800/60 p-3.5 text-xs text-slate-400 flex gap-2 items-start mb-3">
-                                  <Info className="w-4 h-4 text-orange-500 flex-shrink-0 mt-0.5" />
+                                  <Info className="w-4 h-4 text-orange-500 shrink-0 mt-0.5" />
                                   <span>
                                     Funds are safely locked. Once the Fundi completes the task and marks it finished, you can release the payment.
                                   </span>
@@ -860,7 +907,7 @@ export default function PaymentsPage() {
                                   <button
                                     onClick={() => handleAcceptWithQuote(booking._id)}
                                     disabled={updatingQuoteId === booking._id}
-                                    className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-xs font-bold transition flex items-center justify-center min-w-[80px]"
+                                    className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-xs font-bold transition flex items-center justify-center min-w-20"
                                   >
                                     {updatingQuoteId === booking._id ? "..." : "Accept"}
                                   </button>
@@ -890,7 +937,57 @@ export default function PaymentsPage() {
                   )}
                 </section>
 
-                {/* 2. Active Escrows - Funded & In-Progress */}
+                {/* 2. Accepted Bookings Awaiting Escrow Payment */}
+                <section className="mt-12">
+                  <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-amber-500" /> Accepted Jobs Awaiting Client Payment
+                  </h2>
+
+                  {bookings.filter(b => b.status === "accepted" && (!b.paymentStatus || b.paymentStatus === "unpaid")).length === 0 ? (
+                    <div className="rounded-3xl bg-slate-900/10 border border-slate-900 border-dashed p-10 text-center text-slate-500 text-sm">
+                      No accepted jobs are currently waiting for client escrow payment.
+                    </div>
+                  ) : (
+                    <div className="grid gap-6 md:grid-cols-2">
+                      {bookings.filter(b => b.status === "accepted" && (!b.paymentStatus || b.paymentStatus === "unpaid")).map((booking) => (
+                        <div key={booking._id} className="rounded-3xl bg-slate-900/30 border border-slate-800/80 p-6 flex flex-col justify-between hover:border-slate-700 transition">
+                          <div>
+                            <div className="flex justify-between items-start gap-4">
+                              <div>
+                                <span className="bg-slate-800 text-slate-300 text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-md">
+                                  {booking.serviceType}
+                                </span>
+                                <h3 className="text-lg font-bold text-white mt-2">
+                                  Client: {booking.client?.name || "Valued Client"}
+                                </h3>
+                                <div className="mt-3 inline-flex items-center rounded-full bg-amber-500/10 text-amber-300 text-[10px] uppercase tracking-wider px-3 py-1">
+                                  Accepted — awaiting escrow funding
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <p className="text-[10px] text-slate-500 uppercase tracking-widest font-black">Quoted Amount</p>
+                                <p className="text-xl font-black text-amber-400">
+                                  KES {booking.quoteAmount?.toLocaleString() ?? "—"}
+                                </p>
+                              </div>
+                            </div>
+                            <p className="mt-3 text-slate-400 text-xs line-clamp-2">{booking.description}</p>
+                            <div className="mt-4 pt-4 border-t border-slate-800/50 flex flex-wrap gap-x-4 gap-y-2 text-[11px] text-slate-500">
+                              <p>Date: <span className="text-slate-300 font-semibold">{new Date(booking.preferredDate).toLocaleDateString()}</span></p>
+                              <p>Location: <span className="text-slate-300 font-semibold">{booking.location}</span></p>
+                            </div>
+                          </div>
+
+                          <div className="mt-6 rounded-xl bg-slate-900 border border-slate-800/60 p-3.5 text-xs text-slate-400">
+                            The client still needs to pay the agreed quote into escrow. The job will move to active escrow once payment is confirmed.
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </section>
+
+                {/* 3. Active Escrows - Funded & In-Progress */}
                 <section className="mt-12">
                   <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-emerald-500" /> Active Jobs (Escrow Funded)
@@ -907,7 +1004,7 @@ export default function PaymentsPage() {
                         return (
                           <div key={booking._id} className="rounded-3xl bg-slate-900/30 border border-slate-800/80 p-6 flex flex-col justify-between hover:border-slate-700 transition relative overflow-hidden">
                             <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-bl-full flex items-center justify-center text-emerald-500/20">
-                              <Lock className="w-6 h-6 mr-[-10px] mt-[-10px]" />
+                              <Lock className="w-6 h-6 -mr-2.5 -mt-2.5" />
                             </div>
 
                             <div>
@@ -917,17 +1014,30 @@ export default function PaymentsPage() {
                                     <span className="bg-slate-800 text-slate-300 text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-md">
                                       {booking.serviceType}
                                     </span>
-                                    <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-md flex items-center gap-1 ${
-                                      isCompleted 
+                                    <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-md inline-flex items-center gap-1 ${
+                                      booking.status === "completed"
                                         ? "bg-emerald-500/10 text-emerald-500"
+                                        : booking.status === "in_progress"
+                                        ? "bg-sky-500/10 text-sky-400"
                                         : "bg-amber-500/10 text-amber-500"
                                     }`}>
-                                      {isCompleted ? "Completed" : "Active (Escrowed)"}
+                                      {booking.status === "completed"
+                                        ? "Completed"
+                                        : booking.status === "in_progress"
+                                        ? "Work In Progress"
+                                        : "Escrowed / Awaiting Start"}
                                     </span>
                                   </div>
                                   <h3 className="text-lg font-bold text-white mt-2">
                                     Client: {booking.client?.name || "Valued Client"}
                                   </h3>
+                                  <div className="mt-3 inline-flex items-center rounded-full bg-slate-900/60 text-slate-200 text-[10px] uppercase tracking-wider px-3 py-1">
+                                    {booking.status === "completed"
+                                      ? "Ready to be released"
+                                      : booking.status === "in_progress"
+                                      ? "Service ongoing"
+                                      : "Escrowed — awaiting start"}
+                                  </div>
                                 </div>
                                 <div className="text-right">
                                   <p className="text-[10px] text-slate-500 uppercase tracking-widest font-black">Escrow Wallet</p>
@@ -948,23 +1058,47 @@ export default function PaymentsPage() {
                             <div className="mt-6">
                               {isCompleted ? (
                                 <div className="rounded-xl bg-emerald-950/20 border border-emerald-900/30 p-4 text-xs text-slate-400 flex gap-2 items-start">
-                                  <CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5 animate-pulse" />
+                                  <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5 animate-pulse" />
                                   <span>
                                     You have completed the work. Client has been notified to release the KES {booking.quoteAmount} payment directly to your M-Pesa.
                                   </span>
                                 </div>
+                              ) : booking.status === "accepted" ? (
+                                <button
+                                  onClick={() => handleMarkInProgress(booking._id)}
+                                  disabled={jobActionLoadingId === booking._id}
+                                  className="w-full py-3 bg-sky-500 hover:bg-sky-600 text-white rounded-2xl text-xs font-bold transition flex items-center justify-center gap-1.5 mb-3"
+                                >
+                                  {jobActionLoadingId === booking._id ? "..." : (
+                                    <>
+                                      <Clock className="w-4 h-4" /> Mark Job as Started
+                                    </>
+                                  )}
+                                </button>
                               ) : (
                                 <button
                                   onClick={() => handleMarkCompleted(booking._id)}
-                                  disabled={updatingQuoteId === booking._id}
+                                  disabled={jobActionLoadingId === booking._id}
                                   className="w-full py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-2xl text-xs font-bold transition flex items-center justify-center gap-1.5"
                                 >
-                                  {updatingQuoteId === booking._id ? "..." : (
+                                  {jobActionLoadingId === booking._id ? "..." : (
                                     <>
                                       <CheckCircle className="w-4 h-4" /> Mark Job as Completed
                                     </>
                                   )}
                                 </button>
+                              )}
+
+                              {booking.status === "accepted" && (
+                                <p className="mt-3 text-[11px] text-slate-400">
+                                  Work has been funded but not started. Tap "Mark Job as Started" once you begin the task.
+                                </p>
+                              )}
+
+                              {booking.status === "in_progress" && (
+                                <p className="mt-3 text-[11px] text-slate-400">
+                                  Job is in progress. Once the work is finished, tap "Mark Job as Completed" so the client can release escrow funds.
+                                </p>
                               )}
                             </div>
                           </div>
@@ -1070,7 +1204,7 @@ export default function PaymentsPage() {
 
       {/* Payment STK Push Modal / Drawer */}
       {paymentModalOpen && selectedBooking && (
-        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-md flex items-center justify-center z-[100] p-4">
+        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-md flex items-center justify-center z-100 p-4">
           <div className="bg-slate-900 border border-slate-850 rounded-[2.5rem] p-8 max-w-md w-full shadow-2xl relative overflow-hidden animate-in zoom-in-95 duration-300">
             
             {/* Header */}
@@ -1135,7 +1269,7 @@ export default function PaymentsPage() {
 
                 {paymentError && (
                   <div className="p-4 bg-rose-500/10 border border-rose-500/20 text-rose-500 rounded-xl text-xs flex gap-2 items-center">
-                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                    <AlertCircle className="w-4 h-4 shrink-0" />
                     <span>{paymentError}</span>
                   </div>
                 )}
@@ -1262,7 +1396,7 @@ export default function PaymentsPage() {
 
       {/* Wallet Top-Up Modal */}
       {topUpModalOpen && (
-        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-md flex items-center justify-center z-[100] p-4">
+        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-md flex items-center justify-center z-100 p-4">
           <div className="bg-slate-900 border border-slate-850 rounded-[2.5rem] p-8 max-w-md w-full shadow-2xl relative overflow-hidden animate-in zoom-in-95 duration-300">
             
             <div className="flex justify-between items-start mb-6">
@@ -1318,7 +1452,7 @@ export default function PaymentsPage() {
 
                 {topUpError && (
                   <div className="p-4 bg-rose-500/10 border border-rose-500/20 text-rose-500 rounded-xl text-xs flex gap-2 items-center">
-                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                    <AlertCircle className="w-4 h-4 shrink-0" />
                     <span>{topUpError}</span>
                   </div>
                 )}
