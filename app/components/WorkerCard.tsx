@@ -102,6 +102,10 @@ export default function WorkerCard({ worker, workerId }: WorkerCardProps) {
           </div>
         )}
 
+        <p className="mt-5 text-sm leading-6 text-neutral-500">
+          Quotes are sent quickly after booking. Secure escrow payment becomes available once the fundi accepts your request.
+        </p>
+
         <div className="mt-auto pt-6 border-t border-neutral-100">
           <div className="grid gap-3 sm:grid-cols-3">
             <Link

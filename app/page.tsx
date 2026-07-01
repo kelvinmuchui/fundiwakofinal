@@ -139,7 +139,7 @@ export default async function Home() {
                   </div>
                   <div>
                     <h4 className="text-xl font-heading font-bold text-secondary-500 mb-2">Get it Done</h4>
-                    <p className="text-neutral-500">The fundi completes the job. Pay securely through our platform and leave a review.</p>
+                    <p className="text-neutral-500">The fundi completes the job. Pay securely through escrow, confirm the work, and leave a review.</p>
                   </div>
                 </div>
               </div>

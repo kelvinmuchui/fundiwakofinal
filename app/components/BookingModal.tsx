@@ -139,6 +139,7 @@ export default function BookingModal({ fundiId, fundiName, isOpen, onClose }: Bo
                     placeholder="e.g., My kitchen sink is leaking and needs a pipe replacement..."
                     className="w-full px-5 py-4 bg-neutral-50 border-2 border-neutral-100 rounded-2xl focus:border-primary-500 focus:bg-white outline-none transition-all font-medium text-secondary-900 min-h-[100px]"
                     required
+                    disabled={isSubmitting}
                   />
                 </div>
 
@@ -153,6 +154,7 @@ export default function BookingModal({ fundiId, fundiName, isOpen, onClose }: Bo
                     className="w-full px-5 py-4 bg-neutral-50 border-2 border-neutral-100 rounded-2xl focus:border-primary-500 focus:bg-white outline-none transition-all font-medium text-secondary-900"
                     min={new Date().toISOString().split('T')[0]}
                     required
+                    disabled={isSubmitting}
                   />
                 </div>
 
@@ -165,6 +167,7 @@ export default function BookingModal({ fundiId, fundiName, isOpen, onClose }: Bo
                     onChange={(e) => setPreferredTime(e.target.value)}
                     className="w-full px-5 py-4 bg-neutral-50 border-2 border-neutral-100 rounded-2xl focus:border-primary-500 focus:bg-white outline-none transition-all font-medium text-secondary-900"
                     required
+                    disabled={isSubmitting}
                   >
                     <option value="">Select Time</option>
                     <option value="morning">Morning (8AM - 12PM)</option>
@@ -184,6 +187,7 @@ export default function BookingModal({ fundiId, fundiName, isOpen, onClose }: Bo
                     placeholder="Estate, House Number, or City"
                     className="w-full px-5 py-4 bg-neutral-50 border-2 border-neutral-100 rounded-2xl focus:border-primary-500 focus:bg-white outline-none transition-all font-medium text-secondary-900"
                     required
+                    disabled={isSubmitting}
                   />
                 </div>
               </div>
@@ -192,23 +196,26 @@ export default function BookingModal({ fundiId, fundiName, isOpen, onClose }: Bo
                 <button
                   type="button"
                   onClick={onClose}
-                  className="flex-1 py-4 px-6 border-2 border-neutral-100 text-neutral-500 rounded-2xl hover:bg-neutral-50 transition-all font-bold"
+                  className="flex-1 py-4 px-6 border-2 border-neutral-100 text-neutral-500 rounded-2xl hover:bg-neutral-50 transition-all font-bold disabled:cursor-not-allowed disabled:opacity-70"
                   disabled={isSubmitting}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex-[2] py-4 px-6 bg-primary-600 text-white rounded-2xl font-heading font-black text-lg hover:bg-primary-500 transition-all shadow-xl shadow-primary-600/20 flex items-center justify-center gap-2"
+                  className="flex-[2] py-4 px-6 bg-primary-600 text-white rounded-2xl font-heading font-black text-lg hover:bg-primary-500 transition-all shadow-xl shadow-primary-600/20 flex items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-70"
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? (
                     <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                   ) : (
-                    <>Send Request</>
+                    <>Request Quote</>
                   )}
                 </button>
               </div>
+              <p className="mt-4 text-xs text-neutral-400">
+                The fundi will review this request and reply with a quote. After quote approval, you can pay into escrow and track the job until completion.
+              </p>
             </form>
           </>
         )}

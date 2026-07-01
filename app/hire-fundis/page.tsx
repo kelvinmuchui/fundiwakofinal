@@ -34,6 +34,59 @@ export default function HireFundisPage() {
         <div className="container-max">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-heading font-bold text-secondary-600">
+              Hire with confidence, pay with escrow, and track every job
+            </h2>
+            <p className="text-neutral-500 max-w-2xl mx-auto mt-4">
+              FundiWako makes it easy for businesses to hire trusted artisans and for fundis to get reliable work.
+              The entire process is designed around clear quotes, escrow-secured payment, and simple progress tracking.
+            </p>
+          </div>
+
+          <div className="grid gap-8 lg:grid-cols-4 mb-16">
+            <div className="rounded-4xl bg-white p-8 shadow-lg border border-neutral-200">
+              <span className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-primary-100 text-primary-700 font-bold mb-5">
+                1
+              </span>
+              <h3 className="text-2xl font-semibold text-secondary-700 mb-3">Request a Service</h3>
+              <p className="text-neutral-500 leading-relaxed">
+                Tell us what you need and submit a booking request in minutes.
+              </p>
+            </div>
+            <div className="rounded-4xl bg-white p-8 shadow-lg border border-neutral-200">
+              <span className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-accent-100 text-accent-700 font-bold mb-5">
+                2
+              </span>
+              <h3 className="text-2xl font-semibold text-secondary-700 mb-3">Get a Quote</h3>
+              <p className="text-neutral-500 leading-relaxed">
+                The artisan reviews your request and sends an agreed price for approval.
+              </p>
+            </div>
+            <div className="rounded-4xl bg-white p-8 shadow-lg border border-neutral-200">
+              <span className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-secondary-100 text-secondary-700 font-bold mb-5">
+                3
+              </span>
+              <h3 className="text-2xl font-semibold text-secondary-700 mb-3">Secure Escrow</h3>
+              <p className="text-neutral-500 leading-relaxed">
+                Pay the agreed amount into escrow so the artisan can start work safely.
+              </p>
+            </div>
+            <div className="rounded-4xl bg-white p-8 shadow-lg border border-neutral-200">
+              <span className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-emerald-100 text-emerald-700 font-bold mb-5">
+                4
+              </span>
+              <h3 className="text-2xl font-semibold text-secondary-700 mb-3">Track & Release</h3>
+              <p className="text-neutral-500 leading-relaxed">
+                Monitor progress, confirm the job, then release payment once you're satisfied.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-neutral-50 section-padding">
+        <div className="container-max">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-heading font-bold text-secondary-600">
               A bridge between emerging artisans and growing businesses
             </h2>
             <p className="text-neutral-500 max-w-2xl mx-auto mt-4">
