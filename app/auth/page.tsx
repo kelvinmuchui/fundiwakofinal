@@ -257,7 +257,7 @@ export default function AuthPage() {
                   <button
                     type="submit"
                     disabled={isLoading}
-                    className="w-full bg-primary-600 hover:bg-primary-700 text-white font-medium py-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isLoading ? 'Signing in...' : 'Sign In'}
                   </button>
@@ -267,7 +267,7 @@ export default function AuthPage() {
                     <button
                       type="button"
                       onClick={() => setActiveTab('signup')}
-                      className="text-primary-600 hover:text-primary-700 font-medium"
+                      className="text-yellow-600 hover:text-yellow-700 font-medium"
                     >
                       Sign up
                     </button>
@@ -428,7 +428,7 @@ export default function AuthPage() {
                   <button
                     type="submit"
                     disabled={isLoading || !selectedRole}
-                    className="w-full bg-primary-600 hover:bg-primary-700 text-white font-medium py-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isLoading ? 'Creating account...' : 'Create Account'}
                   </button>
@@ -438,7 +438,7 @@ export default function AuthPage() {
                     <button
                       type="button"
                       onClick={() => setActiveTab('signin')}
-                      className="text-primary-600 hover:text-primary-700 font-medium"
+                      className="text-yellow-600 hover:text-yellow-700 font-medium"
                     >
                       Sign in
                     </button>

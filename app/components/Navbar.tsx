@@ -6,8 +6,8 @@ import { useSession, signOut } from "next-auth/react";
 import { usePathname } from "next/navigation";
 
 const navLinks = [
-    { name: "Home", href: "#" },
-    { name: "Categories", href: "/categories" },
+    { name: "Home", href: "/" },
+    { name: "Internship", href: "/internship" },
     { name: "Hire Fundis", href: "/hire-fundis" },
     { name: "Pricing", href: "/pricing" },
     { name: "FAQ", href: "/faq" },

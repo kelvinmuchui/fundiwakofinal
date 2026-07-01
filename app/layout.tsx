@@ -35,11 +35,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="scroll-smooth" suppressHydrationWarning>
-      <body className="font-body antialiased">
+    <html lang="en" className="scroll-smooth overflow-x-hidden" suppressHydrationWarning>
+      <body className="font-body antialiased overflow-x-hidden">
         <Providers>
           <Navbar />
-          <main className="pt-28">{children}</main>
+          <main className="pt-28 overflow-x-hidden">{children}</main>
           <Footer />
         </Providers>
       </body>
