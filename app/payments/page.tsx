@@ -38,6 +38,7 @@ interface Booking {
     skill: string;
     phone: string;
     photoURL?: string;
+    hourlyRate?: string;
   } | null;
   client: {
     _id?: string;
@@ -685,7 +686,7 @@ export default function PaymentsPage() {
                               <div className="text-right">
                                 <p className="text-[10px] text-slate-500 uppercase tracking-widest font-black">Agreed Quote</p>
                                 <p className="text-xl font-black text-orange-500">
-                                  KES {booking.quoteAmount || booking.fundi?.hourlyRate || "1,000"}
+                                  KES {booking.quoteAmount || "1,000" || "1,000"}
                                 </p>
                               </div>
                             </div>
@@ -1172,7 +1173,7 @@ export default function PaymentsPage() {
                 </div>
 
                 {/* Simulated action panel in Mock/Sandbox Mode */}
-                {MpesaClient.isMockMode() && (
+                {isMockMode && (
                   <div className="pt-4 border-t border-slate-850 mt-6 space-y-3 bg-slate-950/40 p-4 rounded-2xl">
                     <p className="text-[10px] text-amber-500 font-bold uppercase tracking-wider">Dev Sandbox Actions</p>
                     <div className="flex gap-2">

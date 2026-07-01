@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
-import { getCollection } from '@/lib/mongodb';
+import { getCollection } from '@/lib/db';
 import { ObjectId } from 'mongodb';
 
 export async function GET(req: NextRequest) {
@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
 
     const { searchParams } = new URL(req.url);
     const status = searchParams.get('status');
-    const role = session.user.role;
+    const role = (session.user as any).role;
 
     const disputesCollection = await getCollection('disputes');
     let query: any = {};
@@ -21,8 +21,8 @@ export async function GET(req: NextRequest) {
     // Admin can see all, users only see theirs
     if (role !== 'admin') {
       query.$or = [
-        { raisedBy: session.user.id },
-        { against: session.user.id }
+        { raisedBy: (session.user as any).id },
+        { against: (session.user as any).id }
       ];
     }
 

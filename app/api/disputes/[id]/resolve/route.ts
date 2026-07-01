@@ -1,21 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
-import { getCollection } from '@/lib/mongodb';
+import { getCollection } from '@/lib/db';
 import { resolveDisputeSchema, getValidationErrorMessages } from '@/lib/validation';
 import { ObjectId } from 'mongodb';
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user || session.user.role !== 'admin') {
+    if (!session?.user || (session.user as any).role !== 'admin') {
       return NextResponse.json({ error: 'Unauthorized. Admin access required.' }, { status: 401 });
     }
 
-    const disputeId = params.id;
+    const { id: disputeId } = await params;
     if (!disputeId) {
       return NextResponse.json({ error: 'Dispute ID is required' }, { status: 400 });
     }
@@ -50,7 +50,7 @@ export async function PATCH(
         $set: {
           status,
           resolutionNotes,
-          adminAssignedId: session.user.id,
+          adminAssignedId: (session.user as any).id,
           resolvedAt: new Date(),
           updatedAt: new Date()
         }

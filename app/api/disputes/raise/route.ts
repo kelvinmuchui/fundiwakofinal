@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
-import { getCollection } from '@/lib/mongodb';
+import { getCollection } from '@/lib/db';
 import { raiseDisputeSchema, getValidationErrorMessages } from '@/lib/validation';
 import { ObjectId } from 'mongodb';
 
@@ -36,12 +36,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Only held escrow funds can be disputed' }, { status: 400 });
     }
 
+    const userId = (session.user as any).id;
+
     // Verify user is part of the transaction
-    if (transaction.clientId !== session.user.id && transaction.fundiId !== session.user.id) {
+    if (transaction.clientId !== userId && transaction.fundiId !== userId) {
       return NextResponse.json({ error: 'Unauthorized to dispute this transaction' }, { status: 403 });
     }
 
-    const againstUser = session.user.id === transaction.clientId ? transaction.fundiId : transaction.clientId;
+    const againstUser = userId === transaction.clientId ? transaction.fundiId : transaction.clientId;
 
     const disputesCollection = await getCollection('disputes');
     
@@ -54,7 +56,7 @@ export async function POST(req: NextRequest) {
     const newDispute = {
       transactionId: new ObjectId(transactionId),
       bookingId: bookingId ? new ObjectId(bookingId) : undefined,
-      raisedBy: session.user.id,
+      raisedBy: userId,
       against: againstUser,
       reason,
       description,

@@ -11,7 +11,16 @@ export type ActivityType =
   | 'milestone_reached'
   | 'rating_received'
   | 'booking_created'
-  | 'booking_status_updated';
+  | 'booking_status_updated'
+  | 'wallet_topup_success'
+  | 'wallet_topup_failed'
+  | 'wallet_topup_initiated'
+  | 'payment_success'
+  | 'payment_failed'
+  | 'payment_initiated'
+  | 'payment_released'
+  | 'payment_received'
+  | 'job_activated';
 
 export interface Activity {
   _id?: ObjectId;
