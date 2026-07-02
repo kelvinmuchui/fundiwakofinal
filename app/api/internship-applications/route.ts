@@ -23,21 +23,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(applications);
     }
 
-    if (user.role === 'client') {
-      const postings = await postingsCollection
-        .find<{ _id?: string }>({ submittedBy: user.id, postingType: 'internship' })
-        .toArray();
-
-      const postingIds = postings
-        .map((post) => post._id?.toString())
-        .filter(Boolean);
-
-      if (postingIds.length === 0) {
-        return NextResponse.json([]);
-      }
-
+    if (user.role === 'client' || user.role === 'fundi') {
       const applications = await internshipApplications
-        .find({ postingId: { $in: postingIds } })
+        .find({ createdBy: user.id })
         .sort({ submittedAt: -1 })
         .toArray();
 

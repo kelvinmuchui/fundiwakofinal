@@ -132,9 +132,9 @@ export default function InternshipPage() {
             </svg>
             Back
           </Link>
-          <h1 className="text-3xl font-bold text-secondary-900">Explore Internship Opportunities</h1>
+          <h1 className="text-3xl font-bold text-secondary-900">Explore TVET, Internship and Corporate Opportunities</h1>
           <p className="mt-2 text-neutral-600 max-w-2xl">
-            Browse live internships from corporates and submit a targeted application directly through FundiWako.
+            Browse live TVET placements, internships, and corporate opportunities and submit a targeted application directly through FundiWako.
           </p>
         </div>
       </div>
@@ -143,7 +143,7 @@ export default function InternshipPage() {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-10">
           <div>
             <h2 className="text-2xl font-semibold text-secondary-900">Available internships</h2>
-            <p className="text-neutral-500">Only approved internship postings are shown here.</p>
+            <p className="text-neutral-500">All internship postings are shown here, including entries still awaiting review.</p>
           </div>
           <div className="flex gap-2">
             <button
@@ -336,7 +336,7 @@ export default function InternshipPage() {
                     name="motivation"
                     value={formData.motivation}
                     onChange={handleInputChange}
-                    className="mt-2 block w-full rounded-3xl border border-neutral-200 px-4 py-3 text-sm focus:border-orange-500 focus:outline-none min-h-[140px]"
+                    className="mt-2 block min-h-36 w-full rounded-3xl border border-neutral-200 px-4 py-3 text-sm focus:border-orange-500 focus:outline-none"
                     required
                   />
                 </label>

@@ -12,10 +12,10 @@ export default function HireFundisPage() {
               Talent Hub
             </p>
             <h1 className="text-4xl sm:text-5xl font-heading font-extrabold text-secondary-700 mb-6">
-              Internship and Corporate Recruitment for Fundis
+              TVET, Internship and Corporate Recruitment for Fundis
             </h1>
             <p className="text-lg text-neutral-600 max-w-2xl leading-relaxed mb-8">
-              Give skilled fundis a chance to grow with internship opportunities while corporates hire, recruit,
+              Give skilled fundis a chance to grow through TVET partnerships, internships, and practical placements while corporates hire, recruit,
               and retain the right artisans for long-term projects.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
@@ -90,7 +90,7 @@ export default function HireFundisPage() {
               A bridge between emerging artisans and growing businesses
             </h2>
             <p className="text-neutral-500 max-w-2xl mx-auto mt-4">
-              Whether you are a fundi seeking hands-on internship experience or a corporate partner
+              Whether you are a fundi seeking hands-on internship experience, a training institution launching TVET placements, or a corporate partner
               looking to hire reliable talent, FundiWako helps you connect with confidence.
             </p>
           </div>
@@ -110,9 +110,9 @@ export default function HireFundisPage() {
               <span className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-accent-100 text-accent-700 font-bold mb-5">
                 2
               </span>
-              <h3 className="text-2xl font-semibold text-secondary-700 mb-3">Corporate Hiring</h3>
+              <h3 className="text-2xl font-semibold text-secondary-700 mb-3">TVET & Corporate Hiring</h3>
               <p className="text-neutral-500 leading-relaxed">
-                Post openings, discover ready-to-work artisans, and hire local talent for maintenance, construction, and facilities work.
+                Post TVET placements, internships, or full hiring needs and connect with ready-to-work artisans for maintenance, construction, and facilities work.
               </p>
             </div>
 

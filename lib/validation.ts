@@ -70,7 +70,7 @@ export const corporatePostingSchema = z.object({
   contactPhone: z.string().min(7, 'Invalid phone number').max(20, 'Invalid phone number'),
   companyWebsite: z.string().url('Invalid website URL').optional().or(z.literal('')),
   location: z.string().min(3, 'Location must be at least 3 characters'),
-  postingType: z.enum(['internship', 'corporate_hire', 'recruitment'], {
+  postingType: z.enum(['internship', 'corporate_hire', 'recruitment', 'tvet'], {
     errorMap: () => ({ message: 'Invalid request type' })
   }),
   serviceCategory: z.enum(['plumbing', 'electrical', 'carpentry', 'painting', 'masonry', 'cleaning', 'general'], {

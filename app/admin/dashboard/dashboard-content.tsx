@@ -56,9 +56,15 @@ interface InternshipApplication {
   _id: string;
   applicantName: string;
   applicantEmail: string;
+  applicantPhone?: string;
   postingCompany: string;
+  postingCategory?: string;
+  postingLocation?: string;
   institution: string;
   yearOfStudy: string;
+  areaOfInterest?: string;
+  motivation?: string;
+  resumeUrl?: string;
   status: string;
   submittedAt: string;
 }
@@ -73,6 +79,7 @@ export default function AdminDashboardContent() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [selectedApp, setSelectedApp] = useState<WorkerApplication | null>(null);
   const [selectedPost, setSelectedPost] = useState<CorporatePosting | null>(null);
+  const [selectedInternshipApplication, setSelectedInternshipApplication] = useState<InternshipApplication | null>(null);
   const [postings, setPostings] = useState<CorporatePosting[]>([]);
   const [internshipApplications, setInternshipApplications] = useState<InternshipApplication[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -186,6 +193,32 @@ export default function AdminDashboardContent() {
     } catch (error) {
       console.error('Error updating posting:', error);
       setErrorMessage('Error updating posting. Please try again.');
+    }
+  };
+
+  const updateInternshipApplicationStatus = async (id: string, newStatus: string) => {
+    try {
+      setErrorMessage('');
+      setSuccessMessage('');
+      const res = await fetch(`/api/admin/internship-applications/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ status: newStatus })
+      });
+
+      if (res.ok) {
+        setSelectedInternshipApplication(null);
+        setSuccessMessage(`Application ${newStatus} successfully!`);
+        fetchData();
+        setTimeout(() => setSuccessMessage(''), 3000);
+      } else {
+        const errorData = await res.json();
+        setErrorMessage(errorData.error || `Failed to ${newStatus} application`);
+      }
+    } catch (error) {
+      console.error('Error updating internship application:', error);
+      setErrorMessage('Error updating internship application. Please try again.');
     }
   };
 
@@ -677,14 +710,18 @@ export default function AdminDashboardContent() {
                     </thead>
                     <tbody className="divide-y divide-gray-700">
                       {internshipApplications.map(app => (
-                        <tr key={app._id} className="hover:bg-gray-700/50 transition-colors">
+                        <tr key={app._id} className="hover:bg-gray-700/50 transition-colors cursor-pointer" onClick={() => setSelectedInternshipApplication(app)}>
                           <td className="px-6 py-4 text-sm text-white font-medium">{app.applicantName}</td>
                           <td className="px-6 py-4 text-sm text-gray-400">{app.applicantEmail}</td>
                           <td className="px-6 py-4 text-sm text-gray-400">{app.postingCompany}</td>
                           <td className="px-6 py-4 text-sm text-gray-400">{app.institution}</td>
                           <td className="px-6 py-4 text-sm text-gray-400">{app.yearOfStudy}</td>
                           <td className="px-6 py-4 text-sm">
-                            <span className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">{app.status}</span>
+                            <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
+                              app.status === 'submitted' ? 'bg-slate-100 text-slate-700' :
+                              app.status === 'approved' ? 'bg-emerald-500/20 text-emerald-400' :
+                              'bg-rose-500/20 text-rose-400'
+                            }`}>{app.status}</span>
                           </td>
                         </tr>
                       ))}
@@ -789,6 +826,62 @@ export default function AdminDashboardContent() {
                   {selectedUser.isVerified ? 'Verified' : 'Unverified'}
                 </p>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {selectedInternshipApplication && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-800 rounded-lg border border-gray-700 max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-start mb-4">
+              <h2 className="text-2xl font-bold text-white">Internship Application</h2>
+              <button
+                onClick={() => setSelectedInternshipApplication(null)}
+                className="text-gray-400 hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-gray-400 text-sm">Applicant</p>
+                <p className="text-white font-medium">{selectedInternshipApplication.applicantName}</p>
+              </div>
+              <div>
+                <p className="text-gray-400 text-sm">Email</p>
+                <p className="text-white font-medium">{selectedInternshipApplication.applicantEmail}</p>
+              </div>
+              <div>
+                <p className="text-gray-400 text-sm">Phone</p>
+                <p className="text-white font-medium">{selectedInternshipApplication.applicantPhone || 'Not provided'}</p>
+              </div>
+              <div>
+                <p className="text-gray-400 text-sm">Institution</p>
+                <p className="text-white font-medium">{selectedInternshipApplication.institution}</p>
+              </div>
+            </div>
+            <div className="mt-4 space-y-3 text-sm text-gray-300">
+              <p><span className="text-gray-400">Posting:</span> {selectedInternshipApplication.postingCompany}</p>
+              <p><span className="text-gray-400">Area of interest:</span> {selectedInternshipApplication.areaOfInterest || 'Not provided'}</p>
+              <p><span className="text-gray-400">Motivation:</span> {selectedInternshipApplication.motivation || 'Not provided'}</p>
+              {selectedInternshipApplication.resumeUrl && (
+                <a href={selectedInternshipApplication.resumeUrl} target="_blank" rel="noreferrer" className="text-orange-400 hover:underline">Open resume / portfolio</a>
+              )}
+            </div>
+            <div className="flex gap-3 mt-6 pt-4 border-t border-gray-700">
+              <button
+                onClick={() => updateInternshipApplicationStatus(selectedInternshipApplication._id, 'approved')}
+                className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors font-medium"
+              >
+                Approve
+              </button>
+              <button
+                onClick={() => updateInternshipApplicationStatus(selectedInternshipApplication._id, 'rejected')}
+                className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors font-medium"
+              >
+                Reject
+              </button>
             </div>
           </div>
         </div>

@@ -145,11 +145,11 @@ export default function SearchBar({
   };
 
   return (
-    <div className="max-w-4xl mx-auto mb-10 relative z-20">
+    <div className="max-w-4xl mx-auto mb-10 relative z-[9999] overflow-visible">
       {/* Main Search Bar */}
       <form
         onSubmit={handleSearch}
-        className="relative bg-white/10 backdrop-blur-xl border border-white/20 p-2 rounded-2xl flex flex-col sm:flex-row gap-2 shadow-2xl"
+        className="relative overflow-visible bg-white/10 backdrop-blur-xl border border-white/20 p-2 rounded-2xl flex flex-col sm:flex-row gap-2 shadow-2xl"
         style={{
           boxShadow:
             "0 25px 60px -12px rgba(0,0,0,0.35), 0 0 40px rgba(249,115,22,0.08)",
@@ -205,7 +205,7 @@ export default function SearchBar({
 
           {/* Service Dropdown */}
           {showServiceDropdown && filteredServices.length > 0 && (
-            <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-2xl border border-neutral-100 overflow-hidden z-50 animate-fade-in"
+            <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-2xl border border-neutral-100 overflow-hidden z-[9999] animate-fade-in"
               style={{ animationDuration: "150ms" }}
             >
               <div className="py-1 max-h-64 overflow-y-auto">
@@ -295,7 +295,7 @@ export default function SearchBar({
 
           {/* Location Dropdown */}
           {showLocationDropdown && filteredLocations.length > 0 && (
-            <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-2xl border border-neutral-100 overflow-hidden z-50 animate-fade-in"
+            <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-2xl border border-neutral-100 overflow-hidden z-[9999] animate-fade-in"
               style={{ animationDuration: "150ms" }}
             >
               <div className="py-1 max-h-64 overflow-y-auto">

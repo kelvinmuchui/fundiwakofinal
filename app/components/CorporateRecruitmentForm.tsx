@@ -37,6 +37,7 @@ const initialFormData: FormData = {
 const postingOptions = [
   { value: "internship", label: "Internship" },
   { value: "corporate_hire", label: "Corporate Hire" },
+  { value: "tvet", label: "TVET / Training Partnership" },
   { value: "recruitment", label: "Long-term Recruitment" },
 ];
 
@@ -114,10 +115,16 @@ export default function CorporateRecruitmentForm({ onSuccess }: Props) {
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.26em] text-primary-500">Recruitment request</p>
           <h3 className="mt-3 text-2xl font-semibold text-secondary-700">
-            {formData.postingType === 'internship' ? 'Internship request form' : 'Corporate application form'}
+            {formData.postingType === 'internship'
+              ? 'Internship request form'
+              : formData.postingType === 'tvet'
+                ? 'TVET / training opportunity form'
+                : 'Corporate application form'}
           </h3>
           <p className="mt-2 text-sm text-neutral-500">
-            Share the details of your hiring or internship needs and we&apos;ll save it in our recruitment queue.
+            {formData.postingType === 'tvet'
+              ? 'Share a TVET, apprenticeship, or skills-development need and we will route it to the right partners.'
+              : 'Share the details of your hiring, internship, or training needs and we&apos;ll save it in our recruitment queue.'}
           </p>
         </div>
 
@@ -281,7 +288,7 @@ export default function CorporateRecruitmentForm({ onSuccess }: Props) {
             value={formData.description}
             onChange={handleChange}
             rows={5}
-            placeholder="Tell us about the project, required skills, experience level, and any special requirements."
+            placeholder={formData.postingType === 'tvet' ? 'Tell us about the training cohort, required skills, institution details, and preferred delivery model.' : 'Tell us about the project, required skills, experience level, and any special requirements.'}
             className={`mt-2 block w-full rounded-3xl border px-4 py-3 text-sm focus:ring-2 focus:ring-primary-400 ${errors.description ? "border-rose-500" : "border-neutral-200"}`}
             required
           />

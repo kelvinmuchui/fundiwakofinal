@@ -19,7 +19,7 @@ export default async function Home() {
   return (
     <div className="flex flex-col min-h-screen">
       {/* Hero Section */}
-      <section className="relative min-h-[calc(100vh-7rem)] flex items-center gradient-hero overflow-hidden">
+      <section className="relative min-h-[calc(100vh-7rem)] flex items-center gradient-hero">
         {/* Background Pattern */}
         <div className="absolute inset-0 bg-hero-pattern opacity-10" />
 

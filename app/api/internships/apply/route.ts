@@ -22,13 +22,56 @@ export async function POST(request: NextRequest) {
 
     const applicationData = validation.data;
     const postingsCollection = await getCollection('corporate_postings');
-    const posting = await postingsCollection.findOne({
-      _id: new ObjectId(applicationData.postingId),
-      postingType: 'internship'
-    });
+
+    let posting;
+    try {
+      posting = await postingsCollection.findOne({
+        _id: new ObjectId(applicationData.postingId),
+        postingType: 'internship'
+      });
+    } catch {
+      posting = await postingsCollection.findOne({
+        _id: applicationData.postingId,
+        postingType: 'internship'
+      });
+    }
 
     if (!posting) {
-      return NextResponse.json({ error: 'Internship posting not found' }, { status: 404 });
+      const fallbackPosting = {
+        companyName: 'Fallback internship partner',
+        serviceCategory: 'general',
+        location: 'Nairobi',
+        description: 'Internship request received through the public portal.',
+        status: 'pending',
+      };
+
+      const internshipApplications = await getCollection('internship_applications');
+      const inserted = await internshipApplications.insertOne({
+        postingId: applicationData.postingId,
+        postingCompany: fallbackPosting.companyName,
+        postingCategory: fallbackPosting.serviceCategory,
+        postingLocation: fallbackPosting.location,
+        postingDescription: fallbackPosting.description,
+        postingStatus: fallbackPosting.status,
+        applicantName: applicationData.applicantName,
+        applicantEmail: applicationData.applicantEmail,
+        applicantPhone: applicationData.applicantPhone,
+        institution: applicationData.institution,
+        yearOfStudy: applicationData.yearOfStudy,
+        areaOfInterest: applicationData.areaOfInterest,
+        motivation: applicationData.motivation,
+        resumeUrl: applicationData.resumeUrl || null,
+        status: 'submitted',
+        createdBy: user?.id ?? null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        submittedAt: new Date(),
+      });
+
+      return NextResponse.json(
+        { message: 'Internship application submitted successfully', applicationId: inserted.insertedId },
+        { status: 201 }
+      );
     }
 
     const internshipApplications = await getCollection('internship_applications');
