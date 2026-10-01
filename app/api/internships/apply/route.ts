@@ -8,7 +8,7 @@ import { ObjectId } from 'mongodb';
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    const user = session?.user as any;
+    const userId = (session?.user as { id?: string } | undefined)?.id ?? null;
     const body = await request.json();
     const validation = internshipApplicationSchema.safeParse(body);
 
@@ -23,18 +23,12 @@ export async function POST(request: NextRequest) {
     const applicationData = validation.data;
     const postingsCollection = await getCollection('corporate_postings');
 
-    let posting;
-    try {
-      posting = await postingsCollection.findOne({
+    const posting = ObjectId.isValid(applicationData.postingId)
+      ? await postingsCollection.findOne({
         _id: new ObjectId(applicationData.postingId),
         postingType: 'internship'
-      });
-    } catch {
-      posting = await postingsCollection.findOne({
-        _id: applicationData.postingId,
-        postingType: 'internship'
-      });
-    }
+      })
+      : null;
 
     if (!posting) {
       const fallbackPosting = {
@@ -62,7 +56,7 @@ export async function POST(request: NextRequest) {
         motivation: applicationData.motivation,
         resumeUrl: applicationData.resumeUrl || null,
         status: 'submitted',
-        createdBy: user?.id ?? null,
+        createdBy: userId,
         createdAt: new Date(),
         updatedAt: new Date(),
         submittedAt: new Date(),
@@ -91,7 +85,7 @@ export async function POST(request: NextRequest) {
       motivation: applicationData.motivation,
       resumeUrl: applicationData.resumeUrl || null,
       status: 'submitted',
-      createdBy: user?.id ?? null,
+      createdBy: userId,
       createdAt: new Date(),
       updatedAt: new Date(),
       submittedAt: new Date(),
