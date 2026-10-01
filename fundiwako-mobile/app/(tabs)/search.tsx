@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput, FlatList, TouchableOpacity, Image, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
-import { searchWorkers, Worker } from '../../lib/services';
+import { Worker } from '../../lib/services';
 import { useGeolocation } from '../../lib/geolocation';
 
 export default function SearchScreen() {

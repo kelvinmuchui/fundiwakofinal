@@ -1,6 +1,12 @@
 import axios from 'axios';
+import * as SecureStore from 'expo-secure-store';
 
 const API_BASE_URL = 'http://localhost:3000'; // Adjust for production
+
+const getAuthHeaders = async () => {
+  const token = await SecureStore.getItemAsync('auth_token');
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
 
 export interface Worker {
   id: string;
@@ -18,6 +24,20 @@ export interface Worker {
   photoURL: string;
   isVerified: boolean;
 }
+
+export const loginUser = async (email: string, password: string) => {
+  try {
+    const response = await axios.post(`${API_BASE_URL}/api/auth/login`, { email, password });
+    const token = response.data?.token || response.data?.data?.token;
+    if (token) {
+      await SecureStore.setItemAsync('auth_token', token);
+    }
+    return response.data;
+  } catch (error) {
+    console.error('Error logging in:', error);
+    throw error;
+  }
+};
 
 export const searchWorkers = async (query: string = ''): Promise<Worker[]> => {
   try {
@@ -48,7 +68,8 @@ export const createBooking = async (bookingData: {
   location: string;
 }) => {
   try {
-    const response = await axios.post(`${API_BASE_URL}/api/bookings`, bookingData);
+    const headers = await getAuthHeaders();
+    const response = await axios.post(`${API_BASE_URL}/api/bookings`, bookingData, { headers });
     return response.data;
   } catch (error) {
     console.error('Error creating booking:', error);

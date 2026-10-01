@@ -122,8 +122,8 @@ export default function Navbar() {
                                     💰 Wallet
                                 </Link>
                                 {(session.user as any)?.role === 'fundi' && (
-                                    <Link href="/fundi/profile" className="px-4 py-2 rounded-xl text-sm font-heading font-semibold bg-emerald-600 text-white hover:bg-emerald-700 transition-all duration-300 shadow-lg shadow-emerald-600/20">
-                                        Fundi Panel
+                                    <Link href="/fundi/dashboard" className="px-4 py-2 rounded-xl text-sm font-heading font-semibold bg-emerald-600 text-white hover:bg-emerald-700 transition-all duration-300 shadow-lg shadow-emerald-600/20">
+                                        Fundi Dashboard
                                     </Link>
                                 )}
                                 {(session.user as any)?.role === 'admin' && (
@@ -207,11 +207,11 @@ export default function Navbar() {
                                          </div>
                                     </div>
                                     <Link
-                                        href="/profile"
+                                        href="/fundi/dashboard"
                                         className="block px-4 py-3 rounded-xl text-black font-medium hover:bg-primary-50 hover:text-primary-600 transition-all duration-200"
                                         onClick={() => setIsMobileMenuOpen(false)}
                                     >
-                                        My Profile
+                                        Fundi Dashboard
                                     </Link>
                                     <Link
                                         href="/dashboard"

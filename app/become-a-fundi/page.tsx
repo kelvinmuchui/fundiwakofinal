@@ -9,6 +9,8 @@ export default function BecomeAFundi() {
     const router = useRouter();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitStatus, setSubmitStatus] = useState<{type: 'success' | 'error', message: string} | null>(null);
+    const [currentStep, setCurrentStep] = useState(1);
+    const steps = ['Account', 'Experience', 'Availability', 'Review'];
 
     // Form State
     const [formData, setFormData] = useState({
@@ -57,6 +59,24 @@ export default function BecomeAFundi() {
         }
     };
 
+    const goToNextStep = () => {
+        const fields = Array.from(document.querySelectorAll(`[data-onboarding-step="${currentStep}"] input, [data-onboarding-step="${currentStep}"] select, [data-onboarding-step="${currentStep}"] textarea`)) as HTMLInputElement[];
+        const invalidField = fields.find((field) => !field.checkValidity());
+
+        if (invalidField) {
+            invalidField.reportValidity();
+            return;
+        }
+
+        setCurrentStep((step) => Math.min(step + 1, steps.length));
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const goToPreviousStep = () => {
+        setCurrentStep((step) => Math.max(step - 1, 1));
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSubmitting(true);
@@ -73,10 +93,10 @@ export default function BecomeAFundi() {
         }
 
         // Validate password strength
-        if (formData.password.length < 6) {
+        if (formData.password.length < 8 || !/[0-9]/.test(formData.password) || !/[!@#$%^&*]/.test(formData.password)) {
             setSubmitStatus({
-                type: 'error',
-                message: 'Password must be at least 6 characters long'
+            type: 'error',
+            message: 'Password must be at least 8 characters long and include a number and special character'
             });
             setIsSubmitting(false);
             return;
@@ -99,6 +119,8 @@ export default function BecomeAFundi() {
                     formDataToSend.append(key, value as string);
                 }
             });
+
+            formDataToSend.append('acceptTerms', 'true');
 
             // Add role as 'fundi' since this is the become-a-fundi form
             formDataToSend.append('role', 'fundi');
@@ -128,13 +150,13 @@ export default function BecomeAFundi() {
 
             // Redirect to fundi profile page after 1 second
             setTimeout(() => {
-                router.push('/fundi/profile');
+                router.push('/fundi/dashboard');
             }, 1000);
 
-        } catch (error: any) {
-            setSubmitStatus({
-                type: 'error',
-                message: error.message || 'Something went wrong. Please try again.'
+        } catch (error: unknown) {
+                setSubmitStatus({
+                    type: 'error',
+                    message: error instanceof Error ? error.message : 'Something went wrong. Please try again.'
             });
         } finally {
             setIsSubmitting(false);
@@ -186,12 +208,41 @@ export default function BecomeAFundi() {
                         <>
                             <div className="mb-10 text-center">
                                 <h2 className="text-2xl font-heading font-bold text-secondary-500">
-                                    Application Form
+                                    Become a Fundi
                                 </h2>
                                 <p className="text-neutral-500 mt-2 text-sm">
-                                    Please provide accurate information. Our vetting team will contact
-                                    you within 48 hours.
+                                    Complete your profile in a few simple steps. You can review everything before sending your application.
                                 </p>
+                            </div>
+
+                            <div className="mb-10">
+                                <div className="flex items-center justify-between gap-2">
+                                    {steps.map((step, index) => {
+                                        const stepNumber = index + 1;
+                                        const isComplete = stepNumber < currentStep;
+                                        const isCurrent = stepNumber === currentStep;
+                                        return (
+                                            <div key={step} className="flex items-center flex-1 last:flex-none">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => stepNumber < currentStep && setCurrentStep(stepNumber)}
+                                                    className={`flex items-center gap-2 text-sm font-medium transition-colors ${isCurrent ? 'text-primary-600' : isComplete ? 'text-secondary-500' : 'text-neutral-400'}`}
+                                                    aria-current={isCurrent ? 'step' : undefined}
+                                                >
+                                                    <span className={`w-9 h-9 rounded-full flex items-center justify-center font-heading font-bold border-2 ${isCurrent ? 'bg-primary-500 border-primary-500 text-white' : isComplete ? 'bg-secondary-500 border-secondary-500 text-white' : 'bg-white border-neutral-200 text-neutral-400'}`}>
+                                                        {isComplete ? '✓' : stepNumber}
+                                                    </span>
+                                                    <span className="hidden sm:inline">{step}</span>
+                                                </button>
+                                                {stepNumber < steps.length && <div className={`h-0.5 flex-1 mx-2 sm:mx-4 ${stepNumber < currentStep ? 'bg-secondary-500' : 'bg-neutral-200'}`} />}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                                <div className="h-1 bg-neutral-100 rounded-full mt-5 overflow-hidden">
+                                    <div className="h-full bg-primary-500 transition-all duration-300" style={{ width: `${(currentStep / steps.length) * 100}%` }} />
+                                </div>
+                                <p className="text-xs text-neutral-400 mt-2 text-right">Step {currentStep} of {steps.length}</p>
                             </div>
 
                             {submitStatus?.type === 'error' && (
@@ -200,9 +251,9 @@ export default function BecomeAFundi() {
                                 </div>
                             )}
 
-                            <form onSubmit={handleSubmit} className="space-y-8">
+                            <form id="fundi-onboarding-form" onSubmit={handleSubmit} className="space-y-8">
                                 {/* Personal Info */}
-                                <div>
+                                {currentStep === 1 && <div data-onboarding-step="1">
                                     <h3 className="text-lg font-heading font-semibold text-secondary-500 mb-4 border-b border-neutral-100 pb-2">
                                         1. Personal Information
                                     </h3>
@@ -292,10 +343,10 @@ export default function BecomeAFundi() {
                                             />
                                         </div>
                                     </div>
-                                </div>
+                                </div>}
 
                                 {/* Professional Info */}
-                                <div>
+                                {currentStep === 2 && <div data-onboarding-step="2">
                                     <h3 className="text-lg font-heading font-semibold text-secondary-500 mb-4 border-b border-neutral-100 pb-2">
                                         2. Professional Info
                                     </h3>
@@ -430,10 +481,10 @@ export default function BecomeAFundi() {
                                             />
                                         </div>
                                     </div>
-                                </div>
+                                </div>}
 
                                 {/* Location Info */}
-                                <div>
+                                {currentStep === 3 && <div data-onboarding-step="3">
                                     <h3 className="text-lg font-heading font-semibold text-secondary-500 mb-4 border-b border-neutral-100 pb-2">
                                         3. Location & Availability
                                     </h3>
@@ -484,10 +535,10 @@ export default function BecomeAFundi() {
                                             </select>
                                         </div>
                                     </div>
-                                </div>
+                                </div>}
 
                                 {/* Additional Info */}
-                                <div>
+                                {currentStep === 4 && <div data-onboarding-step="4">
                                     <h3 className="text-lg font-heading font-semibold text-secondary-500 mb-4 border-b border-neutral-100 pb-2">
                                         4. Additional Information
                                     </h3>
@@ -506,12 +557,14 @@ export default function BecomeAFundi() {
                                             />
                                         </div>
                                     </div>
-                                </div>
+                                </div>}
                                 {/* Terms & Submit */}
-                                <div className="pt-6 border-t border-neutral-100">
+                                {currentStep === 4 && <div className="pt-6 border-t border-neutral-100">
                                     <label className="flex items-start gap-3 cursor-pointer mb-8">
                                         <input
                                             type="checkbox"
+                                            name="acceptTerms"
+                                            value="true"
                                             className="mt-1 w-5 h-5 rounded border-neutral-300 text-primary-500 focus:ring-primary-500"
                                             required
                                         />
@@ -529,12 +582,16 @@ export default function BecomeAFundi() {
                                         </span>
                                     </label>
 
-                                    <button
-                                        type="submit"
-                                        disabled={isSubmitting}
-                                        className={`w-full btn-primary py-4 text-lg shadow-xl flex justify-center items-center ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
-                                    >
-                                        {isSubmitting ? (
+                                    <div className="flex flex-col-reverse sm:flex-row gap-3">
+                                        <button type="button" onClick={goToPreviousStep} className="btn-secondary flex-1 py-4">
+                                            Back
+                                        </button>
+                                        <button
+                                            type="submit"
+                                            disabled={isSubmitting}
+                                            className={`flex-1 btn-primary py-4 text-lg shadow-xl flex justify-center items-center ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
+                                        >
+                                            {isSubmitting ? (
                                             <>
                                                 <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -542,9 +599,17 @@ export default function BecomeAFundi() {
                                                 </svg>
                                                 Submitting...
                                             </>
-                                        ) : "Submit Application"}
-                                    </button>
-                                </div>
+                                            ) : "Submit Application"}
+                                        </button>
+                                    </div>
+                                </div>}
+                                {currentStep < 4 && (
+                                    <div className="flex justify-end pt-6 border-t border-neutral-100">
+                                        <button type="button" onClick={goToNextStep} className="btn-primary py-3 px-8">
+                                            Continue
+                                        </button>
+                                    </div>
+                                )}
                             </form>
                         </>
                         )}

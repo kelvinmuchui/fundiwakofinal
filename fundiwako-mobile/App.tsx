@@ -1,7 +1,7 @@
 import { ExpoRoot } from 'expo-router';
 
 export const unstable_settings = {
-  initialRouteName: '(tabs)',
+  initialRouteName: 'auth',
 };
 
 export default ExpoRoot;

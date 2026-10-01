@@ -49,7 +49,7 @@ export default function AuthPage() {
         if (userRole === 'admin') {
           router.push('/admin/dashboard');
         } else if (userRole === 'fundi') {
-          router.push('/fundi/profile');
+          router.push('/fundi/dashboard');
         } else {
           router.push('/');
         }

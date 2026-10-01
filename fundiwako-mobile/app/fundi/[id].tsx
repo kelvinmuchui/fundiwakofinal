@@ -1,13 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Alert, TextInput } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { getWorkerById, Worker } from '../../lib/services';
+import { createBooking, getWorkerById, Worker } from '../../lib/services';
 
 export default function FundiProfileScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
   const [worker, setWorker] = useState<Worker | null>(null);
   const [loading, setLoading] = useState(true);
+  const [bookingNotes, setBookingNotes] = useState('');
+  const [bookingDate, setBookingDate] = useState('2026-07-10');
+  const [bookingTime, setBookingTime] = useState('morning');
+  const [bookingLocation, setBookingLocation] = useState('Nairobi');
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     loadWorker();
@@ -21,17 +26,25 @@ export default function FundiProfileScreen() {
     setLoading(false);
   };
 
-  const handleBookNow = () => {
-    Alert.alert(
-      'Book Now',
-      `Book ${worker?.name} for ${worker?.skill}?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Book', onPress: () => {
-          Alert.alert('Success', 'Booking request sent! The fundi will contact you soon.');
-        }},
-      ]
-    );
+  const handleBookNow = async () => {
+    if (!worker || !id) return;
+
+    try {
+      setSubmitting(true);
+      await createBooking({
+        fundiId: String(id),
+        serviceType: worker.skill.toLowerCase(),
+        description: bookingNotes || `Service request for ${worker.skill}`,
+        preferredDate: bookingDate,
+        preferredTime: bookingTime,
+        location: bookingLocation,
+      });
+      Alert.alert('Success', 'Booking request sent! The fundi will contact you soon.');
+    } catch (error) {
+      Alert.alert('Booking failed', 'Please sign in and try again.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (loading) {
@@ -129,9 +142,17 @@ export default function FundiProfileScreen() {
         </View>
       </View>
 
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Booking details</Text>
+        <TextInput style={styles.input} placeholder="Describe the task" value={bookingNotes} onChangeText={setBookingNotes} multiline />
+        <TextInput style={styles.input} placeholder="Date (YYYY-MM-DD)" value={bookingDate} onChangeText={setBookingDate} />
+        <TextInput style={styles.input} placeholder="Time slot (morning/afternoon/evening)" value={bookingTime} onChangeText={setBookingTime} />
+        <TextInput style={styles.input} placeholder="Location" value={bookingLocation} onChangeText={setBookingLocation} />
+      </View>
+
       <View style={styles.actions}>
-        <TouchableOpacity style={styles.bookButton} onPress={handleBookNow}>
-          <Text style={styles.bookButtonText}>Book Now</Text>
+        <TouchableOpacity style={styles.bookButton} onPress={handleBookNow} disabled={submitting}>
+          <Text style={styles.bookButtonText}>{submitting ? 'Booking...' : 'Book Now'}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.contactButton}>
           <Text style={styles.contactButtonText}>Contact</Text>
@@ -298,6 +319,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
     fontStyle: 'italic',
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 10,
+    color: '#0F172A',
   },
   actions: {
     flexDirection: 'row',

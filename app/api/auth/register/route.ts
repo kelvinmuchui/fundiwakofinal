@@ -5,20 +5,40 @@ import type { User } from '@/lib/models/User';
 import { registerSchema, getValidationErrorMessages } from '@/lib/validation';
 import { generateVerificationToken, sendVerificationEmail } from '@/lib/emailService';
 import { logAuditAction, logComplianceAction } from '@/lib/auditLog';
-import { encryptData } from '@/lib/encryption';
+
+type RegistrationBody = {
+  name: string;
+  email: string;
+  password: string;
+  role: string;
+  acceptTerms: boolean;
+  phone: string;
+  skill: string;
+  experience: string;
+  description: string;
+  location: string;
+  neighborhood: string;
+  tvetInstitution: string;
+  reasonForJoining: string;
+  availability: string;
+  idNumber: string;
+  skills: string[];
+  hourlyRate: string;
+  yearsOfExperience: number;
+};
 
 export async function POST(request: NextRequest) {
   try {
-    let body: any;
+    let body: RegistrationBody;
     const contentType = request.headers.get('content-type');
     const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
 
     // Handle both JSON and FormData requests
     if (contentType?.includes('application/json')) {
-      body = await request.json();
+      body = await request.json() as RegistrationBody;
     } else if (contentType?.includes('multipart/form-data')) {
       const formData = await request.formData();
-      const getValue = (key: string) => (formData as any).get(key)?.toString() || '';
+      const getValue = (key: string) => formData.get(key)?.toString() || '';
       body = {
         name: getValue('name'),
         email: getValue('email'),
@@ -31,7 +51,12 @@ export async function POST(request: NextRequest) {
         experience: getValue('experience'),
         description: getValue('description'),
         location: getValue('location'),
+        neighborhood: getValue('neighborhood'),
         tvetInstitution: getValue('tvetInstitution'),
+        reasonForJoining: getValue('reasonForJoining'),
+        availability: getValue('availability') || 'flexible',
+        idNumber: getValue('idNumber'),
+        skills: formData.getAll('skills').map((skill) => skill.toString()),
         hourlyRate: getValue('hourlyRate'),
         yearsOfExperience: parseInt(getValue('yearsOfExperience') || '0'),
       };
@@ -96,6 +121,7 @@ export async function POST(request: NextRequest) {
       createdAt: new Date(),
       updatedAt: new Date(),
       phone: body.phone || '',
+      neighborhood: body.neighborhood || '',
     };
 
     let newUser: Omit<User, '_id'> = baseUser;
@@ -109,14 +135,50 @@ export async function POST(request: NextRequest) {
         description: body.description,
         location: body.location,
         tvetInstitution: body.tvetInstitution,
+        neighborhood: body.neighborhood,
+        reasonForJoining: body.reasonForJoining,
+        skills: body.skills || [],
+        idNumber: body.idNumber || '',
         hourlyRate: body.hourlyRate || '0',
-        availability: 'flexible',
+        availability: ['flexible', 'fulltime', 'parttime', 'weekends'].includes(body.availability) ? body.availability as 'flexible' | 'fulltime' | 'parttime' | 'weekends' : 'flexible',
       };
     }
 
     // Insert user into database
     const result = await usersCollection.insertOne(newUser);
     const userId = result.insertedId.toString();
+
+    // Keep the account and its review application in sync before external side effects.
+    if (role === 'fundi') {
+      try {
+        const applicationsCollection = await getCollection('worker_applications');
+        await applicationsCollection.insertOne({
+          userId,
+          name,
+          email: email.toLowerCase(),
+          phone: body.phone || '',
+          skill: body.skill,
+          experience: body.experience,
+          description: body.description,
+          location: body.location,
+          tvetInstitution: body.tvetInstitution,
+          neighborhood: body.neighborhood,
+          reasonForJoining: body.reasonForJoining,
+          skills: body.skills || [],
+          yearsOfExperience: body.yearsOfExperience,
+          status: 'pending',
+          createdAt: new Date(),
+          submittedAt: new Date(),
+        });
+      } catch (applicationError) {
+        try {
+          await usersCollection.deleteOne({ _id: result.insertedId });
+        } catch (cleanupError) {
+          console.error('Failed to remove incomplete fundi account:', cleanupError);
+        }
+        throw applicationError;
+      }
+    }
 
     // Log compliance action (terms acceptance)
     await logComplianceAction(userId, 'accept_terms', {
@@ -136,26 +198,6 @@ export async function POST(request: NextRequest) {
         ipAddress
       }
     });
-
-    // If registering as fundi, create worker application
-    if (role === 'fundi') {
-      const applicationsCollection = await getCollection('worker_applications');
-      await applicationsCollection.insertOne({
-        userId,
-        name,
-        email: email.toLowerCase(),
-        phone: body.phone || '',
-        skill: body.skill,
-        experience: body.experience,
-        description: body.description,
-        location: body.location,
-        tvetInstitution: body.tvetInstitution,
-        yearsOfExperience: body.yearsOfExperience,
-        status: 'pending',
-        createdAt: new Date(),
-        submittedAt: new Date(),
-      });
-    }
 
     return NextResponse.json({
       message: acceptTerms ? 'Account created successfully. Please check your email to verify your account.' : 'Account created but terms not accepted',
