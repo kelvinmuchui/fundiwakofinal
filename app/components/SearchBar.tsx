@@ -2,19 +2,35 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { FUNDI_SERVICE_CATALOG } from "@/lib/serviceCatalog";
 
-const SERVICES = [
-  { label: "Plumbing", icon: "🔧" },
-  { label: "Electrical", icon: "⚡" },
-  { label: "Carpentry", icon: "🪚" },
-  { label: "Painting", icon: "🎨" },
-  { label: "Masonry", icon: "🧱" },
-  { label: "Cleaning", icon: "🧹" },
-  { label: "Roofing", icon: "🏠" },
-  { label: "Welding", icon: "🔩" },
-  { label: "Tiling", icon: "🪟" },
-  { label: "Landscaping", icon: "🌿" },
-];
+const SERVICE_ICONS: Record<string, string> = {
+  Plumbing: "🔧",
+  Electrical: "⚡",
+  Carpentry: "🪚",
+  Painting: "🎨",
+  Masonry: "🧱",
+  Cleaning: "🧹",
+  Roofing: "🏠",
+  "Welding & Metalwork": "🔩",
+  "Tiling & Flooring": "🪟",
+  "Landscaping & Gardening": "🌿",
+  "ICT & Computer Repair": "💻",
+  "Barista & Hospitality": "☕",
+  "Fashion & Design": "✂️",
+  "Animal Health & Veterinary": "🐾",
+  "Solar Installation": "☀️",
+  "Automotive Mechanics": "🚗",
+  "Beauty & Hair": "💇",
+  "Appliance Repair": "🧰",
+  "Pest Control": "🛡️",
+  "HVAC & Refrigeration": "❄️",
+};
+
+const SERVICES = FUNDI_SERVICE_CATALOG.map(({ title }) => ({
+  label: title,
+  icon: SERVICE_ICONS[title] || "🧰",
+}));
 
 const LOCATIONS = [
   "Nairobi",
@@ -355,25 +371,6 @@ export default function SearchBar({
         </button>
       </form>
 
-      {/* Popular Services Chips */}
-      <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
-        <span className="text-white/50 text-sm mr-1">Popular:</span>
-        {SERVICES.slice(0, 5).map((s) => (
-          <button
-            key={s.label}
-            type="button"
-            onClick={() => {
-              setService(s.label);
-              setShowServiceDropdown(false);
-              locationInputRef.current?.focus();
-            }}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium bg-white/10 border border-white/15 text-white/80 hover:bg-white/20 hover:text-white transition-all duration-200 backdrop-blur-sm cursor-pointer"
-          >
-            <span>{s.icon}</span>
-            <span>{s.label}</span>
-          </button>
-        ))}
-      </div>
     </div>
   );
 }

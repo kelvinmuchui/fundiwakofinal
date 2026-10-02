@@ -45,7 +45,7 @@ export default function AuthPage() {
         setError('Invalid email or password');
       } else {
         const session = await getSession();
-        const userRole = (session?.user as any)?.role;
+        const userRole = (session?.user as { role?: string } | undefined)?.role;
         if (userRole === 'admin') {
           router.push('/admin/dashboard');
         } else if (userRole === 'fundi') {
@@ -54,7 +54,7 @@ export default function AuthPage() {
           router.push('/');
         }
       }
-    } catch (error) {
+    } catch {
       setError('Something went wrong. Please try again.');
     } finally {
       setIsLoading(false);
@@ -133,8 +133,8 @@ export default function AuthPage() {
         acceptTerms: false,
       });
       setSelectedRole(null);
-    } catch (error: any) {
-      setError(error.message || 'Something went wrong. Please try again.');
+    } catch (error: unknown) {
+      setError(error instanceof Error ? error.message : 'Something went wrong. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -161,7 +161,7 @@ export default function AuthPage() {
               <div>
                 <h2 className="text-3xl font-heading font-bold mb-4">Welcome to FundiWako</h2>
                 <p className="text-primary-100 mb-8">
-                  Whether you're looking for services or offering your skills, you're in the right place.
+                  Whether you&apos;re looking for services or offering your skills, you&apos;re in the right place.
                 </p>
 
                 {/* Role Cards Preview */}
@@ -263,7 +263,7 @@ export default function AuthPage() {
                   </button>
 
                   <p className="text-center text-sm text-gray-600">
-                    Don't have an account?{' '}
+                    Don&apos;t have an account?{' '}
                     <button
                       type="button"
                       onClick={() => setActiveTab('signup')}
@@ -285,7 +285,7 @@ export default function AuthPage() {
                     <label className="block text-sm font-medium text-gray-700 mb-3">
                       I am a *
                     </label>
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-2 gap-3">
                       {[
                         { value: 'client', label: 'Client', icon: '👤' },
                         { value: 'fundi', label: 'Fundi', icon: '🔧' },
@@ -293,7 +293,13 @@ export default function AuthPage() {
                         <button
                           key={role.value}
                           type="button"
-                          onClick={() => setSelectedRole(role.value as 'client' | 'fundi')}
+                          onClick={() => {
+                            if (role.value === 'fundi') {
+                              router.push('/become-a-fundi');
+                              return;
+                            }
+                            setSelectedRole('client');
+                          }}
                           className={`p-4 rounded-lg border-2 text-center transition-all ${
                             selectedRole === role.value
                               ? 'border-primary-600 bg-primary-50'
@@ -417,13 +423,6 @@ export default function AuthPage() {
                       <Link href="/legal/privacy" className="text-primary-600 hover:underline">Privacy Policy</Link>
                     </label>
                   </div>
-
-                  {/* For Fundis - Additional Message */}
-                  {selectedRole === 'fundi' && (
-                    <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700">
-                      After registration, you'll be directed to complete your professional profile with details about your services, experience, and qualifications.
-                    </div>
-                  )}
 
                   <button
                     type="submit"

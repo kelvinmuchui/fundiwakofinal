@@ -5,6 +5,9 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import PortfolioGallery from '../../components/PortfolioGallery';
 import ReviewSection from '../../components/ReviewSection';
+import { FUNDI_SERVICE_CATALOG } from '@/lib/serviceCatalog';
+
+const SKILL_SUGGESTIONS = FUNDI_SERVICE_CATALOG.map((service) => service.title);
 
 interface FundiProfile {
     _id?: string;
@@ -64,11 +67,6 @@ export default function FundiProfile() {
     const [photoPreview, setPhotoPreview] = useState<string | null>(null);
     const [photoFile, setPhotoFile] = useState<File | null>(null);
     const [showSkillSuggestions, setShowSkillSuggestions] = useState(false);
-    const [skillSuggestions] = useState([
-        'Plumbing', 'Electrical Work', 'Carpentry', 'Painting', 'Tiling', 'Masonry',
-        'Welding', 'Auto Repair', 'HVAC', 'Roofing', 'Flooring', 'Drywall',
-        'Landscaping', 'Pest Control', 'Locksmith', 'Appliance Repair'
-    ]);
 
     useEffect(() => {
         if (status === 'loading') return;
@@ -1013,7 +1011,7 @@ export default function FundiProfile() {
                                             />
                                             {showSkillSuggestions && newSkill && (
                                                 <div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-lg shadow-lg z-10 max-h-40 overflow-y-auto">
-                                                    {skillSuggestions
+                                                    {SKILL_SUGGESTIONS
                                                         .filter(skill =>
                                                             skill.toLowerCase().includes(newSkill.toLowerCase()) &&
                                                             !formData.skills?.includes(skill)

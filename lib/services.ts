@@ -1,4 +1,5 @@
 import { getCollection } from "./db";
+import { FUNDI_SERVICE_CATALOG } from "./serviceCatalog";
 
 export type Service = {
   title: string;
@@ -57,50 +58,7 @@ export async function getServices(): Promise<Service[]> {
   } catch (error) {
     console.error("Failed to fetch services from MongoDB:", error);
     // Return fallback mock data if MongoDB is unavailable
-    return [
-      {
-        title: "Plumbing",
-        description: "Fix leaks, install pipes, water heaters and full bathroom fittings.",
-        fundiCount: 450,
-        color: "gradient-primary",
-        iconName: "plumbing",
-      },
-      {
-        title: "Electrical",
-        description: "Wiring, lighting installations, fault finding and repairs.",
-        fundiCount: 380,
-        color: "gradient-secondary",
-        iconName: "electrical",
-      },
-      {
-        title: "Carpentry",
-        description: "Custom furniture, cabinet making, doors, roofing and wood repairs.",
-        fundiCount: 290,
-        color: "gradient-accent",
-        iconName: "carpentry",
-      },
-      {
-        title: "Painting",
-        description: "Interior and exterior painting, wallpapering and finishing.",
-        fundiCount: 310,
-        color: "bg-fuchsia-500",
-        iconName: "painting",
-      },
-      {
-        title: "Masonry",
-        description: "Bricklaying, plastering, concrete work and stonemasonry.",
-        fundiCount: 240,
-        color: "bg-blue-600",
-        iconName: "masonry",
-      },
-      {
-        title: "Cleaning",
-        description: "Deep cleaning, post-construction cleanup, upholstery and carpet cleaning.",
-        fundiCount: 420,
-        color: "bg-emerald-500",
-        iconName: "cleaning",
-      },
-    ];
+    return FUNDI_SERVICE_CATALOG.map((service) => ({ ...service, fundiCount: 0 }));
   }
 }
 
@@ -149,55 +107,11 @@ export async function seedSampleData() {
   const services = await getCollection<Service>("services");
   const testimonials = await getCollection<Testimonial>("testimonials");
 
-  const existingServices = await services.countDocuments();
   const existingTestimonials = await testimonials.countDocuments();
 
-  if (existingServices === 0) {
-    await services.insertMany([
-      {
-        title: "Plumbing",
-        description: "Fix leaks, install pipes, water heaters and full bathroom fittings.",
-        fundiCount: 450,
-        color: "gradient-primary",
-        iconName: "plumbing",
-      },
-      {
-        title: "Electrical",
-        description: "Wiring, lighting installations, fault finding and repairs.",
-        fundiCount: 380,
-        color: "gradient-secondary",
-        iconName: "electrical",
-      },
-      {
-        title: "Carpentry",
-        description: "Custom furniture, cabinet making, doors, roofing and wood repairs.",
-        fundiCount: 290,
-        color: "gradient-accent",
-        iconName: "carpentry",
-      },
-      {
-        title: "Painting",
-        description: "Interior and exterior painting, wallpapering and finishing.",
-        fundiCount: 310,
-        color: "bg-fuchsia-500",
-        iconName: "painting",
-      },
-      {
-        title: "Masonry",
-        description: "Bricklaying, plastering, concrete work and stonemasonry.",
-        fundiCount: 240,
-        color: "bg-blue-600",
-        iconName: "masonry",
-      },
-      {
-        title: "Cleaning",
-        description: "Deep cleaning, post-construction cleanup, upholstery and carpet cleaning.",
-        fundiCount: 420,
-        color: "bg-emerald-500",
-        iconName: "cleaning",
-      },
-    ]);
-  }
+  await Promise.all(FUNDI_SERVICE_CATALOG.map((service) =>
+    services.updateOne({ title: service.title }, { $setOnInsert: service }, { upsert: true })
+  ));
 
   if (existingTestimonials === 0) {
     await testimonials.insertMany([

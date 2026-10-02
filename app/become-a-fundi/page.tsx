@@ -4,6 +4,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { FUNDI_SERVICE_CATALOG } from "@/lib/serviceCatalog";
 
 export default function BecomeAFundi() {
     const router = useRouter();
@@ -363,13 +364,9 @@ export default function BecomeAFundi() {
                                                 required
                                             >
                                                 <option value="">Select a service...</option>
-                                                <option value="Plumbing">Plumbing</option>
-                                                <option value="Electrical">Electrical</option>
-                                                <option value="Carpentry">Carpentry</option>
-                                                <option value="Painting">Painting</option>
-                                                <option value="Masonry">Masonry</option>
-                                                <option value="Cleaning">Cleaning</option>
-                                                <option value="Other">Other</option>
+                                                {FUNDI_SERVICE_CATALOG.map((service) => (
+                                                    <option key={service.title} value={service.title}>{service.title}</option>
+                                                ))}
                                             </select>
                                         </div>
                                         <div>

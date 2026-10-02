@@ -5,19 +5,13 @@
 @layer base {
   :root {
     --background: #ffffff;
-    --foreground: #171717;
+    --foreground: #111827;
     --primary: #F97316;
     --primary-dark: #EA580C;
     --secondary: #1E3A5F;
     --secondary-dark: #152B45;
     --accent: #14B8A6;
-  }
-
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --background: #0A1628;
-      --foreground: #F5F5F5;
-    }
+    color-scheme: light;
   }
 
   * {
@@ -38,6 +32,10 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     overflow-x: hidden;
+  }
+
+  button {
+    color: inherit;
   }
 
   h1,
