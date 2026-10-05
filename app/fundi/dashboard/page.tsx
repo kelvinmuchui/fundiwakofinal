@@ -169,7 +169,11 @@ export default function FundiDashboard() {
                 <h1 className="mt-2 text-3xl font-heading font-bold tracking-tight sm:text-4xl">Good morning, {displayName.split(" ")[0]}.</h1>
                 <p className="mt-2 text-sm text-neutral-500">Here is what is happening with your FundiWako business.</p>
               </div>
-              <Link href="/fundi/profile" className="btn-primary self-start sm:self-auto">Edit profile</Link>
+              <div className="flex flex-wrap gap-3">
+                <Link href="/jobs" className="btn-secondary self-start sm:self-auto">Browse Jobs</Link>
+                <Link href="/contracts" className="self-start rounded-xl border border-neutral-300 bg-white px-4 py-3 text-sm font-semibold text-neutral-800 hover:bg-neutral-50 sm:self-auto">Contracts</Link>
+                <Link href="/fundi/profile" className="btn-primary self-start sm:self-auto">Edit profile</Link>
+              </div>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-3">

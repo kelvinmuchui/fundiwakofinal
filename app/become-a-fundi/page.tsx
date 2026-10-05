@@ -2,16 +2,28 @@
 
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { FUNDI_SERVICE_CATALOG } from "@/lib/serviceCatalog";
+import { FUNDI_SERVICE_CATALOG, type ServiceCatalogItem } from "@/lib/serviceCatalog";
 
 export default function BecomeAFundi() {
     const router = useRouter();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitStatus, setSubmitStatus] = useState<{type: 'success' | 'error', message: string} | null>(null);
     const [currentStep, setCurrentStep] = useState(1);
+    const [serviceOptions, setServiceOptions] = useState<ServiceCatalogItem[]>(FUNDI_SERVICE_CATALOG);
+    const [isCustomService, setIsCustomService] = useState(false);
+    const [customService, setCustomService] = useState("");
     const steps = ['Account', 'Experience', 'Availability', 'Review'];
+
+    useEffect(() => {
+        fetch('/api/services')
+            .then((response) => response.ok ? response.json() : Promise.reject(new Error('Failed to load services')))
+            .then((services: ServiceCatalogItem[]) => {
+                if (Array.isArray(services)) setServiceOptions(services);
+            })
+            .catch((error) => console.error('Failed to load service options:', error));
+    }, []);
 
     // Form State
     const [formData, setFormData] = useState({
@@ -105,9 +117,13 @@ export default function BecomeAFundi() {
 
         try {
             const formDataToSend = new FormData();
+            const registrationData = {
+                ...formData,
+                skill: isCustomService ? customService.trim() : formData.skill,
+            };
 
             // Add all form fields
-            Object.entries(formData).forEach(([key, value]) => {
+            Object.entries(registrationData).forEach(([key, value]) => {
                 if (key === 'certificates') {
                     (value as File[]).forEach((file) => {
                         formDataToSend.append(`certificates`, file);
@@ -148,6 +164,8 @@ export default function BecomeAFundi() {
                 skill: "", experience: "", tvetInstitution: "", description: "", location: "", neighborhood: "",
                 certificates: [], reasonForJoining: "", availability: "flexible", skills: []
             });
+            setIsCustomService(false);
+            setCustomService("");
 
             // Redirect to fundi profile page after 1 second
             setTimeout(() => {
@@ -357,17 +375,38 @@ export default function BecomeAFundi() {
                                                 Primary Service Specialty *
                                             </label>
                                             <select
-                                                name="skill"
-                                                value={formData.skill}
-                                                onChange={handleChange}
+                                                value={isCustomService ? "__custom_service__" : formData.skill}
+                                                onChange={(event) => {
+                                                    if (event.target.value === "__custom_service__") {
+                                                        setIsCustomService(true);
+                                                        setFormData((previous) => ({ ...previous, skill: "" }));
+                                                    } else {
+                                                        setIsCustomService(false);
+                                                        setCustomService("");
+                                                        setFormData((previous) => ({ ...previous, skill: event.target.value }));
+                                                    }
+                                                }}
                                                 className="w-full px-4 py-3 rounded-xl border border-neutral-200 focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all bg-neutral-50 focus:bg-white text-neutral-700 appearance-none"
                                                 required
                                             >
                                                 <option value="">Select a service...</option>
-                                                {FUNDI_SERVICE_CATALOG.map((service) => (
+                                                {serviceOptions.map((service) => (
                                                     <option key={service.title} value={service.title}>{service.title}</option>
                                                 ))}
+                                                <option value="__custom_service__">Other (add a new service)</option>
                                             </select>
+                                            {isCustomService && (
+                                                <input
+                                                    type="text"
+                                                    value={customService}
+                                                    onChange={(event) => setCustomService(event.target.value)}
+                                                    maxLength={80}
+                                                    className="mt-3 w-full px-4 py-3 rounded-xl border border-neutral-200 focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all bg-neutral-50 focus:bg-white"
+                                                    placeholder="Enter your primary service"
+                                                    aria-label="New primary service"
+                                                    required
+                                                />
+                                            )}
                                         </div>
                                         <div>
                                             <label className="block text-sm font-medium text-neutral-700 mb-2">

@@ -122,13 +122,27 @@ export default function Dashboard() {
                   <p className="mt-3 max-w-2xl text-sm text-slate-300">You have {activeRequests.length} active service request{activeRequests.length === 1 ? "" : "s"} today.</p>
                 </div>
 
-                <Link
-                  href="/hire-fundis"
-                  className="inline-flex items-center justify-center rounded-3xl bg-orange-500 px-6 py-4 text-sm font-semibold text-white shadow-lg shadow-orange-500/20 transition hover:bg-orange-600"
-                >
-                  <span className="mr-2 text-lg">+</span>
-                  Book New Service
-                </Link>
+                <div className="flex flex-wrap gap-3">
+                  <Link
+                    href="/hire-fundis"
+                    className="inline-flex items-center justify-center rounded-3xl bg-orange-500 px-6 py-4 text-sm font-semibold text-white shadow-lg shadow-orange-500/20 transition hover:bg-orange-600"
+                  >
+                    <span className="mr-2 text-lg">+</span>
+                    Book New Service
+                  </Link>
+                  <Link
+                    href="/jobs/new"
+                    className="inline-flex items-center justify-center rounded-3xl border border-white/25 px-6 py-4 text-sm font-semibold text-white transition hover:bg-white/10"
+                  >
+                    Post a Job
+                  </Link>
+                  <Link
+                    href="/contracts"
+                    className="inline-flex items-center justify-center rounded-3xl border border-white/25 px-6 py-4 text-sm font-semibold text-white transition hover:bg-white/10"
+                  >
+                    Contracts
+                  </Link>
+                </div>
               </div>
             </div>
 
@@ -185,7 +199,7 @@ export default function Dashboard() {
                   <div className="rounded-3xl bg-slate-900 px-4 py-2 text-sm text-slate-300">Active</div>
                 </div>
 
-                <p className="mt-6 text-sm leading-7 text-slate-300">You've saved KES 4,500 this month with Pro discounts and faster artisan matching.</p>
+                <p className="mt-6 text-sm leading-7 text-slate-300">You&apos;ve saved KES 4,500 this month with Pro discounts and faster artisan matching.</p>
 
                 <Link
                   href="/profile"

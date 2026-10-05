@@ -135,6 +135,37 @@ export const bookingStatusUpdateSchema = z.object({
 
 export type BookingStatusUpdateInput = z.infer<typeof bookingStatusUpdateSchema>;
 
+// ============= JOB MARKETPLACE VALIDATION SCHEMAS =============
+
+export const marketplaceJobSchema = z.object({
+  title: z.string().trim().min(5, 'Title must be at least 5 characters').max(120),
+  serviceCategory: z.string().trim().min(2).max(80),
+  description: z.string().trim().min(20, 'Description must be at least 20 characters').max(2000),
+  location: z.string().trim().min(3).max(160),
+  budgetType: z.enum(['fixed', 'hourly']),
+  budgetMin: z.number().int().positive().max(10000000),
+  budgetMax: z.number().int().positive().max(10000000),
+  duration: z.string().trim().max(120).optional().or(z.literal('')),
+  skills: z.array(z.string().trim().min(1).max(50)).max(12).default([]),
+}).refine((job) => job.budgetMax >= job.budgetMin, {
+  message: 'Maximum budget must be at least the minimum budget',
+  path: ['budgetMax'],
+});
+
+export type MarketplaceJobInput = z.infer<typeof marketplaceJobSchema>;
+
+export const marketplaceProposalSchema = z.object({
+  coverLetter: z.string().trim().min(30, 'Proposal must be at least 30 characters').max(2000),
+  amount: z.number().int().positive().max(10000000),
+  duration: z.string().trim().min(2).max(120),
+});
+
+export type MarketplaceProposalInput = z.infer<typeof marketplaceProposalSchema>;
+
+export const marketplaceProposalDecisionSchema = z.object({
+  status: z.enum(['accepted', 'rejected']),
+});
+
 // ============= RATING/REVIEW VALIDATION SCHEMAS =============
 
 export const ratingSchema = z.object({

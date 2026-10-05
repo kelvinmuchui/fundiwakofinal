@@ -62,6 +62,36 @@ export async function getServices(): Promise<Service[]> {
   }
 }
 
+export async function ensureServiceExists(title: string): Promise<string> {
+  const normalizedTitle = title.trim();
+  if (!normalizedTitle || normalizedTitle.length > 80) {
+    throw new Error('Service title must be between 1 and 80 characters');
+  }
+
+  const servicesCollection = await getCollection<Service & { _id?: unknown }>('services');
+  const escapedTitle = normalizedTitle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const existingService = await servicesCollection.findOne({
+    title: { $regex: `^${escapedTitle}$`, $options: 'i' }
+  });
+
+  if (existingService) return existingService.title;
+
+  await servicesCollection.updateOne(
+    { title: normalizedTitle },
+    {
+      $setOnInsert: {
+        title: normalizedTitle,
+        description: `${normalizedTitle} services offered by local fundis.`,
+        color: 'bg-neutral-600',
+        iconName: 'briefcase',
+      }
+    },
+    { upsert: true }
+  );
+
+  return normalizedTitle;
+}
+
 export async function getTestimonials(): Promise<Testimonial[]> {
   try {
     await ensureSeeded();

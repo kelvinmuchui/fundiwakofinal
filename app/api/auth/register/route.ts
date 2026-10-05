@@ -5,6 +5,8 @@ import type { User } from '@/lib/models/User';
 import { registerSchema, getValidationErrorMessages } from '@/lib/validation';
 import { generateVerificationToken, sendVerificationEmail } from '@/lib/emailService';
 import { logAuditAction, logComplianceAction } from '@/lib/auditLog';
+import { ensureServiceExists } from '@/lib/services';
+import { FUNDI_SERVICE_CATALOG } from '@/lib/serviceCatalog';
 
 type RegistrationBody = {
   name: string;
@@ -99,6 +101,21 @@ export async function POST(request: NextRequest) {
         { error: 'User with this email already exists' },
         { status: 400 }
       );
+    }
+
+    if (role === 'fundi') {
+      const serviceTitle = body.skill?.trim() ?? '';
+      if (!serviceTitle || serviceTitle.length > 80) {
+        return NextResponse.json(
+          { error: 'Primary service must be between 1 and 80 characters' },
+          { status: 400 }
+        );
+      }
+
+      body.skill = serviceTitle;
+      if (!FUNDI_SERVICE_CATALOG.some((service) => service.title.toLowerCase() === serviceTitle.toLowerCase())) {
+        body.skill = await ensureServiceExists(serviceTitle);
+      }
     }
 
     // Hash password

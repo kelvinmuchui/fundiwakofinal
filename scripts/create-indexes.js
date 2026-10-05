@@ -89,6 +89,23 @@ async function createIndexes() {
     await bookingsCol.createIndex({ status: 1 }, { name: 'status' });
     console.log('   ✓ bookings indexes created\n');
 
+    // Marketplace job and proposal indexes
+    console.log('📍 Creating indexes for marketplace jobs and proposals...');
+    const marketplaceJobsCol = db.collection('marketplace_jobs');
+    await marketplaceJobsCol.createIndex({ status: 1, createdAt: -1 }, { name: 'status_createdAt' });
+    await marketplaceJobsCol.createIndex({ clientId: 1, createdAt: -1 }, { name: 'clientId_createdAt' });
+    const marketplaceProposalsCol = db.collection('marketplace_proposals');
+    await marketplaceProposalsCol.createIndex(
+      { jobId: 1, fundiId: 1 },
+      { unique: true, name: 'marketplace_job_fundi_unique' },
+    );
+    await marketplaceProposalsCol.createIndex({ jobId: 1, status: 1, createdAt: -1 }, { name: 'jobId_status_createdAt' });
+    const marketplaceContractsCol = db.collection('marketplace_contracts');
+    await marketplaceContractsCol.createIndex({ jobId: 1 }, { unique: true, name: 'marketplace_contract_job_unique' });
+    await marketplaceContractsCol.createIndex({ clientId: 1, status: 1 }, { name: 'clientId_status' });
+    await marketplaceContractsCol.createIndex({ fundiId: 1, status: 1 }, { name: 'fundiId_status' });
+    console.log('   ✓ marketplace indexes created\n');
+
     // Ratings collection indexes
     console.log('📍 Creating indexes for ratings collection...');
     const ratingsCol = db.collection('ratings');
@@ -112,7 +129,8 @@ async function createIndexes() {
     console.log('Listing all created indexes:\n');
     const collections = [
       'connections', 'skills', 'activities', 'recommendations',
-      'messages', 'conversations', 'bookings', 'ratings', 'users'
+      'messages', 'conversations', 'bookings', 'marketplace_jobs',
+      'marketplace_proposals', 'marketplace_contracts', 'ratings', 'users'
     ];
 
     for (const collName of collections) {

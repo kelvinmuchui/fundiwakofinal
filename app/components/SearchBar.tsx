@@ -66,6 +66,7 @@ export default function SearchBar({
 }: SearchBarProps) {
   const router = useRouter();
   const [service, setService] = useState(initialService);
+  const [availableServices, setAvailableServices] = useState(SERVICES);
   const [location, setLocation] = useState(initialLocation);
   const [showServiceDropdown, setShowServiceDropdown] = useState(false);
   const [showLocationDropdown, setShowLocationDropdown] = useState(false);
@@ -77,8 +78,28 @@ export default function SearchBar({
   const serviceInputRef = useRef<HTMLInputElement>(null);
   const locationInputRef = useRef<HTMLInputElement>(null);
 
+  useEffect(() => {
+    let isActive = true;
+
+    fetch('/api/services')
+      .then((response) => response.ok ? response.json() : Promise.reject(new Error('Failed to load services')))
+      .then((services: Array<{ title: string }>) => {
+        if (isActive && Array.isArray(services)) {
+          setAvailableServices(services.map(({ title }) => ({
+            label: title,
+            icon: SERVICE_ICONS[title] || '🧰',
+          })));
+        }
+      })
+      .catch((error) => console.error('Failed to load service suggestions:', error));
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
+
   // Filter services based on typed input
-  const filteredServices = SERVICES.filter((s) =>
+  const filteredServices = availableServices.filter((s) =>
     s.label.toLowerCase().includes(service.toLowerCase())
   );
 
@@ -371,6 +392,25 @@ export default function SearchBar({
         </button>
       </form>
 
+      {/* Popular Services Chips */}
+      <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+        <span className="text-white/50 text-sm mr-1">Popular:</span>
+        {SERVICES.slice(0, 5).map((s) => (
+          <button
+            key={s.label}
+            type="button"
+            onClick={() => {
+              setService(s.label);
+              setShowServiceDropdown(false);
+              locationInputRef.current?.focus();
+            }}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium bg-white/10 border border-white/15 text-white/80 hover:bg-white/20 hover:text-white transition-all duration-200 backdrop-blur-sm cursor-pointer"
+          >
+            <span>{s.icon}</span>
+            <span>{s.label}</span>
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
