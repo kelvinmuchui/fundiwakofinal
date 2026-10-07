@@ -232,15 +232,22 @@ export default function FundiProfile() {
             setErrorMessage('Some images were too large. Max size is 5MB each.');
         }
 
+        const remainingSlots = Math.max(0, 6 - (formData.showcasePhotos || []).length);
+        const selectedFiles = validFiles.slice(0, remainingSlots);
+        if (selectedFiles.length < validFiles.length) {
+            setErrorMessage('You can upload up to 6 showcase images.');
+        }
+
         const previews: string[] = [];
 
-        await Promise.all(validFiles.map((file) => new Promise<void>((resolve) => {
+        await Promise.all(selectedFiles.map((file) => new Promise<void>((resolve) => {
             const reader = new FileReader();
             reader.onloadend = () => {
                 const base64 = reader.result as string;
                 previews.push(base64);
                 resolve();
             };
+            reader.onerror = () => resolve();
             reader.readAsDataURL(file);
         })));
 
@@ -266,10 +273,7 @@ export default function FundiProfile() {
             const res = await fetch('/api/fundi/profile', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    ...formData,
-                    photoURL
-                }),
+                body: JSON.stringify({ photoURL }),
                 credentials: 'include'
             });
 
@@ -302,10 +306,7 @@ export default function FundiProfile() {
             const res = await fetch('/api/fundi/profile', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    ...formData,
-                    availability: newStatus
-                }),
+                body: JSON.stringify({ availability: newStatus }),
                 credentials: 'include'
             });
 
@@ -327,11 +328,12 @@ export default function FundiProfile() {
         }
     };
 
-    const addSkill = () => {
-        if (newSkill.trim() && !formData.skills?.includes(newSkill)) {
+    const addSkill = (value = newSkill) => {
+        const skillToAdd = value.trim();
+        if (skillToAdd && !formData.skills?.some((skill) => skill.toLowerCase() === skillToAdd.toLowerCase())) {
             setFormData(prev => ({
                 ...prev,
-                skills: [...(prev.skills || []), newSkill]
+                skills: [...(prev.skills || []), skillToAdd]
             }));
             setNewSkill('');
         }
@@ -340,11 +342,30 @@ export default function FundiProfile() {
     const removeSkill = (skillToRemove: string) => {
         setFormData(prev => ({
             ...prev,
+            skill: prev.skills?.filter(s => s !== skillToRemove)[0] || '',
             skills: prev.skills?.filter(s => s !== skillToRemove) || []
         }));
     };
 
     const saveProfile = async () => {
+        const requiredFields: Array<[keyof FundiProfile, string]> = [
+            ['name', 'Full name'],
+            ['phone', 'Phone'],
+            ['skill', 'Primary skill'],
+            ['experience', 'Experience level'],
+            ['description', 'About you'],
+            ['location', 'Location'],
+            ['neighborhood', 'Neighborhood'],
+        ];
+        const missingFields = requiredFields
+            .filter(([field]) => !String(formData[field] || '').trim())
+            .map(([, label]) => label);
+
+        if (missingFields.length > 0) {
+            setErrorMessage(`Please complete the required fields: ${missingFields.join(', ')}.`);
+            return;
+        }
+
         setSaving(true);
         setErrorMessage('');
         setSuccessMessage('');
@@ -368,6 +389,7 @@ export default function FundiProfile() {
             if (res.ok) {
                 const updated = await res.json();
                 setProfileData(updated);
+                setFormData(updated);
                 setIsEditing(false);
                 setPhotoPreview(null);
                 setPhotoFile(null);
@@ -446,12 +468,20 @@ export default function FundiProfile() {
                             {isEditing && (
                                 <>
                                     <button
-                                        onClick={() => setIsEditing(false)}
+                                        type="button"
+                                        onClick={() => {
+                                            setFormData(profileData || formData);
+                                            setPhotoPreview(null);
+                                            setPhotoFile(null);
+                                            setErrorMessage('');
+                                            setIsEditing(false);
+                                        }}
                                         className="w-full sm:w-auto px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-900 rounded-full transition-colors text-sm font-medium"
                                     >
                                         Cancel
                                     </button>
                                     <button
+                                        type="button"
                                         onClick={saveProfile}
                                         disabled={saving}
                                         className="w-full sm:w-auto px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white rounded-full transition-colors text-sm font-medium"
@@ -461,6 +491,7 @@ export default function FundiProfile() {
                                 </>
                             )}
                             <button
+                                type="button"
                                 onClick={() => signOut()}
                                 className="w-full sm:w-auto px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-full transition-colors text-sm font-medium"
                             >
@@ -752,6 +783,7 @@ export default function FundiProfile() {
                                         </div>
                                         <div className="relative">
                                             <select
+                                                disabled={isSavingStatus}
                                                 value={displayData?.availability || 'flexible'}
                                                 onChange={(e) => saveStatusOnly(e.target.value)}
                                                 className={`w-full appearance-none px-4 py-2 rounded-lg border-2 font-medium transition-all cursor-pointer ${displayData?.availability === 'available' || displayData?.availability === 'Available Now'
@@ -830,7 +862,7 @@ export default function FundiProfile() {
                                             onChange={handlePhotoChange}
                                             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                                         />
-                                        <p className="text-sm text-gray-500 mt-2">Supported formats: JPG, PNG, GIF (Max 5MB)</p>
+                                        <p className="text-sm text-gray-500 mt-2">Supported formats: JPG, PNG, GIF (Max 2MB)</p>
                                     </div>
                                 </div>
                             </div>
@@ -865,7 +897,7 @@ export default function FundiProfile() {
                                             onChange={handleShowcasePhotosChange}
                                             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                                         />
-                                        <p className="text-sm text-gray-500 mt-2">Upload up to 6 showcase images for your public profile.</p>
+                                        <p className="text-sm text-gray-500 mt-2">Upload up to 6 showcase images (5MB max each) for your public profile.</p>
                                     </div>
                                 </div>
                             </div>
@@ -1020,10 +1052,8 @@ export default function FundiProfile() {
                                                         .map((skill, idx) => (
                                                             <button
                                                                 key={idx}
-                                                                onClick={() => {
-                                                                    setNewSkill(skill);
-                                                                    addSkill();
-                                                                }}
+                                                                type="button"
+                                                                onClick={() => addSkill(skill)}
                                                                 className="w-full text-left px-4 py-2 hover:bg-gray-50 focus:bg-gray-50 focus:outline-none"
                                                             >
                                                                 {skill}
@@ -1033,7 +1063,8 @@ export default function FundiProfile() {
                                             )}
                                         </div>
                                         <button
-                                            onClick={addSkill}
+                                            type="button"
+                                            onClick={() => addSkill()}
                                             className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors font-medium"
                                         >
                                             Add
@@ -1045,6 +1076,7 @@ export default function FundiProfile() {
                                         <span key={idx} className="bg-primary-100 text-primary-800 px-3 py-1 rounded-full text-sm font-medium flex items-center gap-2">
                                             {skill}
                                             <button
+                                                type="button"
                                                 onClick={() => removeSkill(skill)}
                                                 className="text-primary-600 hover:text-primary-800 font-bold text-xs"
                                             >

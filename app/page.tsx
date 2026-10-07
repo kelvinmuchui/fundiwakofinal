@@ -43,7 +43,7 @@ export default async function Home() {
           </div>
 
           {/* Search Bar with Glass Interaction */}
-          <div className="animate-reveal opacity-0 [animation-delay:600ms] flex items-center justify-center w-full max-w-3xl mx-auto relative group">
+          <div className="animate-reveal opacity-0 [animation-delay:600ms] flex items-center justify-center w-full max-w-3xl mx-auto relative z-20 group">
             <div className="absolute -inset-1 bg-gradient-to-r from-primary-500/0 via-primary-500/30 to-primary-500/0 rounded-[1.5rem] blur opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
             <div className="relative w-full">
               <SearchBar />
@@ -51,7 +51,7 @@ export default async function Home() {
           </div>
 
           {/* High-Impact Stats Section */}
-          <div className="animate-reveal opacity-0 [animation-delay:800ms] mt-12">
+          <div className="animate-reveal opacity-0 [animation-delay:800ms] relative z-0 mt-12">
             <div className="glass-light/10 border-white/10 p-8 rounded-3xl backdrop-blur-md flex flex-wrap items-center justify-center gap-6 md:gap-16 border">
               <div className="text-center group cursor-default">
                 <p className="text-4xl font-heading font-bold text-white group-hover:translate-x-1 transition-transform">5,000+</p>

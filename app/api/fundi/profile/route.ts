@@ -44,30 +44,75 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Not a fundi' }, { status: 403 });
     }
 
-    const body = await request.json();
-    const {
-      name,
-      phone,
-      skill,
-      skills,
-      experience,
-      description,
-      location,
-      neighborhood,
-      availability,
-      hourlyRate,
-      tvetInstitution,
-      reasonForJoining,
-      photoURL,
-      showcasePhotos
-    } = body;
+    const body: unknown = await request.json();
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      return NextResponse.json({ error: 'Invalid profile update' }, { status: 400 });
+    }
 
-    // Validate required fields
-    if (!name || !phone || !skill || !experience || !description || !location || !neighborhood) {
-      return NextResponse.json(
-        { error: 'Missing required fields' },
-        { status: 400 }
+    const input = body as Record<string, unknown>;
+    const hasField = (field: string) => Object.prototype.hasOwnProperty.call(input, field);
+    const coreFields = ['name', 'phone', 'skill', 'experience', 'description', 'location', 'neighborhood'];
+    const updates: Record<string, unknown> = {};
+
+    if (coreFields.some(hasField)) {
+      const missingFields = coreFields.filter(
+        (field) => typeof input[field] !== 'string' || !input[field].trim()
       );
+      if (missingFields.length > 0) {
+        return NextResponse.json(
+          { error: `Please complete the required profile fields: ${missingFields.join(', ')}` },
+          { status: 400 }
+        );
+      }
+
+      for (const field of coreFields) {
+        updates[field] = (input[field] as string).trim();
+      }
+
+      if (hasField('skills')) {
+        if (!Array.isArray(input.skills) || !input.skills.every((value) => typeof value === 'string')) {
+          return NextResponse.json({ error: 'Skills must be a list of text values' }, { status: 400 });
+        }
+        updates.skills = input.skills.map((value) => value.trim()).filter(Boolean);
+      } else {
+        updates.skills = [updates.skill];
+      }
+    }
+
+    if (hasField('availability')) {
+      const validAvailability = ['flexible', 'fulltime', 'parttime', 'weekends', 'available', 'busy', 'available-soon', 'unavailable'];
+      if (typeof input.availability !== 'string' || !validAvailability.includes(input.availability)) {
+        return NextResponse.json({ error: 'Invalid availability status' }, { status: 400 });
+      }
+      updates.availability = input.availability;
+    }
+
+    for (const field of ['hourlyRate', 'tvetInstitution', 'reasonForJoining']) {
+      if (hasField(field)) {
+        updates[field] = input[field];
+      }
+    }
+
+    if (hasField('photoURL')) {
+      if (typeof input.photoURL !== 'string' && input.photoURL !== null) {
+        return NextResponse.json({ error: 'Invalid profile photo' }, { status: 400 });
+      }
+      updates.photoURL = input.photoURL;
+    }
+
+    if (hasField('showcasePhotos')) {
+      if (
+        !Array.isArray(input.showcasePhotos) ||
+        input.showcasePhotos.length > 6 ||
+        !input.showcasePhotos.every((photo) => typeof photo === 'string')
+      ) {
+        return NextResponse.json({ error: 'Showcase photos must be a list of up to 6 images' }, { status: 400 });
+      }
+      updates.showcasePhotos = input.showcasePhotos;
+    }
+
+    if (Object.keys(updates).length === 0) {
+      return NextResponse.json({ error: 'No profile fields were provided' }, { status: 400 });
     }
 
     const usersCollection = await getCollection('users');
@@ -75,20 +120,7 @@ export async function PUT(request: NextRequest) {
       { email: session.user.email },
       {
         $set: {
-          name,
-          phone,
-          skill,
-          skills: skills || [skill],
-          experience,
-          description,
-          location,
-          neighborhood,
-          availability: availability || 'flexible',
-          hourlyRate,
-          tvetInstitution,
-          reasonForJoining,
-          photoURL,
-          showcasePhotos: showcasePhotos || [],
+          ...updates,
           updatedAt: new Date()
         }
       },
