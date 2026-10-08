@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- **Node.js**: v18+ (check with `node --version`)
+- **Node.js**: v20.9.0 or newer (check with `node --version`)
 - **npm**: v9+ (check with `npm --version`)
 - **MongoDB**: Account at [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) (free tier available)
 - **Git**: Installed and configured
@@ -127,7 +127,6 @@ fundiwako2/
 │   ├── validation.ts    # Zod schemas (Phase 1)
 │   ├── models/          # Database models
 │   └── services.ts      # Business logic
-├── fundiwako-mobile/      # React Native Expo app
 ├── public/               # Static assets
 ├── scripts/              # Utility scripts
 ├── package.json         # Dependencies
@@ -142,7 +141,7 @@ See [API_DOCS.md](./API_DOCS.md) for endpoint documentation.
 
 ## Deployment
 
-See [DEPLOYMENT.md](./DEPLOYMENT.md) for instructions on deploying to production.
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for instructions on deploying to production, including cPanel.
 
 ## Compliance & Security
 
