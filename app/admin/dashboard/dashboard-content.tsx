@@ -90,10 +90,26 @@ const hiddenUserFields = new Set([
   'notifications',
 ]);
 
-function formatDetailValue(value: unknown): string {
+const readableDateFormatter = new Intl.DateTimeFormat('en-KE', {
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+  timeZone: 'Africa/Nairobi',
+});
+
+function formatReadableDate(value: string | Date): string {
+  const date = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(date.getTime()) ? String(value) : readableDateFormatter.format(date);
+}
+
+function formatDetailValue(value: unknown, key?: string): string {
   if (value === null || value === undefined || value === '') return 'Not provided';
   if (typeof value === 'boolean') return value ? 'Yes' : 'No';
-  if (Array.isArray(value)) return value.map(formatDetailValue).join(', ');
+  if (typeof value === 'string' && key && /(At|Date|Expires)$/i.test(key)) {
+    return formatReadableDate(value);
+  }
+  if (value instanceof Date) return formatReadableDate(value);
+  if (Array.isArray(value)) return value.map((item) => formatDetailValue(item)).join(', ');
   if (typeof value === 'object') return JSON.stringify(value);
   return String(value);
 }
@@ -594,7 +610,7 @@ export default function AdminDashboardContent() {
                             </span>
                           </td>
                           <td className="px-6 py-4 text-sm text-gray-400">
-                            {new Date(user.createdAt).toLocaleDateString()}
+                            {formatReadableDate(user.createdAt)}
                           </td>
                         </tr>
                       ))}
@@ -852,7 +868,7 @@ export default function AdminDashboardContent() {
                 .map(([key, value]) => (
                   <div key={key} className="min-w-0">
                     <p className="text-gray-400 text-sm">{formatDetailLabel(key)}</p>
-                    <p className="text-white font-medium wrap-break-word">{formatDetailValue(value)}</p>
+                    <p className="text-white font-medium wrap-break-word">{formatDetailValue(value, key)}</p>
                   </div>
                 ))}
             </div>
@@ -945,7 +961,7 @@ export default function AdminDashboardContent() {
                 .map(([key, value]) => (
                   <div key={key} className="min-w-0">
                     <p className="text-gray-400 text-sm">{formatDetailLabel(key)}</p>
-                    <p className="text-white font-medium wrap-break-word">{formatDetailValue(value)}</p>
+                    <p className="text-white font-medium wrap-break-word">{formatDetailValue(value, key)}</p>
                   </div>
                 ))}
             </div>
@@ -958,7 +974,7 @@ export default function AdminDashboardContent() {
                     .map(([key, value]) => (
                       <div key={key} className="min-w-0">
                         <p className="text-gray-400 text-sm">{formatDetailLabel(key)}</p>
-                        <p className="text-white font-medium wrap-break-word">{formatDetailValue(value)}</p>
+                        <p className="text-white font-medium wrap-break-word">{formatDetailValue(value, key)}</p>
                       </div>
                     ))}
                 </div>
