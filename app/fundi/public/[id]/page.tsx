@@ -286,53 +286,53 @@ export default function PublicFundiProfile() {
           {/* Sidebar Actions */}
           <div className="space-y-6">
             {/* Booking Card */}
-            <div className="bg-inverse-surface rounded-[2rem] p-8 shadow-2xl text-white sticky top-24">
+            <div className="bg-white text-black rounded-[2rem] p-8 shadow-2xl border border-neutral-100 sticky top-24">
               <div className="flex items-center justify-between mb-8">
                 <div>
-                  <p className="text-primary-fixed font-bold text-xs uppercase tracking-widest mb-1">Starting From</p>
+                  <p className="font-bold text-xs uppercase tracking-widest mb-1">Starting From</p>
                   <h3 className="text-3xl font-heading font-black">
                     KES {profile.hourlyRate?.replace(/[^0-9]/g, '') || "1,200"}
-                    <span className="text-sm font-normal text-white/60">/hr</span>
+                    <span className="text-sm font-normal text-black/60">/hr</span>
                   </h3>
                 </div>
-                <div className="bg-white/10 p-3 rounded-2xl backdrop-blur-md">
+                <div className="bg-neutral-100 p-3 rounded-2xl">
                   <div className="flex items-center gap-1">
-                    <span className="text-rating-gold">★</span>
+                    <span className="text-black">★</span>
                     <span className="font-black text-xl">{profile.rating?.toFixed(1) || '—'}</span>
                   </div>
-                  <p className="text-[10px] text-white/50 text-center uppercase font-bold">{profile.jobsCompleted || 0} Jobs</p>
+                  <p className="text-[10px] text-black/60 text-center uppercase font-bold">{profile.jobsCompleted || 0} Jobs</p>
                 </div>
               </div>
 
               <div className="space-y-4 mb-8">
-                <div className="flex items-center gap-4 text-sm text-white/80">
-                  <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">🕒</div>
+                <div className="flex items-center gap-4 text-sm text-black">
+                  <div className="w-8 h-8 rounded-full bg-neutral-100 flex items-center justify-center">🕒</div>
                   <span>{profile.availability || "Flexible Schedule"}</span>
                 </div>
-                <div className="flex items-center gap-4 text-sm text-white/80">
-                  <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">✅</div>
+                <div className="flex items-center gap-4 text-sm text-black">
+                  <div className="w-8 h-8 rounded-full bg-neutral-100 flex items-center justify-center">✅</div>
                   <span>{profile.isVerified ? 'Verified Identity & Skill' : 'Pending Verification'}</span>
                 </div>
-                <div className="flex items-center gap-4 text-sm text-white/80">
-                  <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">📍</div>
+                <div className="flex items-center gap-4 text-sm text-black">
+                  <div className="w-8 h-8 rounded-full bg-neutral-100 flex items-center justify-center">📍</div>
                   <span>Serves {profile.neighborhood || "Nairobi Area"}</span>
                 </div>
-                <div className="flex items-center gap-4 text-sm text-white/80">
-                  <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">👁️</div>
+                <div className="flex items-center gap-4 text-sm text-black">
+                  <div className="w-8 h-8 rounded-full bg-neutral-100 flex items-center justify-center">👁️</div>
                   <span>{profile.profileViews || 0} profile views</span>
                 </div>
               </div>
 
               <div className="flex flex-col gap-3">
                 <button onClick={() => setShowBookingModal(true)}
-                  className="w-full py-4 btn-primary rounded-2xl font-heading font-black text-lg flex items-center justify-center gap-2 group">
+                  className="w-full py-4 btn-primary text-black rounded-2xl font-heading font-black text-lg flex items-center justify-center gap-2 group">
                   <span className="group-hover:scale-125 transition-transform">📅</span> Book Appointment
                 </button>
                 <button onClick={handleContact} disabled={contactClicked || isTracking}
                   className={`w-full py-4 rounded-2xl font-heading font-black text-lg transition-all border-2 flex items-center justify-center gap-2 ${
-                    contactClicked ? 'bg-emerald-500 border-emerald-500 text-white shadow-lg' : 'border-white/20 hover:bg-white hover:text-secondary-900 text-white'
+                    contactClicked ? 'bg-emerald-500 border-emerald-500 text-black shadow-lg' : 'border-neutral-300 bg-white hover:bg-neutral-100 text-black'
                   }`}>
-                  {isTracking ? <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  {isTracking ? <div className="w-6 h-6 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
                     : contactClicked ? <><span>✓</span> Contact Revealed</>
                     : <><span>📞</span> Show Phone Number</>}
                 </button>
@@ -340,20 +340,20 @@ export default function PublicFundiProfile() {
 
               {/* Revealed Contact Info */}
               {contactClicked && (
-                <div id="contact-info" className="mt-6 p-6 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20">
+                <div id="contact-info" className="mt-6 p-6 bg-neutral-50 rounded-2xl border border-neutral-200">
                   <div className="space-y-4">
                     <a href={`tel:${profile.phone}`} className="flex items-center gap-4 group">
-                      <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center group-hover:bg-primary transition-colors">📱</div>
+                      <div className="w-10 h-10 bg-neutral-100 rounded-xl flex items-center justify-center">📱</div>
                       <div>
-                        <p className="text-[10px] font-bold text-white/40 uppercase">Mobile Number</p>
-                        <p className="text-lg font-bold group-hover:text-primary-fixed transition-colors">{profile.phone}</p>
+                        <p className="text-[10px] font-bold text-black/60 uppercase">Mobile Number</p>
+                        <p className="text-lg font-bold text-black">{profile.phone}</p>
                       </div>
                     </a>
                     <a href={`mailto:${profile.email}`} className="flex items-center gap-4 group">
-                      <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center group-hover:bg-primary transition-colors">✉️</div>
+                      <div className="w-10 h-10 bg-neutral-100 rounded-xl flex items-center justify-center">✉️</div>
                       <div>
-                        <p className="text-[10px] font-bold text-white/40 uppercase">Email Address</p>
-                        <p className="text-sm font-bold group-hover:text-primary-fixed transition-colors">{profile.email}</p>
+                        <p className="text-[10px] font-bold text-black/60 uppercase">Email Address</p>
+                        <p className="text-sm font-bold text-black">{profile.email}</p>
                       </div>
                     </a>
                   </div>

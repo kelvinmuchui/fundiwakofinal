@@ -3,14 +3,43 @@ import { getServerSession } from 'next-auth';
 import { getCollection } from '@/lib/db';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 
-export async function GET(request: NextRequest) {
+const fundiProfileProjection = {
+  _id: 1,
+  name: 1,
+  email: 1,
+  phone: 1,
+  skill: 1,
+  skills: 1,
+  experience: 1,
+  description: 1,
+  location: 1,
+  neighborhood: 1,
+  availability: 1,
+  hourlyRate: 1,
+  tvetInstitution: 1,
+  reasonForJoining: 1,
+  photoURL: 1,
+  showcasePhotos: 1,
+  isVerified: 1,
+  profileViews: 1,
+  profileViewCount: 1,
+  contactClicks: 1,
+  notifications: 1,
+  certificates: 1,
+  rating: 1,
+  jobsCompleted: 1,
+  createdAt: 1,
+  updatedAt: 1,
+};
+
+export async function GET() {
   try {
     const session = await getServerSession(authOptions);
     if (!session || !session.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const userRole = (session?.user as any)?.role;
+    const userRole = (session.user as { role?: string }).role;
     if (userRole !== 'fundi') {
       return NextResponse.json({ error: 'Not a fundi' }, { status: 403 });
     }
@@ -18,7 +47,7 @@ export async function GET(request: NextRequest) {
     const usersCollection = await getCollection('users');
     const user = await usersCollection.findOne(
       { email: session.user.email },
-      { projection: { password: 0 } }
+      { projection: fundiProfileProjection }
     );
 
     if (!user) {
@@ -39,7 +68,7 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const userRole = (session?.user as any)?.role;
+    const userRole = (session.user as { role?: string }).role;
     if (userRole !== 'fundi') {
       return NextResponse.json({ error: 'Not a fundi' }, { status: 403 });
     }
@@ -124,16 +153,14 @@ export async function PUT(request: NextRequest) {
           updatedAt: new Date()
         }
       },
-      { returnDocument: 'after' }
+      { returnDocument: 'after', projection: fundiProfileProjection }
     );
 
     if (!result) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // In MongoDB driver 6.x, findOneAndUpdate returns the document directly
-    const updatedUser = (result as any).value || result;
-    return NextResponse.json(updatedUser);
+    return NextResponse.json(result);
   } catch (error) {
     console.error('Error updating profile:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

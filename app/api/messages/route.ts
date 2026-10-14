@@ -5,9 +5,10 @@ import { logAuditAction } from '@/lib/auditLog';
 import type { Message, Conversation } from '@/lib/models/Message';
 import { ObjectId } from 'mongodb';
 import { z } from 'zod';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 
 const sendMessageSchema = z.object({
-  toUserId: z.string().min(1),
+  toUserId: z.string().refine(ObjectId.isValid, 'Invalid recipient ID'),
   content: z.string().min(1).max(5000),
   replyTo: z.string().optional(),
   attachments: z.array(z.object({
@@ -20,7 +21,7 @@ const sendMessageSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession();
+    const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
       return NextResponse.json(
         { error: 'Unauthorized' },
@@ -39,6 +40,9 @@ export async function POST(request: NextRequest) {
     }
 
     const { toUserId, content, replyTo, attachments } = validation.data;
+    if (toUserId === (session.user as { id?: string }).id) {
+      return NextResponse.json({ error: 'You cannot send a message to yourself' }, { status: 400 });
+    }
 
     const usersCollection = await getCollection('users');
     const conversationsCollection = await getCollection('conversations');
@@ -130,8 +134,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: true,
-        message: message,
-        messageId: messageResult.insertedId,
+        message: { ...message, _id: messageResult.insertedId.toString() },
+        messageId: messageResult.insertedId.toString(),
         conversationId: conversation._id?.toString()
       },
       { status: 201 }
@@ -145,9 +149,9 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    const session = await getServerSession();
+    const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
       return NextResponse.json(
         { error: 'Unauthorized' },

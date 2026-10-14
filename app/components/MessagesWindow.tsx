@@ -1,15 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { toast } from "react-toastify";
 import { Send, Smile, Paperclip } from "lucide-react";
-
-interface MessageUser {
-  _id: string;
-  name: string;
-  photoURL?: string;
-}
 
 interface MessageData {
   _id: string;
@@ -40,18 +34,7 @@ export default function MessagesWindow({
   const [isSending, setIsSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    fetchMessages();
-    // Refresh messages every 2 seconds
-    const interval = setInterval(fetchMessages, 2000);
-    return () => clearInterval(interval);
-  }, [conversationId]);
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  const fetchMessages = async () => {
+  const fetchMessages = useCallback(async () => {
     try {
       const response = await fetch(`/api/messages/conversations/${conversationId}`);
       if (!response.ok) throw new Error('Failed to fetch');
@@ -63,7 +46,18 @@ export default function MessagesWindow({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [conversationId]);
+
+  useEffect(() => {
+    void fetchMessages();
+    // Refresh messages every 2 seconds
+    const interval = setInterval(fetchMessages, 2000);
+    return () => clearInterval(interval);
+  }, [fetchMessages]);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -87,7 +81,7 @@ export default function MessagesWindow({
       if (!response.ok) throw new Error('Failed to send');
 
       const data = await response.json();
-      setMessages([...messages, data.message]);
+      setMessages((currentMessages) => [...currentMessages, data.message]);
       setNewMessage('');
       toast.success('Message sent');
     } catch (error) {

@@ -10,7 +10,7 @@ import { logActivity } from '@/lib/activityLogger';
 export async function POST(request: NextRequest) {
   return ApiErrorHandler.withErrorHandler(async () => {
     const session = await getServerSession(authOptions);
-    const user = session?.user as any;
+    const user = session?.user as { id?: string; role?: string } | undefined;
     const clientId = user?.id || 'guest';
 
     const body = await request.json();
@@ -84,10 +84,10 @@ export async function POST(request: NextRequest) {
   }, 'POST /api/bookings');
 }
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   return ApiErrorHandler.withErrorHandler(async () => {
     const session = await getServerSession(authOptions);
-    const user = session?.user as any;
+    const user = session?.user as { id?: string; role?: string } | undefined;
     const userId = user?.id;
 
     if (!userId) {
@@ -137,20 +137,26 @@ export async function GET(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   return ApiErrorHandler.withErrorHandler(async () => {
     const session = await getServerSession(authOptions);
-    const user = session?.user as any;
+    const user = session?.user as { id?: string; role?: string } | undefined;
     const userId = user?.id;
     const userRole = user?.role;
 
-    if (!userId) {
+    if (!userId || !ObjectId.isValid(userId)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      return NextResponse.json({ error: 'Invalid booking update' }, { status: 400 });
+    }
     const { bookingId, status, quoteAmount } = body;
     const allowedStatuses = ['accepted', 'in_progress', 'completed', 'cancelled', 'declined'];
 
-    if (!bookingId || !status || !allowedStatuses.includes(status)) {
+    if (typeof bookingId !== 'string' || !ObjectId.isValid(bookingId) || !allowedStatuses.includes(status)) {
       return NextResponse.json({ error: 'Invalid booking update' }, { status: 400 });
+    }
+    if (!['fundi', 'client', 'admin'].includes(userRole ?? '')) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     const bookingsCollection = await getCollection('bookings');
@@ -172,20 +178,56 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Clients may only cancel bookings' }, { status: 403 });
     }
 
+    const allowedFundiTransitions: Record<string, string[]> = {
+      pending: ['accepted', 'declined'],
+      accepted: ['in_progress'],
+      in_progress: ['completed']
+    };
+    if (
+      userRole === 'fundi' &&
+      !allowedFundiTransitions[booking.status]?.includes(status)
+    ) {
+      return NextResponse.json(
+        { error: `A booking cannot be changed from ${booking.status} to ${status}` },
+        { status: 409 }
+      );
+    }
+    if (userRole === 'client' && !['pending', 'accepted', 'in_progress'].includes(booking.status)) {
+      return NextResponse.json({ error: 'This booking can no longer be cancelled' }, { status: 409 });
+    }
+    if (
+      quoteAmount !== undefined &&
+      (typeof quoteAmount !== 'number' || !Number.isFinite(quoteAmount) || quoteAmount <= 0)
+    ) {
+      return NextResponse.json({ error: 'Quote amount must be a positive number' }, { status: 400 });
+    }
+
     // Get booking details for activity logging
     const usersCollection = await getCollection('users');
-    const fundi = await usersCollection.findOne({ _id: new ObjectId(booking.fundiId) });
+    const fundi = ObjectId.isValid(booking.fundiId)
+      ? await usersCollection.findOne({ _id: new ObjectId(booking.fundiId) })
+      : null;
 
-    const updateFields: any = { status, updatedAt: new Date() };
-    if (status === 'accepted' && quoteAmount) {
-      updateFields.quoteAmount = Number(quoteAmount);
+    const updatedAt = new Date();
+    const updateFields: Record<string, unknown> = { status, updatedAt };
+    if (status === 'accepted' && quoteAmount !== undefined) {
+      updateFields.quoteAmount = quoteAmount;
       updateFields.paymentStatus = 'unpaid';
     }
 
-    await bookingsCollection.updateOne(
-      { _id: new ObjectId(bookingId) },
+    const updateFilter: Record<string, unknown> = {
+      _id: new ObjectId(bookingId),
+      status: booking.status
+    };
+    if (userRole === 'fundi') updateFilter.fundiId = userId;
+    if (userRole === 'client') updateFilter.clientId = userId;
+    const updateResult = await bookingsCollection.updateOne(
+      updateFilter,
       { $set: updateFields }
     );
+    if (updateResult.modifiedCount !== 1) {
+      return NextResponse.json({ error: 'This booking changed before your update was saved. Refresh and try again.' }, { status: 409 });
+    }
 
     // Log booking status change activity
     try {
