@@ -51,7 +51,7 @@ export default function AuthPage() {
         } else if (userRole === 'fundi') {
           router.push('/fundi/dashboard');
         } else {
-          router.push('/');
+          router.push('/dashboard');
         }
       }
     } catch {
