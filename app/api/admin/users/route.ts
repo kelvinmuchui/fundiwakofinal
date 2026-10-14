@@ -17,7 +17,21 @@ export async function GET(request: NextRequest) {
     const usersCollection = await getCollection<User>('users');
     const users = await usersCollection.find({}, {
       projection: {
-        password: 0 // Exclude password from response
+        password: 0,
+        verificationToken: 0,
+        verificationTokenExpires: 0,
+        resetToken: 0,
+        resetTokenExpires: 0,
+        bankAccountNumberEncrypted: 0,
+        bankAccountNameEncrypted: 0,
+        mpesaNumberEncrypted: 0,
+        idNumberEncrypted: 0,
+        phoneEncrypted: 0,
+        connections: 0,
+        connectionRequests: 0,
+        blocked: 0,
+        profileViews: 0,
+        notifications: 0,
       }
     }).sort({ createdAt: -1 }).toArray();
 

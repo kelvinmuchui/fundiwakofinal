@@ -1,9 +1,10 @@
 'use client';
 
-import { useSession, signOut } from 'next-auth/react';
+import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import CorporateRecruitmentForm from '../../components/CorporateRecruitmentForm';
+import { BadgeCheck, BriefcaseBusiness, ClipboardList, RefreshCw, Users } from 'lucide-react';
 
 interface User {
   _id: string;
@@ -13,6 +14,7 @@ interface User {
   role: string;
   isVerified: boolean;
   createdAt: string;
+  [key: string]: unknown;
 }
 
 interface WorkerApplication {
@@ -31,6 +33,7 @@ interface WorkerApplication {
   status: string;
   createdAt: string;
   submittedAt?: string;
+  [key: string]: unknown;
 }
 
 interface CorporatePosting {
@@ -69,6 +72,38 @@ interface InternshipApplication {
   submittedAt: string;
 }
 
+const hiddenUserFields = new Set([
+  'password',
+  'verificationToken',
+  'verificationTokenExpires',
+  'resetToken',
+  'resetTokenExpires',
+  'bankAccountNumberEncrypted',
+  'bankAccountNameEncrypted',
+  'mpesaNumberEncrypted',
+  'idNumberEncrypted',
+  'phoneEncrypted',
+  'connections',
+  'connectionRequests',
+  'blocked',
+  'profileViews',
+  'notifications',
+]);
+
+function formatDetailValue(value: unknown): string {
+  if (value === null || value === undefined || value === '') return 'Not provided';
+  if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+  if (Array.isArray(value)) return value.map(formatDetailValue).join(', ');
+  if (typeof value === 'object') return JSON.stringify(value);
+  return String(value);
+}
+
+function formatDetailLabel(key: string): string {
+  return key
+    .replace(/([A-Z])/g, ' $1')
+    .replace(/^./, (character) => character.toUpperCase());
+}
+
 export default function AdminDashboardContent() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -87,11 +122,12 @@ export default function AdminDashboardContent() {
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
 
   useEffect(() => {
     if (status === 'loading') return;
 
-    const userRole = (session?.user as any)?.role;
+    const userRole = (session?.user as { role?: string } | undefined)?.role;
     if (!session || !session.user || userRole !== 'admin') {
       router.push('/auth');
       return;
@@ -222,6 +258,36 @@ export default function AdminDashboardContent() {
     }
   };
 
+  const deleteUser = async (user: User) => {
+    if (!window.confirm(`Delete ${user.name}'s account? This cannot be undone.`)) return;
+
+    setDeletingUserId(user._id);
+    setErrorMessage('');
+    setSuccessMessage('');
+    try {
+      const res = await fetch(`/api/admin/users/${user._id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        setErrorMessage(errorData.error || 'Failed to delete user');
+        return;
+      }
+
+      setUsers((currentUsers) => currentUsers.filter((currentUser) => currentUser._id !== user._id));
+      setSelectedUser(null);
+      setSuccessMessage('User deleted successfully.');
+      setTimeout(() => setSuccessMessage(''), 3000);
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      setErrorMessage('Error deleting user. Please try again.');
+    } finally {
+      setDeletingUserId(null);
+    }
+  };
+
   const filteredUsers = users.filter(user => {
     const matchesSearch = user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           user.email.toLowerCase().includes(searchQuery.toLowerCase());
@@ -243,79 +309,82 @@ export default function AdminDashboardContent() {
     rejectedPostings: postings.filter(p => p.status === 'rejected').length,
   };
 
+  const selectedApplicationUser = selectedApp
+    ? users.find((user) => user.email.toLowerCase() === selectedApp.email.toLowerCase()) ?? null
+    : null;
+  const tabTitles: Record<string, { title: string; description: string }> = {
+    overview: { title: 'Dashboard overview', description: 'A snapshot of users, applications, and activity across FundiWako.' },
+    users: { title: 'User management', description: 'Browse and manage client, fundi, and administrator accounts.' },
+    applications: { title: 'Fundi applications', description: 'Review new fundi registrations and their submitted profile details.' },
+    postings: { title: 'Marketplace postings', description: 'Review and manage company service and recruitment postings.' },
+    internships: { title: 'Internships', description: 'Manage internship postings and candidate applications.' },
+    analytics: { title: 'Analytics', description: 'Monitor account, verification, and marketplace activity.' },
+  };
+  const currentTab = tabTitles[activeTab] ?? tabTitles.overview;
+  const navigateToTab = (tab: string) => {
+    router.push(tab === 'overview' ? '/admin/dashboard' : `/admin/dashboard?tab=${tab}`);
+  };
+
   if (status === 'loading' || loading) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+      <div className="flex min-h-[50vh] items-center justify-center">
         <div className="text-center">
-          <div className="w-12 h-12 border-4 border-primary-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-white">Loading dashboard...</p>
+          <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-orange-100 border-t-primary"></div>
+          <p className="text-sm font-medium text-slate-600">Loading dashboard...</p>
         </div>
       </div>
     );
   }
 
-  const userRole = (session?.user as any)?.role;
+  const userRole = (session?.user as { role?: string } | undefined)?.role;
   if (!session || !session.user || userRole !== 'admin') {
     return null;
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid gap-6">
-          <section className="rounded-[2.5rem] bg-slate-950 text-white shadow-2xl border border-white/10 overflow-hidden">
-            <div className="bg-[radial-gradient(circle_at_top_left,rgba(249,115,22,0.18),transparent_35%),linear-gradient(90deg,#0f172a,#111827)] px-8 py-8 sm:px-12 sm:py-10">
-              <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-                <div className="max-w-2xl">
-                  <p className="text-xs uppercase tracking-[0.45em] text-primary/80">Admin Workspace</p>
-                  <h1 className="mt-3 text-4xl font-extrabold text-white">FundiWako Admin Dashboard</h1>
-                  <p className="mt-3 text-sm leading-7 text-slate-300">A polished admin console for guests, service providers, and corporate postings — built to manage everything from one modern surface.</p>
-                </div>
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
-                  <div className="rounded-[1.75rem] bg-slate-900/80 border border-white/10 p-5 shadow-xl shadow-slate-950/20">
-                    <p className="text-xs uppercase tracking-[0.35em] text-slate-400">Signed in as</p>
-                    <p className="mt-3 text-lg font-semibold text-white">{session.user.name}</p>
+    <div className="admin-dashboard-content space-y-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-primary">FundiWako / Admin</p>
+          <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">{currentTab.title}</h1>
+          <p className="mt-1.5 max-w-2xl text-sm text-slate-500">{currentTab.description}</p>
+        </div>
+        <button
+          type="button"
+          onClick={fetchData}
+          className="inline-flex w-fit items-center gap-2 rounded-md border border-slate-300 bg-white px-3.5 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+        >
+          <RefreshCw size={15} />
+          Refresh data
+        </button>
+      </div>
+
+      {activeTab === 'overview' && (
+        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {[
+            { label: 'Total users', value: stats.totalUsers, detail: 'Accounts on the platform', icon: Users, tone: 'bg-orange-50 text-primary' },
+            { label: 'Fundis', value: stats.fundis, detail: 'Service providers', icon: BriefcaseBusiness, tone: 'bg-blue-50 text-blue-700' },
+            { label: 'Pending applications', value: stats.pendingApplications, detail: 'Waiting for review', icon: ClipboardList, tone: 'bg-amber-50 text-amber-700' },
+            { label: 'Verified users', value: stats.verified, detail: 'Approved profiles', icon: BadgeCheck, tone: 'bg-emerald-50 text-emerald-700' },
+          ].map((item) => {
+            const Icon = item.icon;
+            return (
+              <article key={item.label} className="rounded-md border border-slate-200 bg-white p-5">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-slate-500">{item.label}</p>
+                    <p className="mt-2 text-3xl font-bold tracking-tight text-slate-900">{item.value}</p>
                   </div>
-                  <div className="flex gap-3 rounded-[1.75rem] border border-white/10 bg-slate-900/80 p-4 shadow-xl shadow-slate-950/20">
-                    <button
-                      onClick={() => router.push('/')}
-                      className="flex-1 rounded-full border border-primary/40 bg-primary/10 px-4 py-2 text-sm font-semibold text-primary transition hover:bg-primary/20"
-                    >
-                      Back to Home
-                    </button>
-                    <button
-                      onClick={() => signOut()}
-                      className="flex-1 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-600"
-                    >
-                      Sign Out
-                    </button>
-                  </div>
+                  <span className={`flex h-10 w-10 items-center justify-center rounded-md ${item.tone}`}>
+                    <Icon size={20} strokeWidth={1.8} />
+                  </span>
                 </div>
-              </div>
-            </div>
-            <div className="grid gap-4 p-6 sm:grid-cols-2 lg:grid-cols-4 bg-slate-900/80">
-              <div className="rounded-[1.75rem] bg-slate-900 border border-white/10 p-6 shadow-xl shadow-slate-950/10">
-                <p className="text-xs uppercase tracking-[0.35em] text-slate-400">Users</p>
-                <p className="mt-4 text-3xl font-semibold text-white">{stats.totalUsers}</p>
-                <p className="mt-2 text-sm text-slate-400">Total platform users</p>
-              </div>
-              <div className="rounded-[1.75rem] bg-slate-900 border border-white/10 p-6 shadow-xl shadow-slate-950/10">
-                <p className="text-xs uppercase tracking-[0.35em] text-slate-400">Fundis</p>
-                <p className="mt-4 text-3xl font-semibold text-white">{stats.fundis}</p>
-                <p className="mt-2 text-sm text-slate-400">Active fundi accounts</p>
-              </div>
-              <div className="rounded-[1.75rem] bg-slate-900 border border-white/10 p-6 shadow-xl shadow-slate-950/10">
-                <p className="text-xs uppercase tracking-[0.35em] text-slate-400">Pending</p>
-                <p className="mt-4 text-3xl font-semibold text-white">{stats.pendingApplications}</p>
-                <p className="mt-2 text-sm text-slate-400">Open applications</p>
-              </div>
-              <div className="rounded-[1.75rem] bg-slate-900 border border-white/10 p-6 shadow-xl shadow-slate-950/10">
-                <p className="text-xs uppercase tracking-[0.35em] text-slate-400">Verified</p>
-                <p className="mt-4 text-3xl font-semibold text-white">{stats.verified}</p>
-                <p className="mt-2 text-sm text-slate-400">Verified users</p>
-              </div>
-            </div>
-          </section>
+                <p className="mt-3 border-t border-slate-100 pt-3 text-xs text-slate-500">{item.detail}</p>
+              </article>
+            );
+          })}
+        </section>
+      )}
 
           <div className="fixed bottom-8 right-8 z-100 flex flex-col gap-3 pointer-events-none">
             {successMessage && (
@@ -330,31 +399,6 @@ export default function AdminDashboardContent() {
                 <p className="font-semibold">{errorMessage}</p>
               </div>
             )}
-          </div>
-
-          <div className="mb-6 rounded-full bg-slate-900/80 p-2 shadow-inner border border-white/10">
-            <nav className="flex flex-wrap gap-2">
-              {[
-                { id: 'overview', label: 'Overview', icon: '📊' },
-                { id: 'users', label: 'Users', icon: '👥' },
-                { id: 'applications', label: 'Applications', icon: '📋' },
-                { id: 'postings', label: 'Postings', icon: '🏢' },
-                { id: 'internships', label: 'Internships', icon: '🎓' },
-                { id: 'analytics', label: 'Analytics', icon: '📈' }
-              ].map(tab => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                    activeTab === tab.id
-                      ? 'bg-primary text-white shadow-lg shadow-primary/20'
-                      : 'text-slate-300 hover:bg-white/10 hover:text-white'
-                  }`}
-                >
-                  {tab.icon} {tab.label}
-                </button>
-              ))}
-            </nav>
           </div>
 
           {activeTab === 'overview' && (
@@ -468,19 +512,19 @@ export default function AdminDashboardContent() {
                   </div>
                   <div className="space-y-3 text-sm text-secondary">
                     <button
-                      onClick={() => setActiveTab('users')}
+                      onClick={() => navigateToTab('users')}
                       className="w-full rounded-3xl border border-surface-container-high px-4 py-3 text-left transition hover:border-primary hover:bg-primary/5"
                     >
                       Manage users
                     </button>
                     <button
-                      onClick={() => setActiveTab('applications')}
+                      onClick={() => navigateToTab('applications')}
                       className="w-full rounded-3xl border border-surface-container-high px-4 py-3 text-left transition hover:border-primary hover:bg-primary/5"
                     >
                       Review applications
                     </button>
                     <button
-                      onClick={() => setActiveTab('postings')}
+                      onClick={() => navigateToTab('postings')}
                       className="w-full rounded-3xl border border-surface-container-high px-4 py-3 text-left transition hover:border-primary hover:bg-primary/5"
                     >
                       Review postings
@@ -645,8 +689,8 @@ export default function AdminDashboardContent() {
                     <p className="text-sm text-gray-400">Review internship posts and the candidates who applied.</p>
                   </div>
                   <div className="flex flex-wrap gap-3">
-                    <span className="inline-flex items-center rounded-full bg-slate-900/80 px-4 py-2 text-sm font-semibold text-slate-200">Internship posts: {stats.internshipPostings}</span>
-                    <span className="inline-flex items-center rounded-full bg-slate-900/80 px-4 py-2 text-sm font-semibold text-slate-200">Applications: {stats.internshipApplications}</span>
+                    <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-700">Internship posts: {stats.internshipPostings}</span>
+                    <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-700">Applications: {stats.internshipApplications}</span>
                   </div>
                 </div>
               </div>
@@ -788,44 +832,39 @@ export default function AdminDashboardContent() {
               </div>
             </div>
           )}
-        </div>
-      </div>
 
       {selectedUser && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-800 rounded-lg border border-gray-700 max-w-md w-full p-6">
+          <div className="bg-gray-800 rounded-lg border border-gray-700 max-w-3xl w-full p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-start mb-4">
               <h2 className="text-2xl font-bold text-white">User Details</h2>
               <button
                 onClick={() => setSelectedUser(null)}
                 className="text-gray-400 hover:text-white"
+                aria-label="Close user details"
               >
                 ✕
               </button>
             </div>
-            <div className="space-y-4">
-              <div>
-                <p className="text-gray-400 text-sm">Name</p>
-                <p className="text-white font-medium">{selectedUser.name}</p>
-              </div>
-              <div>
-                <p className="text-gray-400 text-sm">Email</p>
-                <p className="text-white font-medium">{selectedUser.email}</p>
-              </div>
-              <div>
-                <p className="text-gray-400 text-sm">Phone</p>
-                <p className="text-white font-medium">{selectedUser.phone}</p>
-              </div>
-              <div>
-                <p className="text-gray-400 text-sm">Role</p>
-                <p className="text-white font-medium capitalize">{selectedUser.role}</p>
-              </div>
-              <div>
-                <p className="text-gray-400 text-sm">Verification Status</p>
-                <p className={`font-medium ${selectedUser.isVerified ? 'text-green-400' : 'text-yellow-400'}`}>
-                  {selectedUser.isVerified ? 'Verified' : 'Unverified'}
-                </p>
-              </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {Object.entries(selectedUser)
+                .filter(([key]) => !hiddenUserFields.has(key))
+                .map(([key, value]) => (
+                  <div key={key} className="min-w-0">
+                    <p className="text-gray-400 text-sm">{formatDetailLabel(key)}</p>
+                    <p className="text-white font-medium wrap-break-word">{formatDetailValue(value)}</p>
+                  </div>
+                ))}
+            </div>
+            <div className="flex justify-end mt-6 pt-4 border-t border-gray-700">
+              <button
+                type="button"
+                onClick={() => deleteUser(selectedUser)}
+                disabled={deletingUserId === selectedUser._id}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors font-medium disabled:opacity-50"
+              >
+                {deletingUserId === selectedUser._id ? 'Deleting...' : 'Delete user'}
+              </button>
             </div>
           </div>
         </div>
@@ -889,34 +928,44 @@ export default function AdminDashboardContent() {
 
       {selectedApp && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-800 rounded-lg border border-gray-700 max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
+          <div className="bg-gray-800 rounded-lg border border-gray-700 max-w-3xl w-full p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-start mb-4">
               <h2 className="text-2xl font-bold text-white">Application Details</h2>
               <button
                 onClick={() => setSelectedApp(null)}
                 className="text-gray-400 hover:text-white"
+                aria-label="Close application details"
               >
                 ✕
               </button>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-gray-400 text-sm">Name</p>
-                <p className="text-white font-medium">{selectedApp.name}</p>
-              </div>
-              <div>
-                <p className="text-gray-400 text-sm">Email</p>
-                <p className="text-white font-medium">{selectedApp.email}</p>
-              </div>
-              <div>
-                <p className="text-gray-400 text-sm">Phone</p>
-                <p className="text-white font-medium">{selectedApp.phone}</p>
-              </div>
-              <div>
-                <p className="text-gray-400 text-sm">Skill/Service</p>
-                <p className="text-white font-medium">{selectedApp.skill}</p>
-              </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {Object.entries(selectedApp)
+                .filter(([key]) => key !== '_id')
+                .map(([key, value]) => (
+                  <div key={key} className="min-w-0">
+                    <p className="text-gray-400 text-sm">{formatDetailLabel(key)}</p>
+                    <p className="text-white font-medium wrap-break-word">{formatDetailValue(value)}</p>
+                  </div>
+                ))}
             </div>
+            <section className="mt-6 border-t border-gray-700 pt-4">
+              <h3 className="mb-4 text-lg font-semibold text-white">Account details from the user record</h3>
+              {selectedApplicationUser ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {Object.entries(selectedApplicationUser)
+                    .filter(([key]) => !hiddenUserFields.has(key))
+                    .map(([key, value]) => (
+                      <div key={key} className="min-w-0">
+                        <p className="text-gray-400 text-sm">{formatDetailLabel(key)}</p>
+                        <p className="text-white font-medium wrap-break-word">{formatDetailValue(value)}</p>
+                      </div>
+                    ))}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-400">No matching user account was found for this application.</p>
+              )}
+            </section>
             {selectedApp.status === 'pending' && (
               <div className="flex gap-3 mt-6 pt-4 border-t border-gray-700">
                 <button

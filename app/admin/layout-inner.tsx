@@ -1,13 +1,51 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname, useSearchParams } from 'next/navigation';
+import { signOut, useSession } from 'next-auth/react';
 import { useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import {
+  Activity,
+  BriefcaseBusiness,
+  Building2,
+  ChartNoAxesCombined,
+  ClipboardList,
+  Home,
+  LayoutDashboard,
+  LogOut,
+  Menu,
+  Plus,
+  ShieldCheck,
+  Users,
+  X,
+} from 'lucide-react';
+
+const navigationGroups = [
+  {
+    label: 'Workspace',
+    items: [
+      { href: '/admin/dashboard', label: 'Overview', tab: 'overview', icon: LayoutDashboard },
+      { href: '/admin/dashboard?tab=users', label: 'Users', tab: 'users', icon: Users },
+      { href: '/admin/dashboard?tab=applications', label: 'Applications', tab: 'applications', icon: ClipboardList },
+    ],
+  },
+  {
+    label: 'Marketplace',
+    items: [
+      { href: '/admin/dashboard?tab=postings', label: 'Postings', tab: 'postings', icon: Building2 },
+      { href: '/admin/dashboard?tab=internships', label: 'Internships', tab: 'internships', icon: BriefcaseBusiness },
+      { href: '/admin/dashboard?tab=analytics', label: 'Analytics', tab: 'analytics', icon: ChartNoAxesCombined },
+    ],
+  },
+];
 
 export default function AdminLayoutInner({ children }: { children: React.ReactNode }) {
   const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const { data: session } = useSession();
   const activeTab = searchParams?.get('tab') ?? 'overview';
   const [showAddUserModal, setShowAddUserModal] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [newUserForm, setNewUserForm] = useState({
     name: '',
     email: '',
@@ -15,6 +53,9 @@ export default function AdminLayoutInner({ children }: { children: React.ReactNo
     role: 'client',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const adminName = session?.user?.name || 'Admin User';
+  const adminInitial = adminName.trim().charAt(0).toUpperCase() || 'A';
 
   const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,181 +84,258 @@ export default function AdminLayoutInner({ children }: { children: React.ReactNo
     }
   };
 
+  const renderNavigation = (onNavigate?: () => void) => (
+    <nav aria-label="Admin navigation" className="space-y-7 px-3 py-6">
+      {navigationGroups.map((group) => (
+        <div key={group.label}>
+          <p className="px-3 pb-2 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">
+            {group.label}
+          </p>
+          <div className="space-y-1">
+            {group.items.map((item) => {
+              const Icon = item.icon;
+              const isActive = pathname === '/admin/dashboard' && activeTab === item.tab;
+              return (
+                <Link
+                  key={item.tab}
+                  href={item.href}
+                  onClick={onNavigate}
+                  aria-current={isActive ? 'page' : undefined}
+                  className={`flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors ${
+                    isActive
+                      ? 'bg-orange-50 text-primary'
+                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-950'
+                  }`}
+                >
+                  <Icon size={18} strokeWidth={1.8} />
+                  <span>{item.label}</span>
+                  {isActive && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-primary" />}
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+    </nav>
+  );
+
   return (
-    <div className="min-h-screen bg-background text-on-background font-body-md flex flex-col">
-      {/* Top App Bar */}
-      <header className="w-full sticky top-0 z-50 bg-slate-950 border-b border-white/10 shadow-[0_20px_50px_rgba(15,23,42,0.18)]">
-        <div className="max-w-7xl mx-auto flex flex-col gap-4 px-6 py-4 sm:px-8 sm:py-5 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
-            <div className="flex items-center gap-3 rounded-3xl bg-linear-to-r from-primary to-orange-400 px-4 py-3 text-white shadow-xl shadow-primary/20">
-              <span className="text-2xl">⚙️</span>
-              <div>
-                <p className="text-[0.65rem] uppercase tracking-[0.4em] font-semibold opacity-80">Admin Panel</p>
-                <h1 className="text-xl font-bold">FundiWako</h1>
-              </div>
+    <div className="min-h-screen bg-slate-50 text-slate-800">
+      <header className="sticky top-0 z-40 h-[68px] border-b border-slate-200 bg-white">
+        <div className="flex h-full items-center">
+          <div className="hidden h-full w-64 shrink-0 items-center gap-3 border-r border-slate-200 px-6 md:flex">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-white">
+              <span className="text-lg font-extrabold">F</span>
             </div>
-            <div className="flex items-center gap-3 rounded-full bg-slate-900/90 px-4 py-3 border border-white/10 shadow-sm">
-              <span className="text-slate-400">🔍</span>
-              <input
-                type="search"
-                placeholder="Search applications, users..."
-                className="bg-transparent border-none focus:outline-none focus:ring-0 text-sm text-slate-100 placeholder:text-slate-500 w-56"
-              />
+            <div>
+              <p className="text-base font-bold leading-tight text-slate-900">FundiWako</p>
+              <p className="text-[11px] font-medium text-slate-500">Admin workspace</p>
             </div>
           </div>
 
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <button
-              onClick={() => setShowAddUserModal(true)}
-              className="inline-flex items-center justify-center rounded-full bg-primary px-5 py-3 text-sm font-semibold text-white shadow-xl shadow-primary/20 transition hover:bg-orange-600"
-            >
-              + Add User
-            </button>
-            <div className="flex items-center gap-3 rounded-full bg-slate-900/90 px-4 py-2 border border-white/10 shadow-sm">
-              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-white font-bold">A</div>
-              <div>
-                <p className="text-sm font-semibold text-white">Admin User</p>
-                <p className="text-xs text-slate-400">Super Admin</p>
+          <div className="flex min-w-0 flex-1 items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
+            <div className="flex min-w-0 items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setIsSidebarOpen(true)}
+                className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50 md:hidden"
+                aria-label="Open admin navigation"
+              >
+                <Menu size={19} />
+              </button>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-slate-800">Administration</p>
+                <p className="hidden text-xs text-slate-500 sm:block">Manage the FundiWako marketplace</p>
+              </div>
+            </div>
+
+            <div className="flex shrink-0 items-center gap-2 sm:gap-4">
+              <button
+                type="button"
+                onClick={() => setShowAddUserModal(true)}
+                className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-orange-700 sm:px-4"
+              >
+                <Plus size={17} />
+                <span className="hidden sm:inline">Add user</span>
+                <span className="sm:hidden">Add</span>
+              </button>
+              <div className="hidden h-8 w-px bg-slate-200 sm:block" />
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-orange-100 text-sm font-bold text-primary">
+                  {adminInitial}
+                </div>
+                <div className="hidden min-w-0 lg:block">
+                  <p className="max-w-36 truncate text-sm font-semibold text-slate-800">{adminName}</p>
+                  <p className="text-xs capitalize text-slate-500">
+                    {(session?.user as { role?: string } | undefined)?.role || 'Administrator'}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => signOut()}
+                  className="ml-1 inline-flex h-9 w-9 items-center justify-center rounded-md text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900"
+                  aria-label="Sign out"
+                  title="Sign out"
+                >
+                  <LogOut size={17} />
+                </button>
               </div>
             </div>
           </div>
         </div>
       </header>
 
-      <div className="flex flex-1">
-        {/* Navigation Sidebar */}
-        <aside className="hidden md:flex w-72 sticky top-20 bg-slate-950 text-white flex-col py-8 shadow-2xl h-[calc(100vh-5rem)] overflow-y-auto">
-          <div className="px-6 pb-6 border-b border-white/10">
-            <p className="text-xs uppercase tracking-[0.3em] text-primary/80">Admin</p>
-            <h2 className="mt-4 text-2xl font-bold">FundiWako</h2>
-            <p className="mt-2 text-sm text-slate-400">Modern control dashboard</p>
-          </div>
-          <nav className="flex-1 px-4 py-6 space-y-3">
-            {[
-              { href: '/admin/dashboard', label: 'Overview', icon: '📊', tab: 'overview' },
-              { href: '/admin/dashboard?tab=users', label: 'Users', icon: '👥', tab: 'users' },
-              { href: '/admin/dashboard?tab=applications', label: 'Applications', icon: '📋', tab: 'applications' },
-              { href: '/admin/dashboard?tab=postings', label: 'Postings', icon: '🏢', tab: 'postings' },
-              { href: '/admin/dashboard?tab=analytics', label: 'Analytics', icon: '📈', tab: 'analytics' },
-              { href: '/admin/dashboard?tab=settings', label: 'Settings', icon: '⚙️', tab: 'settings' },
-            ].map((item) => (
-              <Link
-                key={item.tab}
-                href={item.href}
-                className={`flex items-center gap-3 rounded-[1.75rem] px-4 py-3 text-sm font-semibold transition ${
-                  activeTab === item.tab ? 'bg-slate-900 text-white ring-1 ring-primary/40 shadow-lg shadow-slate-950/40' : 'text-slate-300 hover:bg-white/5 hover:text-white'
-                }`}
-              >
-                <span>{item.icon}</span>
-                {item.label}
-              </Link>
-            ))}
-          </nav>
-          <div className="px-6 py-6 border-t border-white/10">
-            <div className="rounded-[1.75rem] bg-slate-900/80 border border-white/10 p-4 shadow-inner">
-              <p className="text-xs uppercase tracking-[0.3em] text-primary/80">System status</p>
-              <p className="mt-3 text-sm text-slate-200">Stable and secure</p>
-              <p className="mt-4 text-xs text-slate-400">v1.0.4 · Audit ready</p>
+      <aside className="fixed bottom-0 left-0 top-[68px] z-30 hidden w-64 flex-col border-r border-slate-200 bg-white md:flex">
+        {renderNavigation()}
+        <div className="mt-auto border-t border-slate-200 p-4">
+          <Link
+            href="/"
+            className="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-950"
+          >
+            <Home size={18} strokeWidth={1.8} />
+            Back to website
+          </Link>
+          <div className="mt-4 flex items-center gap-3 rounded-md bg-slate-50 p-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+              <Activity size={16} />
             </div>
-          </div>
-        </aside>
-
-        {/* Main Content */}
-        <main className="flex-1 p-6 md:p-10 max-w-7xl mx-auto w-full">
-          {children}
-        </main>
-      </div>
-
-      {/* Footer */}
-      <footer className="w-full py-6 mt-auto bg-surface-container border-t border-outline-variant">
-        <div className="flex justify-between items-center px-10 max-w-7xl mx-auto">
-          <p className="text-sm text-secondary">© 2024 FundiWako Marketplace. Secure Admin Portal.</p>
-          <div className="flex gap-6 items-center">
-            <a className="text-sm text-secondary hover:text-primary transition-colors" href="#">Support</a>
-            <a className="text-sm text-secondary hover:text-primary transition-colors" href="#">Privacy Policy</a>
-            <a className="text-sm text-secondary hover:text-primary transition-colors" href="#">Audit Log</a>
+            <div>
+              <p className="text-xs font-semibold text-slate-800">System status</p>
+              <p className="text-[11px] text-slate-500">Admin services online</p>
+            </div>
+            <span className="ml-auto h-2 w-2 rounded-full bg-emerald-500" />
           </div>
         </div>
-      </footer>
+      </aside>
 
-      {/* Add New User Modal */}
-      {showAddUserModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl border border-outline-variant max-w-md w-full p-6 shadow-lg">
-            <div className="flex justify-between items-start mb-6">
-              <h2 className="text-xl font-bold text-on-surface">Add New User</h2>
+      {isSidebarOpen && (
+        <div className="fixed inset-0 z-50 md:hidden">
+          <button
+            type="button"
+            className="absolute inset-0 bg-slate-950/40"
+            onClick={() => setIsSidebarOpen(false)}
+            aria-label="Close admin navigation"
+          />
+          <aside className="absolute bottom-0 left-0 top-0 flex w-72 max-w-[85vw] flex-col border-r border-slate-200 bg-white shadow-xl">
+            <div className="flex h-[68px] items-center justify-between border-b border-slate-200 px-5">
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-lg font-extrabold text-white">F</div>
+                <div>
+                  <p className="text-sm font-bold text-slate-900">FundiWako</p>
+                  <p className="text-[11px] text-slate-500">Admin workspace</p>
+                </div>
+              </div>
               <button
-                onClick={() => setShowAddUserModal(false)}
-                className="text-secondary hover:text-on-surface text-2xl leading-none"
+                type="button"
+                onClick={() => setIsSidebarOpen(false)}
+                className="flex h-9 w-9 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100"
+                aria-label="Close admin navigation"
               >
-                ✕
+                <X size={18} />
+              </button>
+            </div>
+            {renderNavigation(() => setIsSidebarOpen(false))}
+            <div className="mt-auto border-t border-slate-200 p-4">
+              <Link
+                href="/"
+                onClick={() => setIsSidebarOpen(false)}
+                className="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50"
+              >
+                <Home size={18} />
+                Back to website
+              </Link>
+            </div>
+          </aside>
+        </div>
+      )}
+
+      <main className="min-h-[calc(100vh-68px)] px-4 py-6 sm:px-6 md:ml-64 lg:px-8 lg:py-8">
+        <div className="mx-auto w-full max-w-[1440px]">{children}</div>
+        <footer className="mx-auto mt-10 flex w-full max-w-[1440px] flex-col gap-2 border-t border-slate-200 pt-5 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between">
+          <p>© {new Date().getFullYear()} FundiWako Marketplace</p>
+          <p className="flex items-center gap-1.5"><ShieldCheck size={14} /> Secure admin portal</p>
+        </footer>
+      </main>
+
+      {showAddUserModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4">
+          <div className="w-full max-w-md rounded-lg border border-slate-200 bg-white p-6 shadow-xl">
+            <div className="mb-6 flex items-start justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-primary">User management</p>
+                <h2 className="mt-1 text-xl font-bold text-slate-900">Add new user</h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAddUserModal(false)}
+                className="flex h-8 w-8 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+                aria-label="Close add user form"
+              >
+                <X size={18} />
               </button>
             </div>
 
             <form onSubmit={handleAddUser} className="space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-on-surface mb-2">Full Name</label>
+                <label className="mb-1.5 block text-sm font-medium text-slate-700">Full name</label>
                 <input
                   type="text"
                   required
                   value={newUserForm.name}
                   onChange={(e) => setNewUserForm({ ...newUserForm, name: e.target.value })}
-                  className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-on-surface placeholder-secondary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                  className="w-full rounded-md border border-slate-300 px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-primary focus:ring-2 focus:ring-orange-100"
                   placeholder="John Doe"
                 />
               </div>
-
               <div>
-                <label className="block text-sm font-semibold text-on-surface mb-2">Email</label>
+                <label className="mb-1.5 block text-sm font-medium text-slate-700">Email</label>
                 <input
                   type="email"
                   required
                   value={newUserForm.email}
                   onChange={(e) => setNewUserForm({ ...newUserForm, email: e.target.value })}
-                  className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-on-surface placeholder-secondary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                  className="w-full rounded-md border border-slate-300 px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-primary focus:ring-2 focus:ring-orange-100"
                   placeholder="john@example.com"
                 />
               </div>
-
               <div>
-                <label className="block text-sm font-semibold text-on-surface mb-2">Phone</label>
+                <label className="mb-1.5 block text-sm font-medium text-slate-700">Phone</label>
                 <input
                   type="tel"
                   required
                   value={newUserForm.phone}
                   onChange={(e) => setNewUserForm({ ...newUserForm, phone: e.target.value })}
-                  className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-on-surface placeholder-secondary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                  className="w-full rounded-md border border-slate-300 px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-primary focus:ring-2 focus:ring-orange-100"
                   placeholder="+254712345678"
                 />
               </div>
-
               <div>
-                <label className="block text-sm font-semibold text-on-surface mb-2">Role</label>
+                <label className="mb-1.5 block text-sm font-medium text-slate-700">Role</label>
                 <select
                   value={newUserForm.role}
                   onChange={(e) => setNewUserForm({ ...newUserForm, role: e.target.value })}
-                  className="w-full px-4 py-2.5 border border-outline-variant rounded-lg text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                  className="w-full rounded-md border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-primary focus:ring-2 focus:ring-orange-100"
                 >
                   <option value="client">Client</option>
                   <option value="fundi">Fundi</option>
                   <option value="admin">Admin</option>
                 </select>
               </div>
-
-              <div className="flex gap-3 pt-4">
+              <div className="flex justify-end gap-3 border-t border-slate-200 pt-4">
                 <button
                   type="button"
                   onClick={() => setShowAddUserModal(false)}
-                  className="flex-1 px-4 py-2.5 border border-outline-variant text-on-surface rounded-lg hover:bg-surface-container-low transition-colors font-semibold"
+                  className="rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="flex-1 px-4 py-2.5 bg-primary text-on-primary rounded-lg hover:opacity-90 disabled:opacity-40 transition-all font-semibold"
+                  className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-orange-700 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  {isSubmitting ? 'Adding...' : 'Add User'}
+                  <Plus size={16} />
+                  {isSubmitting ? 'Adding...' : 'Add user'}
                 </button>
               </div>
             </form>
