@@ -115,6 +115,7 @@ export interface Notification {
 
 export interface WorkerApplication {
   _id?: ObjectId;
+  userId?: string;
   name: string;
   phone: string;
   idNumber: string;

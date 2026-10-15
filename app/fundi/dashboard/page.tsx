@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
-import { Bell, BriefcaseBusiness, CheckCircle2, ChevronRight, CircleDollarSign, Clock3, LayoutDashboard, Mail, MapPin, Menu, Settings, UserRound, X, type LucideIcon } from "lucide-react";
+import { useEffect, useMemo, useState, type ChangeEvent } from "react";
+import { Bell, BriefcaseBusiness, CheckCircle2, ChevronRight, CircleDollarSign, Clock3, FileText, LayoutDashboard, Mail, MapPin, Menu, Settings, Star, Upload, UserRound, X, type LucideIcon } from "lucide-react";
 
 type Booking = {
   _id: string;
@@ -20,6 +20,7 @@ type Booking = {
 };
 
 type FundiProfile = {
+  _id?: string;
   name?: string;
   skill?: string;
   description?: string;
@@ -30,6 +31,28 @@ type FundiProfile = {
   profileViews?: number;
   contactClicks?: number;
   availability?: string;
+  rating?: number;
+};
+
+type Certificate = {
+  id: string;
+  filename: string;
+  contentType?: string;
+  size?: number;
+  createdAt?: string;
+  url?: string;
+};
+
+type RatingSummary = {
+  averageRating: number;
+  totalCount: number;
+  reviews: Array<{
+    _id: string;
+    rating: number;
+    review?: string;
+    clientName: string;
+    createdAt: string;
+  }>;
 };
 
 const statusStyles: Record<string, string> = {
@@ -52,6 +75,11 @@ export default function FundiDashboard() {
   const router = useRouter();
   const [profile, setProfile] = useState<FundiProfile>({});
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [certificates, setCertificates] = useState<Certificate[]>([]);
+  const [ratingSummary, setRatingSummary] = useState<RatingSummary | null>(null);
+  const [certificateMessage, setCertificateMessage] = useState("");
+  const [certificateError, setCertificateError] = useState("");
+  const [uploadingCertificates, setUploadingCertificates] = useState(false);
   const [unreadMessages, setUnreadMessages] = useState(0);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -70,21 +98,38 @@ export default function FundiDashboard() {
 
     const loadDashboard = async () => {
       try {
-        const [profileResponse, bookingResponse, messageResponse] = await Promise.all([
+        const [profileResponse, bookingResponse, messageResponse, certificateResponse] = await Promise.all([
           fetch("/api/fundi/profile"),
           fetch("/api/bookings"),
           fetch("/api/messages"),
+          fetch("/api/fundi/certificates"),
         ]);
 
-        if (profileResponse.ok) setProfile(await profileResponse.json());
+        if (profileResponse.ok) {
+          const profileData: FundiProfile = await profileResponse.json();
+          setProfile(profileData);
+          if (profileData._id) {
+            const ratingResponse = await fetch(`/api/ratings/${encodeURIComponent(profileData._id)}?limit=3`);
+            if (ratingResponse.ok) setRatingSummary(await ratingResponse.json());
+            else console.error("Failed to load fundi ratings:", ratingResponse.status);
+          }
+        } else {
+          console.error("Failed to load fundi profile:", profileResponse.status);
+        }
         if (bookingResponse.ok) {
           const bookingData = await bookingResponse.json();
           setBookings(Array.isArray(bookingData) ? bookingData : bookingData.data || []);
-        }
+        } else console.error("Failed to load fundi bookings:", bookingResponse.status);
         if (messageResponse.ok) {
           const messageData = await messageResponse.json();
           setUnreadMessages((messageData.conversations || []).reduce((total: number, conversation: { unreadCount?: number }) => total + (conversation.unreadCount || 0), 0));
-        }
+        } else console.error("Failed to load fundi messages:", messageResponse.status);
+        if (certificateResponse.ok) {
+          const certificateData = await certificateResponse.json();
+          setCertificates(Array.isArray(certificateData.certificates) ? certificateData.certificates : []);
+        } else console.error("Failed to load fundi certificates:", certificateResponse.status);
+      } catch (error) {
+        console.error("Error loading fundi dashboard:", error);
       } finally {
         setLoading(false);
       }
@@ -115,6 +160,35 @@ export default function FundiDashboard() {
       if (response.ok) setBookings((current) => current.map((booking) => booking._id === bookingId ? { ...booking, status: nextStatus } : booking));
     } finally {
       setActionLoading(null);
+    }
+  };
+
+  const uploadCertificates = async (event: ChangeEvent<HTMLInputElement>) => {
+    const input = event.currentTarget;
+    const selectedFiles = input.files;
+    if (!selectedFiles?.length) return;
+
+    setUploadingCertificates(true);
+    setCertificateError("");
+    setCertificateMessage("");
+    const formData = new FormData();
+    Array.from(selectedFiles).forEach((file) => formData.append("certificates", file));
+
+    try {
+      const response = await fetch("/api/fundi/certificates", { method: "POST", body: formData });
+      const data = await response.json();
+      if (!response.ok) {
+        setCertificateError(data.error || "Could not upload certificates.");
+        return;
+      }
+      setCertificates((current) => [...data.certificates, ...current]);
+      setCertificateMessage("Certificates uploaded successfully.");
+    } catch (error) {
+      console.error("Error uploading fundi certificates:", error);
+      setCertificateError("Could not upload certificates. Please try again.");
+    } finally {
+      setUploadingCertificates(false);
+      input.value = "";
     }
   };
 
@@ -200,9 +274,95 @@ export default function FundiDashboard() {
                 ))}
               </div>
             </section>
+
+            <section className="mt-6 rounded-2xl border border-neutral-200 bg-white shadow-sm">
+              <div className="flex flex-col justify-between gap-4 border-b border-neutral-100 px-5 py-5 sm:flex-row sm:items-center sm:px-6">
+                <div>
+                  <h2 className="font-heading text-lg font-bold">My certificates</h2>
+                  <p className="mt-1 text-xs text-neutral-500">View certificates submitted with your application or add new ones.</p>
+                </div>
+                <label className={`inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-primary-500 px-4 py-3 text-sm font-semibold text-white hover:bg-primary-600 ${uploadingCertificates ? "pointer-events-none opacity-60" : ""}`}>
+                  <Upload size={16} />
+                  {uploadingCertificates ? "Uploading..." : "Add certificates"}
+                  <input
+                    type="file"
+                    className="sr-only"
+                    accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
+                    multiple
+                    disabled={uploadingCertificates}
+                    onChange={uploadCertificates}
+                  />
+                </label>
+              </div>
+              <div className="px-5 py-4 sm:px-6">
+                <p className="mb-4 text-xs text-neutral-500">PDF, JPG, or PNG files; up to 5 files and 4 MB per upload.</p>
+                {certificateError && <p role="alert" className="mb-3 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{certificateError}</p>}
+                {certificateMessage && <p role="status" className="mb-3 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{certificateMessage}</p>}
+                {certificates.length === 0 ? (
+                  <div className="rounded-xl border border-dashed border-neutral-200 px-4 py-8 text-center">
+                    <FileText className="mx-auto text-neutral-300" size={28} />
+                    <p className="mt-2 text-sm font-semibold text-neutral-600">No certificates added yet</p>
+                    <p className="mt-1 text-xs text-neutral-400">Upload a certificate to help clients trust your experience.</p>
+                  </div>
+                ) : (
+                  <ul className="grid gap-3 sm:grid-cols-2">
+                    {certificates.map((certificate) => (
+                      <li key={certificate.id} className="flex min-w-0 items-center gap-3 rounded-xl border border-neutral-100 bg-neutral-50 p-3">
+                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white text-primary-600"><FileText size={19} /></span>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-semibold text-neutral-800">{certificate.filename}</p>
+                          <p className="mt-1 text-xs text-neutral-400">
+                            {certificate.size ? `${Math.ceil(certificate.size / 1024)} KB` : certificate.contentType || "Certificate"}
+                          </p>
+                        </div>
+                        <a
+                          href={certificate.url || `/api/fundi/certificates/${encodeURIComponent(certificate.id)}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="shrink-0 rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs font-semibold text-primary-700 hover:bg-primary-50"
+                        >
+                          View
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </section>
           </main>
 
           <aside className="grid content-start gap-5">
+            <section className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
+              <div className="flex items-center justify-between">
+                <h2 className="font-heading font-bold">Your ratings</h2>
+                <Star size={18} className="fill-amber-400 text-amber-400" />
+              </div>
+              <div className="mt-4 flex items-end gap-2">
+                <span className="font-heading text-3xl font-bold">{(ratingSummary?.averageRating ?? profile.rating ?? 0).toFixed(1)}</span>
+                <span className="mb-1 text-xs text-neutral-500">/ 5 · {ratingSummary?.totalCount ?? 0} reviews</span>
+              </div>
+              <div className="mt-2 flex gap-1" aria-label={`Average rating ${(ratingSummary?.averageRating ?? profile.rating ?? 0).toFixed(1)} out of 5`}>
+                {Array.from({ length: 5 }, (_, index) => (
+                  <Star key={index} size={15} className={index < Math.round(ratingSummary?.averageRating ?? profile.rating ?? 0) ? "fill-amber-400 text-amber-400" : "text-neutral-200"} />
+                ))}
+              </div>
+              {ratingSummary?.reviews?.length ? (
+                <ul className="mt-4 space-y-3 border-t border-neutral-100 pt-3">
+                  {ratingSummary.reviews.slice(0, 3).map((review) => (
+                    <li key={review._id}>
+                      <div className="flex items-center justify-between gap-2 text-xs">
+                        <span className="truncate font-semibold text-neutral-700">{review.clientName}</span>
+                        <span className="shrink-0 font-semibold text-amber-600">{review.rating} / 5</span>
+                      </div>
+                      {review.review && <p className="mt-1 line-clamp-2 text-xs leading-5 text-neutral-500">{review.review}</p>}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-3 text-xs leading-5 text-neutral-500">Ratings and client reviews will appear here when clients review your work.</p>
+              )}
+              <Link href="/fundi/profile" className="mt-4 inline-flex text-xs font-bold text-primary-600">View profile and reviews <ChevronRight size={14} /></Link>
+            </section>
             <section className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm"><div className="flex items-center justify-between"><h2 className="font-heading font-bold">Profile strength</h2><span className="text-sm font-bold text-primary-600">{profileStrength}%</span></div><div className="mt-4 h-2 overflow-hidden rounded-full bg-neutral-100"><div className="h-full rounded-full bg-primary-500 transition-all" style={{ width: `${profileStrength}%` }} /></div><p className="mt-3 text-xs leading-5 text-neutral-500">Complete your profile to appear more often in client searches.</p><Link href="/fundi/profile" className="mt-4 inline-flex items-center text-xs font-bold text-primary-600">Improve profile <ChevronRight size={14} /></Link></section>
             <section className="rounded-2xl bg-secondary-500 p-5 text-white"><div className="flex items-center justify-between"><p className="text-xs font-semibold text-black">This month</p><CircleDollarSign size={19} className="text-primary-300" /></div><p className="mt-3 text-3xl font-heading font-bold text-black">KES 0</p><p className="mt-1 text-xs font-medium text-black">Completed job earnings</p><div className="mt-5 flex h-12 items-end gap-1.5" aria-hidden="true">{[35, 52, 44, 62, 48, 76, 58].map((height, index) => <span key={index} className="flex-1 rounded-t bg-primary-400/60" style={{ height: `${height}%` }} />)}</div><p className="mt-3 text-[11px] leading-5 text-black">Earnings tracking will update when clients pay through FundiWako.</p></section>
             <section className="rounded-2xl border border-primary-100 bg-primary-50 p-5"><div className="flex items-center justify-between"><div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white text-primary-600"><Bell size={18} /></div><span className="text-xs font-bold text-primary-700">{profile.isVerified ? "Verified" : "Pending"}</span></div><h2 className="mt-4 font-heading font-bold">Build client trust</h2><p className="mt-2 text-xs leading-5 text-neutral-600">Add recent work photos and complete your verification to stand out to clients.</p><Link href="/fundi/profile" className="mt-4 inline-flex text-xs font-bold text-primary-700">Update portfolio <ChevronRight size={14} /></Link></section>

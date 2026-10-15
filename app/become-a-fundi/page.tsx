@@ -4,6 +4,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Eye, EyeOff } from "lucide-react";
 import { FUNDI_SERVICE_CATALOG, type ServiceCatalogItem } from "@/lib/serviceCatalog";
 
 export default function BecomeAFundi() {
@@ -14,6 +15,8 @@ export default function BecomeAFundi() {
     const [serviceOptions, setServiceOptions] = useState<ServiceCatalogItem[]>(FUNDI_SERVICE_CATALOG);
     const [isCustomService, setIsCustomService] = useState(false);
     const [customService, setCustomService] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const steps = ['Account', 'Experience', 'Availability', 'Review'];
 
     useEffect(() => {
@@ -342,29 +345,74 @@ export default function BecomeAFundi() {
                                             <label className="block text-sm font-medium text-neutral-700 mb-2">
                                                 Password *
                                             </label>
-                                            <input
-                                                type="password"
-                                                name="password"
-                                                value={formData.password}
-                                                onChange={handleChange}
-                                                className="w-full px-4 py-3 rounded-xl border border-neutral-200 focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all bg-neutral-50 focus:bg-white"
-                                                placeholder="Create a strong password"
-                                                required
-                                            />
+                                            <div className="relative">
+                                                <input
+                                                    type={showPassword ? "text" : "password"}
+                                                    name="password"
+                                                    value={formData.password}
+                                                    onChange={handleChange}
+                                                    autoComplete="new-password"
+                                                    className="w-full px-4 py-3 pr-12 rounded-xl border border-neutral-200 focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all bg-neutral-50 focus:bg-white"
+                                                    placeholder="Create a strong password"
+                                                    required
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowPassword((visible) => !visible)}
+                                                    className="absolute inset-y-0 right-0 flex items-center px-4 text-neutral-500 hover:text-neutral-800"
+                                                    aria-label={showPassword ? "Hide password" : "Show password"}
+                                                    aria-pressed={showPassword}
+                                                >
+                                                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                                </button>
+                                            </div>
                                         </div>
                                         <div>
                                             <label className="block text-sm font-medium text-neutral-700 mb-2">
                                                 Confirm Password *
                                             </label>
-                                            <input
-                                                type="password"
-                                                name="confirmPassword"
-                                                value={formData.confirmPassword}
-                                                onChange={handleChange}
-                                                className="w-full px-4 py-3 rounded-xl border border-neutral-200 focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all bg-neutral-50 focus:bg-white"
-                                                placeholder="Confirm your password"
-                                                required
-                                            />
+                                            <div className="relative">
+                                                <input
+                                                    type={showConfirmPassword ? "text" : "password"}
+                                                    name="confirmPassword"
+                                                    value={formData.confirmPassword}
+                                                    onChange={handleChange}
+                                                    autoComplete="new-password"
+                                                    aria-invalid={Boolean(formData.confirmPassword && formData.password !== formData.confirmPassword)}
+                                                    aria-describedby="fundi-password-match"
+                                                    className={`w-full px-4 py-3 pr-12 rounded-xl border focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all bg-neutral-50 focus:bg-white ${
+                                                        formData.confirmPassword && formData.password !== formData.confirmPassword
+                                                            ? "border-red-500"
+                                                            : "border-neutral-200"
+                                                    }`}
+                                                    placeholder="Confirm your password"
+                                                    required
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowConfirmPassword((visible) => !visible)}
+                                                    className="absolute inset-y-0 right-0 flex items-center px-4 text-neutral-500 hover:text-neutral-800"
+                                                    aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+                                                    aria-pressed={showConfirmPassword}
+                                                >
+                                                    {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                                </button>
+                                            </div>
+                                            <p
+                                                id="fundi-password-match"
+                                                aria-live="polite"
+                                                className={`mt-2 text-sm ${
+                                                    formData.confirmPassword && formData.password !== formData.confirmPassword
+                                                        ? "text-red-600"
+                                                        : "text-green-700"
+                                                }`}
+                                            >
+                                                {formData.confirmPassword
+                                                    ? formData.password === formData.confirmPassword
+                                                        ? "Passwords match."
+                                                        : "Alert: passwords do not match."
+                                                    : ""}
+                                            </p>
                                         </div>
                                     </div>
                                 </div>}

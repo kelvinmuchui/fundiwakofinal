@@ -134,6 +134,11 @@ async function createIndexes() {
       { applicationId: 1 },
       { name: 'worker_application_certificate_application' },
     );
+    const fundiCertificatesCol = db.collection('fundi_certificates');
+    await fundiCertificatesCol.createIndex(
+      { fundiId: 1, createdAt: -1 },
+      { name: 'fundi_certificate_owner_created' },
+    );
     console.log('   ✓ users indexes created\n');
 
     console.log('✅ All indexes created successfully!\n');
@@ -144,7 +149,7 @@ async function createIndexes() {
       'connections', 'skills', 'activities', 'recommendations',
       'messages', 'conversations', 'bookings', 'marketplace_jobs',
       'marketplace_proposals', 'marketplace_contracts', 'ratings', 'users',
-      'worker_application_certificates'
+      'worker_application_certificates', 'fundi_certificates'
     ];
 
     for (const collName of collections) {

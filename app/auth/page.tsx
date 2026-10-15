@@ -4,12 +4,15 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { signIn, getSession } from 'next-auth/react';
+import { Eye, EyeOff } from 'lucide-react';
 
 export default function AuthPage() {
   const [activeTab, setActiveTab] = useState<'signin' | 'signup'>('signin');
   const [selectedRole, setSelectedRole] = useState<'client' | 'fundi' | 'admin' | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showSignUpPassword, setShowSignUpPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const router = useRouter();
 
   // Sign In State
@@ -63,15 +66,15 @@ export default function AuthPage() {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
     setError('');
 
     // Validate passwords match
     if (signUpData.password !== signUpData.confirmPassword) {
       setError('Passwords do not match');
-      setIsLoading(false);
       return;
     }
+
+    setIsLoading(true);
 
     if (signUpData.password.length < 8) {
       setError('Password must be at least 8 characters long');
@@ -384,30 +387,75 @@ export default function AuthPage() {
                       <label htmlFor="signup-password" className="block text-sm font-medium text-gray-700 mb-2">
                         Password
                       </label>
-                      <input
-                        id="signup-password"
-                        type="password"
-                        required
-                        value={signUpData.password}
-                        onChange={(e) => setSignUpData({ ...signUpData, password: e.target.value })}
-                        className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                        placeholder="••••••••"
-                      />
+                      <div className="relative">
+                        <input
+                          id="signup-password"
+                          type={showSignUpPassword ? 'text' : 'password'}
+                          required
+                          value={signUpData.password}
+                          onChange={(e) => setSignUpData({ ...signUpData, password: e.target.value })}
+                          className="w-full px-4 py-3 pr-12 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                          placeholder="••••••••"
+                          autoComplete="new-password"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowSignUpPassword((visible) => !visible)}
+                          className="absolute inset-y-0 right-0 flex items-center px-4 text-gray-500 hover:text-gray-800"
+                          aria-label={showSignUpPassword ? 'Hide password' : 'Show password'}
+                          aria-pressed={showSignUpPassword}
+                        >
+                          {showSignUpPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                        </button>
+                      </div>
                     </div>
 
                     <div>
                       <label htmlFor="signup-confirm" className="block text-sm font-medium text-gray-700 mb-2">
                         Confirm Password
                       </label>
-                      <input
-                        id="signup-confirm"
-                        type="password"
-                        required
-                        value={signUpData.confirmPassword}
-                        onChange={(e) => setSignUpData({ ...signUpData, confirmPassword: e.target.value })}
-                        className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                        placeholder="••••••••"
-                      />
+                      <div className="relative">
+                        <input
+                          id="signup-confirm"
+                          type={showConfirmPassword ? 'text' : 'password'}
+                          required
+                          value={signUpData.confirmPassword}
+                          onChange={(e) => setSignUpData({ ...signUpData, confirmPassword: e.target.value })}
+                          className={`w-full px-4 py-3 pr-12 rounded-lg border focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
+                            signUpData.confirmPassword && signUpData.password !== signUpData.confirmPassword
+                              ? 'border-red-500'
+                              : 'border-gray-300'
+                          }`}
+                          placeholder="••••••••"
+                          autoComplete="new-password"
+                          aria-invalid={Boolean(signUpData.confirmPassword && signUpData.password !== signUpData.confirmPassword)}
+                          aria-describedby="signup-password-match"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowConfirmPassword((visible) => !visible)}
+                          className="absolute inset-y-0 right-0 flex items-center px-4 text-gray-500 hover:text-gray-800"
+                          aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
+                          aria-pressed={showConfirmPassword}
+                        >
+                          {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                        </button>
+                      </div>
+                      <p
+                        id="signup-password-match"
+                        aria-live="polite"
+                        className={`mt-2 text-sm ${
+                          signUpData.confirmPassword && signUpData.password !== signUpData.confirmPassword
+                            ? 'text-red-600'
+                            : 'text-green-700'
+                        }`}
+                      >
+                        {signUpData.confirmPassword
+                          ? signUpData.password === signUpData.confirmPassword
+                            ? 'Passwords match.'
+                            : 'Alert: passwords do not match.'
+                          : ''}
+                      </p>
                     </div>
                   </div>
 

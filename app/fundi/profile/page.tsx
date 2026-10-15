@@ -3,6 +3,7 @@
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { Pencil } from 'lucide-react';
 import PortfolioGallery from '../../components/PortfolioGallery';
 import ReviewSection from '../../components/ReviewSection';
 import { FUNDI_SERVICE_CATALOG } from '@/lib/serviceCatalog';
@@ -462,7 +463,10 @@ export default function FundiProfile() {
                                     }}
                                     className="w-full sm:w-auto px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-full transition-colors text-sm font-medium"
                                 >
-                                    Edit Profile
+                                    <span className="inline-flex items-center gap-2">
+                                        Edit Profile
+                                        <Pencil size={16} aria-hidden="true" />
+                                    </span>
                                 </button>
                             )}
                             {isEditing && (

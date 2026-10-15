@@ -35,7 +35,7 @@ const fundiProfileProjection = {
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
-    if (!session || !session.user) {
+    if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -46,7 +46,7 @@ export async function GET() {
 
     const usersCollection = await getCollection('users');
     const user = await usersCollection.findOne(
-      { email: session.user.email },
+      { email: session.user.email, role: 'fundi' },
       { projection: fundiProfileProjection }
     );
 
@@ -64,7 +64,7 @@ export async function GET() {
 export async function PUT(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session || !session.user) {
+    if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -83,29 +83,24 @@ export async function PUT(request: NextRequest) {
     const coreFields = ['name', 'phone', 'skill', 'experience', 'description', 'location', 'neighborhood'];
     const updates: Record<string, unknown> = {};
 
-    if (coreFields.some(hasField)) {
-      const missingFields = coreFields.filter(
-        (field) => typeof input[field] !== 'string' || !input[field].trim()
-      );
-      if (missingFields.length > 0) {
-        return NextResponse.json(
-          { error: `Please complete the required profile fields: ${missingFields.join(', ')}` },
-          { status: 400 }
-        );
-      }
-
-      for (const field of coreFields) {
-        updates[field] = (input[field] as string).trim();
-      }
-
-      if (hasField('skills')) {
-        if (!Array.isArray(input.skills) || !input.skills.every((value) => typeof value === 'string')) {
-          return NextResponse.json({ error: 'Skills must be a list of text values' }, { status: 400 });
+    for (const field of coreFields) {
+      if (hasField(field)) {
+        if (typeof input[field] !== 'string' || !input[field].trim()) {
+          return NextResponse.json({ error: `${field} must be a non-empty text value` }, { status: 400 });
         }
-        updates.skills = input.skills.map((value) => value.trim()).filter(Boolean);
-      } else {
-        updates.skills = [updates.skill];
+        updates[field] = input[field].trim();
       }
+    }
+
+    if (hasField('skills')) {
+      if (!Array.isArray(input.skills) || !input.skills.every((value) => typeof value === 'string')) {
+        return NextResponse.json({ error: 'Skills must be a list of text values' }, { status: 400 });
+      }
+      const skills = input.skills.map((value) => value.trim()).filter(Boolean);
+      updates.skills = skills;
+      if (!hasField('skill') && skills.length > 0) updates.skill = skills[0];
+    } else if (hasField('skill')) {
+      updates.skills = [updates.skill];
     }
 
     if (hasField('availability')) {
@@ -145,22 +140,27 @@ export async function PUT(request: NextRequest) {
     }
 
     const usersCollection = await getCollection('users');
-    const result = await usersCollection.findOneAndUpdate(
-      { email: session.user.email },
+    const fundiQuery = { email: session.user.email, role: 'fundi' };
+    const result = await usersCollection.updateOne(
+      fundiQuery,
       {
         $set: {
           ...updates,
           updatedAt: new Date()
         }
-      },
-      { returnDocument: 'after', projection: fundiProfileProjection }
+      }
     );
 
-    if (!result) {
+    if (result.matchedCount !== 1) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    return NextResponse.json(result);
+    const updatedProfile = await usersCollection.findOne(fundiQuery, { projection: fundiProfileProjection });
+    if (!updatedProfile) {
+      return NextResponse.json({ error: 'Profile was updated but could not be reloaded' }, { status: 500 });
+    }
+
+    return NextResponse.json(updatedProfile);
   } catch (error) {
     console.error('Error updating profile:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
