@@ -501,11 +501,11 @@ export default function BecomeAFundi() {
                                                 name="certificates"
                                                 onChange={handleChange}
                                                 multiple
-                                                accept=".pdf,.jpg,.jpeg,.png"
+                                                accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
                                                 className="w-full px-4 py-3 rounded-xl border border-neutral-200 focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all bg-neutral-50 focus:bg-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
                                             />
                                             <p className="text-xs text-neutral-500 mt-1">
-                                                Upload your certificates, licenses, or qualifications (PDF, JPG, PNG - Max 5MB each)
+                                                Upload up to 5 PDF, JPG, or PNG certificates (4 MB combined maximum).
                                             </p>
                                         </div>
                                         <div className="md:col-span-2">

@@ -325,7 +325,7 @@ export default function PublicFundiProfile() {
 
               <div className="flex flex-col gap-3">
                 <button onClick={() => setShowBookingModal(true)}
-                  className="w-full py-4 btn-primary text-black rounded-2xl font-heading font-black text-lg flex items-center justify-center gap-2 group">
+                  className="w-full py-4 btn-primary text-white rounded-2xl font-heading font-black text-lg flex items-center justify-center gap-2 group">
                   <span className="group-hover:scale-125 transition-transform">📅</span> Book Appointment
                 </button>
                 <button onClick={handleContact} disabled={contactClicked || isTracking}

@@ -203,7 +203,7 @@ export default function BookingModal({ fundiId, fundiName, isOpen, onClose }: Bo
                 </button>
                 <button
                   type="submit"
-                  className="flex-[2] py-4 px-6 bg-primary-600 text-white rounded-2xl font-heading font-black text-lg hover:bg-primary-500 transition-all shadow-xl shadow-primary-600/20 flex items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-70"
+                  className="flex-[2] py-4 px-6 bg-orange-500 text-white rounded-2xl font-heading font-black text-lg hover:bg-orange-600 transition-all shadow-xl shadow-orange-500/20 flex items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-70"
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? (

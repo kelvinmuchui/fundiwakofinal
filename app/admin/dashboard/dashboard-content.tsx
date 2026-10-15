@@ -4,7 +4,14 @@ import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import CorporateRecruitmentForm from '../../components/CorporateRecruitmentForm';
-import { BadgeCheck, BriefcaseBusiness, ClipboardList, RefreshCw, Users } from 'lucide-react';
+import { BadgeCheck, BriefcaseBusiness, ClipboardList, ExternalLink, FileText, RefreshCw, Users } from 'lucide-react';
+
+interface ApplicationCertificate {
+  id: string;
+  filename: string;
+  contentType: 'application/pdf' | 'image/jpeg' | 'image/png';
+  size: number;
+}
 
 interface User {
   _id: string;
@@ -14,6 +21,7 @@ interface User {
   role: string;
   isVerified: boolean;
   createdAt: string;
+  certificates?: Array<ApplicationCertificate | string>;
   [key: string]: unknown;
 }
 
@@ -30,6 +38,7 @@ interface WorkerApplication {
   tvetInstitution?: string;
   availability?: string;
   reasonForJoining?: string;
+  certificates?: Array<ApplicationCertificate | string>;
   status: string;
   createdAt: string;
   submittedAt?: string;
@@ -328,6 +337,13 @@ export default function AdminDashboardContent() {
   const selectedApplicationUser = selectedApp
     ? users.find((user) => user.email.toLowerCase() === selectedApp.email.toLowerCase()) ?? null
     : null;
+  const selectedCertificates = selectedApp
+    ? Array.isArray(selectedApp.certificates) && selectedApp.certificates.length > 0
+      ? selectedApp.certificates
+      : Array.isArray(selectedApplicationUser?.certificates)
+        ? selectedApplicationUser.certificates
+        : []
+    : [];
   const tabTitles: Record<string, { title: string; description: string }> = {
     overview: { title: 'Dashboard overview', description: 'A snapshot of users, applications, and activity across FundiWako.' },
     users: { title: 'User management', description: 'Browse and manage client, fundi, and administrator accounts.' },
@@ -957,7 +973,7 @@ export default function AdminDashboardContent() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {Object.entries(selectedApp)
-                .filter(([key]) => key !== '_id')
+                .filter(([key]) => key !== '_id' && key !== 'certificates')
                 .map(([key, value]) => (
                   <div key={key} className="min-w-0">
                     <p className="text-gray-400 text-sm">{formatDetailLabel(key)}</p>
@@ -966,11 +982,48 @@ export default function AdminDashboardContent() {
                 ))}
             </div>
             <section className="mt-6 border-t border-gray-700 pt-4">
+              <h3 className="mb-3 text-lg font-semibold text-white">Submitted certificates</h3>
+              {selectedCertificates.length > 0 ? (
+                <ul className="space-y-2">
+                  {selectedCertificates.map((certificate, index) => {
+                    const isStoredCertificate = typeof certificate === 'object' && certificate !== null;
+                    const filename = isStoredCertificate ? certificate.filename : certificate;
+                    const href = isStoredCertificate
+                      ? `/api/admin/applications/${encodeURIComponent(selectedApp._id)}/certificates/${encodeURIComponent(certificate.id)}`
+                      : /^https?:\/\//i.test(certificate) || certificate.startsWith('/')
+                        ? certificate
+                        : null;
+
+                    return (
+                      <li key={isStoredCertificate ? certificate.id : `${certificate}-${index}`}>
+                        {href ? (
+                          <a
+                            href={href}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 rounded-md border border-gray-600 bg-gray-900 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-700"
+                          >
+                            <FileText size={16} aria-hidden="true" />
+                            <span className="break-all">{filename || `Certificate ${index + 1}`}</span>
+                            <ExternalLink size={14} aria-hidden="true" />
+                          </a>
+                        ) : (
+                          <span className="text-sm text-gray-400">{filename}</span>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : (
+                <p className="text-sm text-gray-400">No certificates were submitted with this application.</p>
+              )}
+            </section>
+            <section className="mt-6 border-t border-gray-700 pt-4">
               <h3 className="mb-4 text-lg font-semibold text-white">Account details from the user record</h3>
               {selectedApplicationUser ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {Object.entries(selectedApplicationUser)
-                    .filter(([key]) => !hiddenUserFields.has(key))
+                    .filter(([key]) => !hiddenUserFields.has(key) && key !== 'certificates')
                     .map(([key, value]) => (
                       <div key={key} className="min-w-0">
                         <p className="text-gray-400 text-sm">{formatDetailLabel(key)}</p>

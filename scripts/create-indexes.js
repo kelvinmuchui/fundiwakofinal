@@ -129,6 +129,11 @@ async function createIndexes() {
     await usersCol.createIndex({ role: 1 }, { name: 'role' });
     await usersCol.createIndex({ isVerified: 1 }, { name: 'isVerified' });
     await usersCol.createIndex({ createdAt: -1 }, { name: 'createdAt' });
+    const workerApplicationCertificatesCol = db.collection('worker_application_certificates');
+    await workerApplicationCertificatesCol.createIndex(
+      { applicationId: 1 },
+      { name: 'worker_application_certificate_application' },
+    );
     console.log('   ✓ users indexes created\n');
 
     console.log('✅ All indexes created successfully!\n');
@@ -138,7 +143,8 @@ async function createIndexes() {
     const collections = [
       'connections', 'skills', 'activities', 'recommendations',
       'messages', 'conversations', 'bookings', 'marketplace_jobs',
-      'marketplace_proposals', 'marketplace_contracts', 'ratings', 'users'
+      'marketplace_proposals', 'marketplace_contracts', 'ratings', 'users',
+      'worker_application_certificates'
     ];
 
     for (const collName of collections) {

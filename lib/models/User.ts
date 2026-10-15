@@ -127,7 +127,15 @@ export interface WorkerApplication {
   neighborhood: string;
   businessName?: string;
   businessRegistration?: string;
-  certificates?: string[];
+  certificates?: Array<
+    | string
+    | {
+        id: string;
+        filename: string;
+        contentType: 'application/pdf' | 'image/jpeg' | 'image/png';
+        size: number;
+      }
+  >;
   mpesaNumber?: string;
   bankName?: string;
   bankAccountName?: string;

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
+import { Binary, ObjectId, type Collection, type Document } from 'mongodb';
 import { getCollection } from '@/lib/db';
-import type { User } from '@/lib/models/User';
+import type { User, WorkerApplication } from '@/lib/models/User';
 import { registerSchema, getValidationErrorMessages } from '@/lib/validation';
 import { generateVerificationToken, sendVerificationEmail } from '@/lib/emailService';
 import { logAuditAction, logComplianceAction } from '@/lib/auditLog';
@@ -29,9 +30,36 @@ type RegistrationBody = {
   yearsOfExperience: number;
 };
 
+type PreparedCertificate = {
+  filename: string;
+  contentType: 'application/pdf' | 'image/jpeg' | 'image/png';
+  size: number;
+  data: Buffer;
+};
+
+interface StoredCertificate extends Document {
+  _id?: ObjectId;
+  applicationId: ObjectId;
+  filename: string;
+  contentType: PreparedCertificate['contentType'];
+  size: number;
+  data: Binary;
+  createdAt: Date;
+}
+
+const MAX_CERTIFICATE_COUNT = 5;
+const MAX_CERTIFICATE_UPLOAD_BYTES = 4 * 1024 * 1024;
+const CERTIFICATE_TYPES: Map<string, PreparedCertificate['contentType']> = new Map([
+  ['.pdf', 'application/pdf'],
+  ['.jpg', 'image/jpeg'],
+  ['.jpeg', 'image/jpeg'],
+  ['.png', 'image/png'],
+] as const);
+
 export async function POST(request: NextRequest) {
   try {
     let body: RegistrationBody;
+    let certificateFiles: File[] = [];
     const contentType = request.headers.get('content-type');
     const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
 
@@ -41,6 +69,11 @@ export async function POST(request: NextRequest) {
     } else if (contentType?.includes('multipart/form-data')) {
       const formData = await request.formData();
       const getValue = (key: string) => formData.get(key)?.toString() || '';
+      const submittedFiles = formData.getAll('certificates');
+      if (submittedFiles.some((entry) => !(entry instanceof File))) {
+        return NextResponse.json({ error: 'Certificate uploads must be files' }, { status: 400 });
+      }
+      certificateFiles = submittedFiles.filter((entry): entry is File => entry instanceof File && entry.size > 0);
       body = {
         name: getValue('name'),
         email: getValue('email'),
@@ -67,6 +100,11 @@ export async function POST(request: NextRequest) {
         { error: 'Invalid content type' },
         { status: 400 }
       );
+    }
+
+    const certificateValidation = await prepareCertificates(certificateFiles);
+    if (!certificateValidation.success) {
+      return NextResponse.json({ error: certificateValidation.error }, { status: 400 });
     }
 
     // Validate input with Zod schema
@@ -113,6 +151,13 @@ export async function POST(request: NextRequest) {
       if (!serviceTitle || serviceTitle.length > 80) {
         return NextResponse.json(
           { error: 'Primary service must be between 1 and 80 characters' },
+          { status: 400 }
+        );
+      }
+
+      if (role !== 'fundi' && certificateValidation.certificates.length > 0) {
+        return NextResponse.json(
+          { error: 'Only fundi applications can include certificates' },
           { status: 400 }
         );
       }
@@ -172,15 +217,24 @@ export async function POST(request: NextRequest) {
 
     // Keep the account and its review application in sync before external side effects.
     if (role === 'fundi') {
+      let applicationsCollection: Collection<WorkerApplication & Document> | null = null;
+      let certificatesCollection: Collection<StoredCertificate> | null = null;
+      let applicationId: ObjectId | undefined;
+
       try {
-        const applicationsCollection = await getCollection('worker_applications');
-        await applicationsCollection.insertOne({
+        applicationsCollection = await getCollection<WorkerApplication & Document>('worker_applications');
+        if (certificateValidation.certificates.length > 0) {
+          certificatesCollection = await getCollection<StoredCertificate>('worker_application_certificates');
+        }
+
+        const applicationResult = await applicationsCollection.insertOne({
           userId,
           name,
           email: email.toLowerCase(),
           phone,
           skill: body.skill,
           experience: body.experience,
+          idNumber: body.idNumber || '',
           description: body.description,
           location: body.location,
           tvetInstitution: body.tvetInstitution,
@@ -188,11 +242,57 @@ export async function POST(request: NextRequest) {
           reasonForJoining: body.reasonForJoining,
           skills: body.skills || [],
           yearsOfExperience: body.yearsOfExperience,
+          certificates: [],
           status: 'pending',
           createdAt: new Date(),
           submittedAt: new Date(),
         });
+
+        applicationId = applicationResult.insertedId;
+        if (certificatesCollection && certificateValidation.certificates.length > 0) {
+          const storedCertificates = await certificatesCollection.insertMany(
+            certificateValidation.certificates.map((certificate) => ({
+              applicationId: applicationResult.insertedId,
+              filename: certificate.filename,
+              contentType: certificate.contentType,
+              size: certificate.size,
+              data: new Binary(certificate.data),
+              createdAt: new Date(),
+            })),
+          );
+
+          const updateResult = await applicationsCollection.updateOne(
+            { _id: applicationResult.insertedId },
+            {
+              $set: {
+                certificates: certificateValidation.certificates.map((certificate, index) => ({
+                  id: storedCertificates.insertedIds[index].toString(),
+                  filename: certificate.filename,
+                  contentType: certificate.contentType,
+                  size: certificate.size,
+                })),
+              },
+            },
+          );
+          if (updateResult.matchedCount !== 1) {
+            throw new Error('Failed to attach certificate uploads to the fundi application');
+          }
+        }
       } catch (applicationError) {
+        if (applicationId && applicationsCollection) {
+          try {
+            await applicationsCollection.deleteOne({ _id: applicationId });
+          } catch (cleanupError) {
+            console.error('Failed to remove incomplete fundi application:', cleanupError);
+          }
+        }
+        if (applicationId && certificatesCollection) {
+          try {
+            await certificatesCollection.deleteMany({ applicationId });
+          } catch (cleanupError) {
+            console.error('Failed to remove incomplete fundi certificates:', cleanupError);
+          }
+        }
         try {
           await usersCollection.deleteOne({ _id: result.insertedId });
         } catch (cleanupError) {
@@ -254,6 +354,47 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+async function prepareCertificates(
+  files: File[],
+): Promise<{ success: true; certificates: PreparedCertificate[] } | { success: false; error: string }> {
+  if (files.length > MAX_CERTIFICATE_COUNT) {
+    return { success: false, error: `Upload no more than ${MAX_CERTIFICATE_COUNT} certificates` };
+  }
+
+  const totalSize = files.reduce((total, file) => total + file.size, 0);
+  if (totalSize > MAX_CERTIFICATE_UPLOAD_BYTES) {
+    return { success: false, error: 'Combined certificate files must be 4 MB or smaller' };
+  }
+
+  const certificates: PreparedCertificate[] = [];
+  for (const file of files) {
+    const extension = file.name.slice(file.name.lastIndexOf('.')).toLowerCase();
+    const expectedType = CERTIFICATE_TYPES.get(extension);
+    if (!expectedType || (file.type && file.type !== expectedType)) {
+      return { success: false, error: 'Certificates must be PDF, JPG, JPEG, or PNG files' };
+    }
+
+    const data = Buffer.from(await file.arrayBuffer());
+    const isValidFileSignature = expectedType === 'application/pdf'
+      ? data.subarray(0, 5).toString() === '%PDF-'
+      : expectedType === 'image/png'
+        ? data.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))
+        : data[0] === 0xff && data[1] === 0xd8 && data[2] === 0xff;
+    if (!isValidFileSignature) {
+      return { success: false, error: `The file "${file.name}" is not a valid ${expectedType === 'application/pdf' ? 'PDF' : expectedType === 'image/png' ? 'PNG' : 'JPEG'} file` };
+    }
+
+    certificates.push({
+      filename: file.name.replace(/[/\\\r\n"]/g, '_'),
+      contentType: expectedType,
+      size: file.size,
+      data,
+    });
+  }
+
+  return { success: true, certificates };
 }
 
 function escapeRegExp(value: string): string {
