@@ -118,6 +118,14 @@ async function createIndexes() {
     console.log('📍 Creating indexes for users collection...');
     const usersCol = db.collection('users');
     await usersCol.createIndex({ email: 1 }, { unique: true, name: 'email' });
+    await usersCol.createIndex(
+      { phone: 1 },
+      {
+        unique: true,
+        name: 'phone_unique',
+        partialFilterExpression: { phone: { $type: 'string', $gt: '' } },
+      },
+    );
     await usersCol.createIndex({ role: 1 }, { name: 'role' });
     await usersCol.createIndex({ isVerified: 1 }, { name: 'isVerified' });
     await usersCol.createIndex({ createdAt: -1 }, { name: 'createdAt' });

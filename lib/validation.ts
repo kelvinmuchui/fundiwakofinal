@@ -2,8 +2,21 @@ import { z } from 'zod';
 
 // ============= AUTH VALIDATION SCHEMAS =============
 
+export const kenyanPhoneSchema = z
+  .string()
+  .trim()
+  .refine(
+    (phone) => /^(?:0[17]\d{8}|\+?254[17]\d{8})$/.test(phone.replace(/[\s().-]/g, '')),
+    'Enter a valid Kenyan mobile number, e.g. 0712345678 or +254712345678',
+  )
+  .transform((phone) => {
+    const digits = phone.replace(/[\s().-]/g, '').replace(/^\+/, '');
+    return digits.startsWith('0') ? `+254${digits.slice(1)}` : `+${digits}`;
+  });
+
 export const registerSchema = z.object({
-  email: z.string().email('Invalid email address'),
+  email: z.string().trim().toLowerCase().email('Enter a valid email address').max(254, 'Email address is too long'),
+  phone: kenyanPhoneSchema,
   password: z
     .string()
     .min(8, 'Password must be at least 8 characters')

@@ -74,32 +74,37 @@ export async function POST(request: NextRequest) {
     if (!validation.success) {
       const errors = getValidationErrorMessages(validation.error);
       return NextResponse.json(
-        { error: 'Validation failed', details: errors },
+        { error: Object.values(errors)[0] || 'Validation failed', details: errors },
         { status: 400 }
       );
     }
 
-    const { email, password, name, role, acceptTerms } = validation.data;
+    const { email, phone, password, name, role, acceptTerms } = validation.data;
 
-    // Check if user already exists
+    // Check for existing accounts using normalized values, including common phone formatting.
     const usersCollection = await getCollection<User>('users');
-    const existingUser = await usersCollection.findOne({ 
-      $or: [
-        { email: email.toLowerCase() }
-      ]
-    });
+    const existingEmail = await usersCollection.findOne({
+      email: { $regex: `^${escapeRegExp(email)}$`, $options: 'i' },
+    }, { projection: { _id: 1 } });
+    const existingPhone = await usersCollection.findOne({
+      phone: { $regex: getPhoneNumberPattern(phone) },
+    }, { projection: { _id: 1 } });
 
-    if (existingUser) {
+    if (existingEmail || existingPhone) {
+      const duplicateField = existingEmail ? 'email' : 'phone';
+      const errorMessage = duplicateField === 'email'
+        ? 'An account with this email already exists'
+        : 'An account with this phone number already exists';
       await logAuditAction('register', 'unknown', {
         status: 'failure',
-        statusCode: 400,
-        errorMessage: 'User already exists',
-        metadata: { email, role, ipAddress }
+        statusCode: 409,
+        errorMessage,
+        metadata: { email, role, duplicateField, ipAddress }
       });
 
       return NextResponse.json(
-        { error: 'User with this email already exists' },
-        { status: 400 }
+        { error: errorMessage },
+        { status: 409 }
       );
     }
 
@@ -137,7 +142,7 @@ export async function POST(request: NextRequest) {
       verificationTokenExpires,
       createdAt: new Date(),
       updatedAt: new Date(),
-      phone: body.phone || '',
+      phone,
       neighborhood: body.neighborhood || '',
     };
 
@@ -173,7 +178,7 @@ export async function POST(request: NextRequest) {
           userId,
           name,
           email: email.toLowerCase(),
-          phone: body.phone || '',
+          phone,
           skill: body.skill,
           experience: body.experience,
           description: body.description,
@@ -224,6 +229,13 @@ export async function POST(request: NextRequest) {
     }, { status: 201 });
 
   } catch (error) {
+    if (isDuplicateKeyError(error)) {
+      return NextResponse.json(
+        { error: 'An account with this email or phone number already exists' },
+        { status: 409 }
+      );
+    }
+
     console.error('Registration error:', error);
 
     const errorMessage = error instanceof Error ? error.message : 'Internal server error';
@@ -242,4 +254,19 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function getPhoneNumberPattern(phone: string): string {
+  const digits = phone.replace(/\D/g, '');
+  const nationalNumber = `0${digits.slice(3)}`;
+  const formatted = (value: string) => value.split('').join('[\\s().-]*');
+  return `^(?:${formatted(nationalNumber)}|\\+?${formatted(digits)})$`;
+}
+
+function isDuplicateKeyError(error: unknown): boolean {
+  return typeof error === 'object' && error !== null && 'code' in error && error.code === 11000;
 }

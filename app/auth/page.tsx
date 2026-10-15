@@ -338,6 +338,8 @@ export default function AuthPage() {
                         id="signup-email"
                         type="email"
                         required
+                        maxLength={254}
+                        autoComplete="email"
                         value={signUpData.email}
                         onChange={(e) => setSignUpData({ ...signUpData, email: e.target.value })}
                         className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
@@ -353,10 +355,13 @@ export default function AuthPage() {
                         id="signup-phone"
                         type="tel"
                         required
+                        autoComplete="tel"
+                        pattern="(?:0|\+?254)[\s().-]*[17](?:[\s().-]*[0-9]){8}"
+                        title="Enter a valid Kenyan mobile number, e.g. 0712345678 or +254712345678"
                         value={signUpData.phone}
                         onChange={(e) => setSignUpData({ ...signUpData, phone: e.target.value })}
                         className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                        placeholder="0712345678"
+                        placeholder="0712345678 or +254712345678"
                       />
                     </div>
 

@@ -300,8 +300,11 @@ export default function BecomeAFundi() {
                                                 name="phone"
                                                 value={formData.phone}
                                                 onChange={handleChange}
+                                                pattern="(?:0|\+?254)[\s().-]*[17](?:[\s().-]*[0-9]){8}"
+                                                title="Enter a valid Kenyan mobile number, e.g. 0712345678 or +254712345678"
+                                                autoComplete="tel"
                                                 className="w-full px-4 py-3 rounded-xl border border-neutral-200 focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all bg-neutral-50 focus:bg-white"
-                                                placeholder="e.g. 0712 345 678"
+                                                placeholder="e.g. 0712 345 678 or +254 712 345 678"
                                                 required
                                             />
                                         </div>
@@ -328,6 +331,8 @@ export default function BecomeAFundi() {
                                                 name="email"
                                                 value={formData.email}
                                                 onChange={handleChange}
+                                                maxLength={254}
+                                                autoComplete="email"
                                                 className="w-full px-4 py-3 rounded-xl border border-neutral-200 focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all bg-neutral-50 focus:bg-white"
                                                 placeholder="e.g. john@example.com"
                                                 required
