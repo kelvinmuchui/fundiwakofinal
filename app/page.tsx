@@ -20,26 +20,26 @@ export default async function Home() {
 
         <div className="container-max relative z-10 text-center text-white h-full grid grid-rows-[auto_1fr_auto]">
           <div>
-            <span className="inline-block animate-fade-in opacity-0 py-1 px-3 rounded-full bg-white/10 border border-white/20 text-sm font-medium mb-6">
+            <span className="inline-block animate-fade-in py-1 px-3 rounded-full bg-white/10 border border-white/20 text-sm font-medium mb-6">
               ✨ Kenya&apos;s #1 Artisan Marketplace
             </span>
-            <h1 className="text-5xl md:text-6xl lg:text-7xl font-heading font-extrabold mb-6 tracking-tight animate-reveal opacity-0 [animation-delay:200ms]">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-heading font-extrabold mb-6 tracking-tight animate-reveal [animation-delay:200ms]">
               Find Trusted <span className="gradient-text drop-shadow-[0_0_15px_rgba(249,115,22,0.3)]">Fundis</span> <br className="hidden md:block" /> Near You
             </h1>
-            <p className="max-w-2xl mx-auto text-lg md:text-xl text-white/80 mb-10 animate-reveal opacity-0 [animation-delay:400ms]">
+            <p className="max-w-2xl mx-auto text-base sm:text-lg md:text-xl text-white/80 mb-10 animate-reveal [animation-delay:400ms]">
               Connect with verified plumbers, electricians, carpenters, and more.
               Quality work, fair prices, and peace of mind.
             </p>
           </div>
 
-          <div className="animate-reveal opacity-0 [animation-delay:600ms] flex items-center justify-center w-full max-w-3xl mx-auto relative z-20 group">
+          <div className="animate-reveal [animation-delay:600ms] flex items-center justify-center w-full max-w-3xl mx-auto relative z-20 group">
             <div className="absolute -inset-1 bg-gradient-to-r from-primary-500/0 via-primary-500/30 to-primary-500/0 rounded-[1.5rem] blur opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
             <div className="relative w-full">
               <SearchBar />
             </div>
           </div>
 
-          <div className="animate-reveal opacity-0 [animation-delay:800ms] relative z-0 mt-12">
+          <div className="animate-reveal [animation-delay:800ms] relative z-0 mt-12">
             <div className="glass-light/10 border-white/10 p-8 rounded-3xl backdrop-blur-md flex flex-wrap items-center justify-center gap-6 md:gap-16 border">
               <div className="text-center group cursor-default">
                 <p className="text-4xl font-heading font-bold text-white group-hover:translate-x-1 transition-transform">5,000+</p>

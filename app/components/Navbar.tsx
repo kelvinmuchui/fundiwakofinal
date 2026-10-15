@@ -241,8 +241,14 @@ export default function Navbar() {
 
                 {/* Mobile Menu */}
                 <div
-                    className={`md:hidden max-h-[80vh] overflow-y-auto transition-all duration-500 ease-in-out ${isMobileMenuOpen ? "opacity-100 mt-4" : "max-h-0 opacity-0"
+                    className={`md:hidden transition-all duration-500 ease-in-out ${isMobileMenuOpen
+                        ? "max-h-[80vh] overflow-y-auto opacity-100 mt-4"
+                        : "max-h-0 overflow-hidden opacity-0 pointer-events-none"
                         }`}
+                    style={{
+                        maxHeight: isMobileMenuOpen ? "80vh" : "0px",
+                        pointerEvents: isMobileMenuOpen ? "auto" : "none",
+                    }}
                 >
                     <div className="glass-light rounded-2xl p-4 space-y-1">
                         {visibleNavLinks.map((link) => (
