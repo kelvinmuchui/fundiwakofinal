@@ -1,26 +1,68 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import WorkerCard from "@/app/components/WorkerCard";
 import SearchBar from "@/app/components/SearchBar";
-import { useGeolocation } from "@/lib/geolocation";
 import type { Worker } from "@/app/types/worker";
+
+type SearchQuery = {
+  service: string;
+  location: string;
+  minRating: string;
+  maxPrice: string;
+};
+
+type FundiSearchResult = Partial<Worker> & Pick<Worker, "id" | "name">;
 
 type SearchPageProps = {
   searchParams: Promise<{
     service?: string;
     location?: string;
-    lat?: string;
-    lng?: string;
   }>;
 };
 
 export default function SearchPage({ searchParams }: SearchPageProps) {
-  const [query, setQuery] = useState({ service: "", location: "", lat: "", lng: "" });
-  const [fundis, setFundis] = useState<any[]>([]);
+  const [query, setQuery] = useState<SearchQuery>({
+    service: "",
+    location: "",
+    minRating: "",
+    maxPrice: "",
+  });
+  const [fundis, setFundis] = useState<FundiSearchResult[]>([]);
   const [loading, setLoading] = useState(false);
-  const { location: userLocation, loading: locationLoading } = useGeolocation();
+  const [searchError, setSearchError] = useState("");
+
+  const searchFundis = useCallback(async (searchQuery: SearchQuery) => {
+    setLoading(true);
+    setSearchError("");
+    try {
+      const params = new URLSearchParams();
+      if (searchQuery.service.trim()) params.append('skill', searchQuery.service.trim());
+      if (searchQuery.location.trim()) params.append('location', searchQuery.location.trim());
+      if (searchQuery.minRating) params.append('minRating', searchQuery.minRating);
+      if (searchQuery.maxPrice) params.append('maxPrice', searchQuery.maxPrice);
+
+      const response = await fetch(`/api/location/search?${params}`);
+      if (!response.ok) {
+        throw new Error(`Search request failed with status ${response.status}`);
+      }
+
+      const data: { data?: FundiSearchResult[] } | FundiSearchResult[] = await response.json();
+      const fundisData = Array.isArray(data) ? data : data?.data ?? [];
+      if (Array.isArray(fundisData)) {
+        setFundis(fundisData);
+      } else {
+        throw new Error('Location search returned an invalid response');
+      }
+    } catch (error) {
+      console.error('Search error:', error);
+      setSearchError('We could not load fundis right now. Please try your search again.');
+      setFundis([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     const loadSearchParams = async () => {
@@ -28,52 +70,23 @@ export default function SearchPage({ searchParams }: SearchPageProps) {
       const newQuery = {
         service: params?.service?.toString() ?? "",
         location: params?.location?.toString() ?? "",
-        lat: params?.lat?.toString() ?? userLocation?.latitude?.toString() ?? "",
-        lng: params?.lng?.toString() ?? userLocation?.longitude?.toString() ?? "",
+        minRating: "",
+        maxPrice: "",
       };
       setQuery(newQuery);
-      searchFundis(newQuery);
+      void searchFundis(newQuery);
     };
     loadSearchParams();
-  }, [searchParams, userLocation]);
+  }, [searchParams, searchFundis]);
 
-  const searchFundis = async (searchQuery: typeof query) => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams();
-      if (searchQuery.service) params.append('skill', searchQuery.service);
-      if (searchQuery.location) params.append('location', searchQuery.location);
-      if (searchQuery.lat && searchQuery.lng) {
-        params.append('lat', searchQuery.lat);
-        params.append('lng', searchQuery.lng);
-        params.append('radius', '20'); // 20km radius
-      }
-
-      const response = await fetch(`/api/location/search?${params}`);
-      const data = await response.json();
-      const fundisData = Array.isArray(data) ? data : data?.data ?? [];
-      if (Array.isArray(fundisData)) {
-        setFundis(fundisData);
-      } else {
-        console.warn('Location search returned non-array response', data);
-        setFundis([]);
-      }
-    } catch (error) {
-      console.error('Search error:', error);
-      setFundis([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const results: Worker[] = fundis.map((user: any) => ({
+  const results: Worker[] = fundis.map((user) => ({
     id: user.id,
     name: user.name,
     skill: user.skill ?? "General",
     location: user.location || "Nairobi",
     neighborhood: user.neighborhood || "",
     availability: user.availability ?? "Available Now",
-    email: user.email,
+    email: user.email ?? "",
     rating: user.rating ?? 0,
     jobsCompleted: user.jobsCompleted ?? 0,
     isVerified: user.isVerified || false,
@@ -101,12 +114,11 @@ export default function SearchPage({ searchParams }: SearchPageProps) {
           <p className="text-white/80 text-base sm:text-lg max-w-2xl mx-auto mb-10">
             Discover certified local professionals with clear ratings, verified profiles, and fast booking options.
           </p>
-          <SearchBar initialService={query.service} initialLocation={query.location} />
-          {locationLoading && (
-            <p className="text-white/60 text-center text-sm mt-4">
-              Getting your location...
-            </p>
-          )}
+          <SearchBar
+            key={JSON.stringify([query.service, query.location])}
+            initialService={query.service}
+            initialLocation={query.location}
+          />
         </div>
       </div>
 
@@ -125,8 +137,8 @@ export default function SearchPage({ searchParams }: SearchPageProps) {
                       className="w-4 h-4 text-primary-600 focus:ring-primary-500 border-neutral-300"
                       onChange={() => {
                         const newQuery = { ...query, minRating: rating.toString() };
-                        setQuery(newQuery as any);
-                        searchFundis(newQuery as any);
+                        setQuery(newQuery);
+                        void searchFundis(newQuery);
                       }}
                     />
                     <span className="text-sm text-neutral-700">{rating}+ Stars</span>
@@ -141,8 +153,8 @@ export default function SearchPage({ searchParams }: SearchPageProps) {
                 className="w-full px-4 py-3 rounded-2xl border border-neutral-200 text-sm focus:ring-2 focus:ring-primary-500 outline-none"
                 onChange={(e) => {
                   const newQuery = { ...query, maxPrice: e.target.value };
-                  setQuery(newQuery as any);
-                  searchFundis(newQuery as any);
+                  setQuery(newQuery);
+                  void searchFundis(newQuery);
                 }}
               >
                 <option value="">Any Price</option>
@@ -153,30 +165,25 @@ export default function SearchPage({ searchParams }: SearchPageProps) {
             </div>
 
             <div className="space-y-2">
-              <p className="text-sm font-semibold uppercase tracking-[0.24em] text-neutral-500">Search Radius</p>
-              <div className="space-y-3">
-                <input
-                  type="range"
-                  min="1"
-                  max="50"
-                  defaultValue="20"
-                  className="w-full h-2 bg-neutral-200 rounded-lg appearance-none cursor-pointer accent-primary-600"
-                />
-                <div className="flex justify-between text-[10px] text-neutral-400">
-                  <span>1km</span>
-                  <span>50km</span>
-                </div>
-              </div>
+              <p className="text-sm font-semibold uppercase tracking-[0.24em] text-neutral-500">Category + Location</p>
+              <p className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm leading-6 text-neutral-600">
+                Search results match the selected fundi category and location together.
+              </p>
             </div>
           </div>
 
           <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-neutral-500">Filter results by rating, price, or distance.</p>
+            <p className="text-sm text-neutral-500">Use the search fields above to narrow results by service and location.</p>
             <button
               onClick={() => {
-                const resetQuery = { service: "", location: "", lat: "", lng: "" };
+                const resetQuery: SearchQuery = {
+                  service: "",
+                  location: "",
+                  minRating: "",
+                  maxPrice: "",
+                };
                 setQuery(resetQuery);
-                searchFundis(resetQuery);
+                void searchFundis(resetQuery);
               }}
               className="inline-flex items-center justify-center rounded-2xl border border-neutral-200 bg-neutral-50 px-5 py-3 text-sm font-semibold text-neutral-700 hover:border-primary-300 hover:text-primary-700 transition"
             >
@@ -190,7 +197,7 @@ export default function SearchPage({ searchParams }: SearchPageProps) {
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-8">
             <div>
               <h2 className="text-2xl font-heading font-bold text-secondary-500">
-                {query.service || query.location ? "Search Results" : "Nearby Fundis"}
+                {query.service || query.location ? "Search Results" : "All Fundis"}
               </h2>
             </div>
             <div className="flex gap-3">
@@ -200,7 +207,15 @@ export default function SearchPage({ searchParams }: SearchPageProps) {
             </div>
           </div>
 
-          {results.length === 0 ? (
+          {searchError ? (
+            <div role="alert" className="rounded-3xl border border-red-200 bg-red-50 p-8 text-center text-red-700">
+              {searchError}
+            </div>
+          ) : loading ? (
+            <div role="status" className="rounded-3xl bg-white p-12 text-center text-neutral-500">
+              Searching for fundis...
+            </div>
+          ) : results.length === 0 ? (
             <div className="rounded-3xl bg-white shadow-sm border border-neutral-200 p-16 text-center">
               <div className="text-6xl mb-6">🔍</div>
               <h2 className="text-2xl font-heading font-semibold text-secondary-500 mb-3">

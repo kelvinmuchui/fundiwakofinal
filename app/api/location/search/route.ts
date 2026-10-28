@@ -2,29 +2,56 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCollection } from '@/lib/db';
 import { ApiErrorHandler, createSuccessResponse } from '@/lib/errorHandler';
 
+const SKILL_ALIASES: Record<string, string[]> = {
+  Plumbing: ['plumbing', 'plumber'],
+  Electrical: ['electrical', 'electrician'],
+  Carpentry: ['carpentry', 'carpenter'],
+  Painting: ['painting', 'painter'],
+  Masonry: ['masonry', 'mason'],
+  Cleaning: ['cleaning', 'cleaner'],
+  Roofing: ['roofing', 'roofer'],
+  'Welding & Metalwork': ['welding', 'welder', 'metalwork', 'metal worker'],
+  'Tiling & Flooring': ['tiling', 'tiler', 'flooring'],
+  'Landscaping & Gardening': ['landscaping', 'landscaper', 'gardening', 'gardener'],
+  'ICT & Computer Repair': ['ict', 'computer repair', 'computer technician', 'it support'],
+  'Barista & Hospitality': ['barista', 'hospitality'],
+  'Fashion & Design': ['fashion', 'tailor', 'tailoring', 'fashion design'],
+  'Animal Health & Veterinary': ['animal health', 'veterinary', 'veterinarian', 'vet'],
+  'Solar Installation': ['solar installation', 'solar installer'],
+  'Automotive Mechanics': ['automotive mechanics', 'automotive', 'mechanic'],
+  'Beauty & Hair': ['beauty', 'hair', 'barber', 'hairdresser'],
+  'Appliance Repair': ['appliance repair', 'appliance technician'],
+  'Pest Control': ['pest control', 'exterminator'],
+  'HVAC & Refrigeration': ['hvac', 'refrigeration', 'air conditioning'],
+};
+
+function escapeRegex(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function getSkillRegex(skill: string) {
+  const category = Object.keys(SKILL_ALIASES).find(
+    (title) => title.toLowerCase() === skill.toLowerCase()
+  );
+  const terms = category ? SKILL_ALIASES[category] : [skill];
+  return new RegExp(terms.map(escapeRegex).join('|'), 'i');
+}
+
 export async function GET(request: NextRequest) {
   return ApiErrorHandler.withErrorHandler(async () => {
     const { searchParams } = new URL(request.url);
-    const lat = parseFloat(searchParams.get('lat') || '0');
-    const lng = parseFloat(searchParams.get('lng') || '0');
-    const radius = parseFloat(searchParams.get('radius') || '10'); // km
-    const skill = searchParams.get('skill');
-    const location = searchParams.get('location');
+    const skill = searchParams.get('skill')?.trim() || '';
+    const location = searchParams.get('location')?.trim() || '';
     const minRating = parseFloat(searchParams.get('minRating') || '0');
     const maxPrice = parseFloat(searchParams.get('maxPrice') || '0');
 
-    // Validate coordinates if provided
-    if ((lat !== 0 || lng !== 0) && (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180)) {
-      return NextResponse.json({ error: 'Invalid coordinates' }, { status: 400 });
-    }
-
-    if (radius < 0 || radius > 100) {
-      return NextResponse.json({ error: 'Radius must be between 0 and 100 km' }, { status: 400 });
+    if (skill.length > 100 || location.length > 100) {
+      return NextResponse.json({ error: 'Search terms must be 100 characters or fewer' }, { status: 400 });
     }
 
     const usersCollection = await getCollection('users');
-
-    let query: any = { role: 'fundi' };
+    const query: Record<string, unknown> = { role: 'fundi' };
+    const andClauses: Record<string, unknown>[] = [];
 
     // Rating Filter
     if (minRating > 0) {
@@ -39,46 +66,26 @@ export async function GET(request: NextRequest) {
       // We'll filter this in memory for now if stored as string, or use a better query if stored as number
     }
 
-    if (lat && lng) {
-      query.location = {
-        $near: {
-          $geometry: {
-            type: 'Point',
-            coordinates: [lng, lat],
-          },
-          $maxDistance: radius * 1000,
-        },
-      };
+    if (skill) {
+      const skillRegex = getSkillRegex(skill);
+      andClauses.push({
+        $or: [{ skill: skillRegex }, { skills: skillRegex }],
+      });
     }
 
-    if (skill || location) {
-      const andClauses: any[] = [];
+    if (location) {
+      const locationRegex = new RegExp(escapeRegex(location), 'i');
+      andClauses.push({
+        $or: [
+          { neighborhood: locationRegex },
+          { location: locationRegex },
+          { city: locationRegex },
+        ],
+      });
+    }
 
-      if (skill) {
-        const skillRegex = new RegExp(skill.trim(), 'i');
-        andClauses.push({
-          $or: [
-            { skill: skillRegex },
-            { skills: { $in: [skill] } },
-            { description: skillRegex },
-          ],
-        });
-      }
-
-      if (location) {
-        const regex = new RegExp(location.trim(), 'i');
-        andClauses.push({
-          $or: [
-            { neighborhood: regex }, 
-            { location: typeof location === 'string' ? regex : { $exists: true } }, 
-            { city: regex }
-          ],
-        });
-      }
-
-      if (andClauses.length) {
-        query = { ...query, $and: andClauses };
-      }
+    if (andClauses.length) {
+      query.$and = andClauses;
     }
 
     const fundis = await usersCollection.find(query).limit(20).toArray();
@@ -91,10 +98,6 @@ export async function GET(request: NextRequest) {
       skills: fundi.skills || [],
       location: fundi.location,
       neighborhood: fundi.neighborhood,
-      distance:
-        lat && lng && fundi.location?.coordinates
-          ? calculateDistance(lat, lng, fundi.location.coordinates[1], fundi.location.coordinates[0])
-          : undefined,
       rating: fundi.rating || 0,
       jobsCompleted: fundi.jobsCompleted || 0,
       hourlyRate: fundi.hourlyRate,
@@ -104,21 +107,4 @@ export async function GET(request: NextRequest) {
 
     return createSuccessResponse('Fundis retrieved successfully', formattedFundis);
   }, 'GET /api/location/search');
-}
-
-// Haversine formula to calculate distance between two points
-function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 6371; // Earth's radius in km
-  const dLat = toRadians(lat2 - lat1);
-  const dLon = toRadians(lon2 - lon1);
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) *
-    Math.sin(dLon / 2) * Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-}
-
-function toRadians(degrees: number): number {
-  return degrees * (Math.PI / 180);
 }
