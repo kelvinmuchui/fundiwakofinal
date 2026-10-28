@@ -2,17 +2,20 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { getCollection } from '@/lib/db';
 import { ObjectId } from 'mongodb';
+import { hasContactAccess } from '@/lib/contactAccess';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession();
+    const session = await getServerSession(authOptions);
     const { id } = await params;
 
     const usersCollection = await getCollection('users');
     const connectionsCollection = await getCollection('connections');
+    const currentUser = session?.user as { id?: string; email?: string; role?: string } | undefined;
 
     // Get the requested user
     const user = await usersCollection.findOne(
@@ -35,6 +38,13 @@ export async function GET(
         { status: 404 }
       );
     }
+
+    const canShowPhone = user.role !== 'fundi' ||
+      currentUser?.role === 'admin' ||
+      currentUser?.id === id ||
+      (currentUser?.role === 'client' && currentUser.id
+        ? await hasContactAccess(currentUser.id, id)
+        : false);
 
     // Determine connection status if user is logged in
     let connectionStatus = 'not_connected';
@@ -59,7 +69,7 @@ export async function GET(
         _id: user._id?.toString(),
         name: user.name,
         email: user.email,
-        phone: user.phone,
+        ...(canShowPhone ? { phone: user.phone } : {}),
         role: user.role,
         headline: user.headline,
         about: user.about,

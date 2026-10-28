@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCollection } from '@/lib/db';
 import { ObjectId } from 'mongodb';
 import { logActivity } from '@/lib/activityLogger';
+import { CONTACT_ACCESS_FEE } from '@/lib/contactAccess';
 
 export async function POST(request: NextRequest) {
   try {
@@ -28,6 +29,7 @@ export async function POST(request: NextRequest) {
     }
 
     const isTopUp = transaction.transactionType === 'wallet_topup';
+    const isContactAccess = transaction.transactionType === 'contact_access';
 
     if (ResultCode === 0) {
       // ── PAYMENT SUCCESSFUL ──────────────────────────────────────────────
@@ -40,7 +42,25 @@ export async function POST(request: NextRequest) {
         if (item.Name === 'Amount') amountPaid = Number(item.Value);
       }
 
-      if (isTopUp) {
+      if (isContactAccess) {
+        const status = amountPaid >= CONTACT_ACCESS_FEE ? 'completed' : 'failed';
+        if (status === 'failed') {
+          console.warn(
+            `[M-PESA CALLBACK] Contact unlock payment was below the KES ${CONTACT_ACCESS_FEE} fee (received ${amountPaid})`
+          );
+        }
+        await transactionsCollection.updateOne(
+          { _id: transaction._id },
+          {
+            $set: {
+              status,
+              mpesaReceiptNumber,
+              paymentDate: new Date(),
+              updatedAt: new Date(),
+            },
+          }
+        );
+      } else if (isTopUp) {
         // ── WALLET TOP-UP SUCCESS ──────────────────────────────────────────
         console.log(`[M-PESA CALLBACK] Wallet top-up of KES ${amountPaid} for user ${transaction.clientId} (Receipt: ${mpesaReceiptNumber})`);
 

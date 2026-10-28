@@ -3,6 +3,7 @@ import { getCollection } from '@/lib/db';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../auth/[...nextauth]/route';
 import { ObjectId } from 'mongodb';
+import { hasContactAccess } from '@/lib/contactAccess';
 
 export async function GET(request: NextRequest) {
   try {
@@ -19,6 +20,7 @@ export async function GET(request: NextRequest) {
 
     // Find transactions where user is client or fundi
     const transactions = await transactionsCollection.find({
+      transactionType: { $ne: 'contact_access' },
       $or: [
         { clientId: user.id },
         { fundiId: user.id }
@@ -34,7 +36,12 @@ export async function GET(request: NextRequest) {
         if (user.role === 'client') {
           // counterparty is the fundi
           const fundi = await usersCollection.findOne({ _id: new ObjectId(tx.fundiId) });
-          counterparty = fundi ? { name: fundi.name, phone: fundi.phone } : null;
+          counterparty = fundi
+            ? {
+                name: fundi.name,
+                ...(await hasContactAccess(user.id, tx.fundiId) ? { phone: fundi.phone } : {}),
+              }
+            : null;
         } else {
           // counterparty is the client
           const client = await usersCollection.findOne({ _id: new ObjectId(tx.clientId) });

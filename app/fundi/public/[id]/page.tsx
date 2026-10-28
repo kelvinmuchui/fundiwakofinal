@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import BookingModal from '../../../components/BookingModal';
 import ReviewSection from '../../../components/ReviewSection';
 import PortfolioGallery from '../../../components/PortfolioGallery';
@@ -10,7 +11,7 @@ interface PublicFundiProfile {
   _id: string;
   name: string;
   email: string;
-  phone: string;
+  phone?: string;
   skill: string;
   skills?: string[];
   experience: string;
@@ -32,11 +33,15 @@ interface PublicFundiProfile {
 export default function PublicFundiProfile() {
   const params = useParams();
   const router = useRouter();
+  const { data: session, status: sessionStatus } = useSession();
   const [profile, setProfile] = useState<PublicFundiProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [contactClicked, setContactClicked] = useState(false);
-  const [isTracking, setIsTracking] = useState(false);
+  const [revealedPhone, setRevealedPhone] = useState('');
+  const [mpesaPhone, setMpesaPhone] = useState('');
+  const [checkoutRequestId, setCheckoutRequestId] = useState('');
+  const [contactPaymentStatus, setContactPaymentStatus] = useState<'idle' | 'paying' | 'pending' | 'unlocked' | 'failed'>('idle');
+  const [contactPaymentError, setContactPaymentError] = useState('');
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [activeTab, setActiveTab] = useState<'about' | 'portfolio' | 'reviews'>('about');
 
@@ -64,14 +69,100 @@ export default function PublicFundiProfile() {
     fetchProfile();
   }, [params]);
 
-  const handleContact = async () => {
-    if (contactClicked || !profile?._id) return;
-    setIsTracking(true);
+  useEffect(() => {
+    const user = session?.user as { role?: string } | undefined;
+    if (!profile?._id || sessionStatus !== 'authenticated' || user?.role !== 'client') return;
+
+    let active = true;
+    fetch(`/api/fundi/${profile._id}/contact-access`, { cache: 'no-store' })
+      .then(async (response) => {
+        if (!response.ok) throw new Error('Unable to check contact access');
+        return response.json();
+      })
+      .then((data) => {
+        if (active && data.unlocked && typeof data.phone === 'string') {
+          setRevealedPhone(data.phone);
+          setContactPaymentStatus('unlocked');
+        }
+      })
+      .catch((err) => console.error('Contact access check failed:', err));
+
+    return () => { active = false; };
+  }, [profile?._id, session, sessionStatus]);
+
+  useEffect(() => {
+    if (contactPaymentStatus !== 'pending' || !checkoutRequestId || !profile?._id) return;
+
+    let active = true;
+    const checkPayment = async () => {
+      try {
+        const statusResponse = await fetch(
+          `/api/payments/status?checkoutRequestID=${encodeURIComponent(checkoutRequestId)}`
+        );
+        if (!statusResponse.ok) throw new Error('Unable to check payment status');
+        const payment = await statusResponse.json();
+
+        if (payment.status === 'failed') {
+          if (active) {
+            setContactPaymentError('Payment failed. Please try again.');
+            setContactPaymentStatus('failed');
+          }
+          return;
+        }
+        if (payment.status !== 'completed') return;
+
+        const accessResponse = await fetch(`/api/fundi/${profile._id}/contact-access`, { cache: 'no-store' });
+        if (!accessResponse.ok) throw new Error('Payment completed, but contact access could not be loaded');
+        const access = await accessResponse.json();
+        if (!active) return;
+        if (!access.unlocked || typeof access.phone !== 'string') {
+          throw new Error('Payment is being confirmed. Please refresh shortly.');
+        }
+
+        setRevealedPhone(access.phone);
+        setContactPaymentStatus('unlocked');
+        await fetch(`/api/fundi/${profile._id}/track?type=contact`, { method: 'POST' });
+      } catch (err) {
+        console.error('Contact payment status check failed:', err);
+        if (active) setContactPaymentError(err instanceof Error ? err.message : 'Unable to verify payment');
+      }
+    };
+
+    void checkPayment();
+    const timer = setInterval(checkPayment, 2500);
+    return () => {
+      active = false;
+      clearInterval(timer);
+    };
+  }, [checkoutRequestId, contactPaymentStatus, profile?._id]);
+
+  const handleContactPayment = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!profile?._id) return;
+
+    setContactPaymentStatus('paying');
+    setContactPaymentError('');
     try {
-      await fetch(`/api/fundi/${profile._id}/track?type=contact`, { method: 'POST' });
-      setContactClicked(true);
-      document.getElementById('contact-info')?.scrollIntoView({ behavior: 'smooth' });
-    } catch {} finally { setIsTracking(false); }
+      const response = await fetch(`/api/fundi/${profile._id}/contact-access`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: mpesaPhone }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Unable to start payment');
+
+      if (data.unlocked && typeof data.phone === 'string') {
+        setRevealedPhone(data.phone);
+        setContactPaymentStatus('unlocked');
+        return;
+      }
+
+      setCheckoutRequestId(data.checkoutRequestID);
+      setContactPaymentStatus('pending');
+    } catch (err) {
+      setContactPaymentError(err instanceof Error ? err.message : 'Unable to start payment');
+      setContactPaymentStatus('failed');
+    }
   };
 
   const getAvailabilityStyle = (avail?: string) => {
@@ -328,27 +419,62 @@ export default function PublicFundiProfile() {
                   className="w-full py-4 btn-primary text-white rounded-2xl font-heading font-black text-lg flex items-center justify-center gap-2 group">
                   <span className="group-hover:scale-125 transition-transform">📅</span> Book Appointment
                 </button>
-                <button onClick={handleContact} disabled={contactClicked || isTracking}
-                  className={`w-full py-4 rounded-2xl font-heading font-black text-lg transition-all border-2 flex items-center justify-center gap-2 ${
-                    contactClicked ? 'bg-emerald-500 border-emerald-500 text-black shadow-lg' : 'border-neutral-300 bg-white hover:bg-neutral-100 text-black'
-                  }`}>
-                  {isTracking ? <div className="w-6 h-6 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
-                    : contactClicked ? <><span>✓</span> Contact Revealed</>
-                    : <><span>📞</span> Show Phone Number</>}
-                </button>
+                {revealedPhone ? (
+                  <div className="w-full py-4 rounded-2xl bg-emerald-50 border-2 border-emerald-200 text-black text-center">
+                    <p className="text-xs font-bold uppercase tracking-wider text-emerald-800">Phone number unlocked</p>
+                    <a href={`tel:${revealedPhone}`} className="mt-1 inline-block text-xl font-black text-emerald-900">
+                      {revealedPhone}
+                    </a>
+                  </div>
+                ) : sessionStatus === 'authenticated' &&
+                  (session?.user as { role?: string } | undefined)?.role === 'client' ? (
+                  <form onSubmit={handleContactPayment} className="w-full space-y-3">
+                    <label className="block text-left text-sm font-bold text-black" htmlFor="contact-mpesa-phone">
+                      M-Pesa phone number
+                    </label>
+                    <input
+                      id="contact-mpesa-phone"
+                      type="tel"
+                      required
+                      value={mpesaPhone}
+                      onChange={(event) => setMpesaPhone(event.target.value)}
+                      placeholder="07XXXXXXXX"
+                      className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-black"
+                    />
+                    <button
+                      type="submit"
+                      disabled={contactPaymentStatus === 'paying' || contactPaymentStatus === 'pending'}
+                      className="w-full py-4 rounded-2xl bg-orange-500 hover:bg-orange-600 disabled:opacity-60 text-white font-heading font-black text-lg transition-all"
+                    >
+                      {contactPaymentStatus === 'paying'
+                        ? 'Starting M-Pesa payment...'
+                        : contactPaymentStatus === 'pending'
+                          ? 'Complete payment on your phone...'
+                          : 'Pay KES 50 to reveal number'}
+                    </button>
+                    {contactPaymentError && (
+                      <p role="alert" className="text-sm font-semibold text-red-700">{contactPaymentError}</p>
+                    )}
+                  </form>
+                ) : sessionStatus === 'authenticated' ? (
+                  <p className="w-full rounded-2xl bg-neutral-100 px-4 py-4 text-center text-sm font-semibold text-neutral-700">
+                    Sign in with a client account to unlock this phone number.
+                  </p>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => router.push('/auth')}
+                    className="w-full py-4 rounded-2xl border-2 border-neutral-300 bg-white hover:bg-neutral-100 text-black font-heading font-black text-lg transition-all"
+                  >
+                    Sign in to unlock phone number
+                  </button>
+                )}
               </div>
 
               {/* Revealed Contact Info */}
-              {contactClicked && (
+              {revealedPhone && (
                 <div id="contact-info" className="mt-6 p-6 bg-neutral-50 rounded-2xl border border-neutral-200">
                   <div className="space-y-4">
-                    <a href={`tel:${profile.phone}`} className="flex items-center gap-4 group">
-                      <div className="w-10 h-10 bg-neutral-100 rounded-xl flex items-center justify-center">📱</div>
-                      <div>
-                        <p className="text-[10px] font-bold text-black/60 uppercase">Mobile Number</p>
-                        <p className="text-lg font-bold text-black">{profile.phone}</p>
-                      </div>
-                    </a>
                     <a href={`mailto:${profile.email}`} className="flex items-center gap-4 group">
                       <div className="w-10 h-10 bg-neutral-100 rounded-xl flex items-center justify-center">✉️</div>
                       <div>

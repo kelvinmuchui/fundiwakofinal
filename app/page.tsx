@@ -3,6 +3,7 @@ import ServiceCard from "./components/ServiceCard";
 import TestimonialCard from "./components/TestimonialCard";
 import SearchBar from "./components/SearchBar";
 import { getServices, getTestimonials } from "../lib/services";
+import heroBanner from "./FundiWako Skills Hero Banner.png";
 
 export const revalidate = 3600;
 
@@ -12,35 +13,40 @@ export default async function Home() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <section className="relative -mt-28 min-h-screen flex items-center gradient-hero">
-        <div className="absolute inset-0 bg-hero-pattern opacity-10" />
-        <div className="absolute top-0 right-0 -mr-40 -mt-40 w-[32rem] h-[32rem] rounded-full bg-primary-500/10 blur-[100px] animate-float" />
-        <div className="absolute bottom-0 left-0 -ml-40 -mb-40 w-[28rem] h-[28rem] rounded-full bg-accent-500/10 blur-[80px] animate-float animate-delay-500" />
-        <div className="absolute top-1/3 left-1/4 w-64 h-64 rounded-full bg-secondary-500/10 blur-[120px] animate-float transition-all duration-1000" />
+      <section
+        className="relative -mt-28 min-h-screen flex items-center overflow-hidden bg-secondary-950"
+      >
+        <div
+          aria-hidden="true"
+          className="absolute inset-y-0 right-0 w-full bg-cover bg-right md:w-[65%]"
+          style={{ backgroundImage: `url("${heroBanner.src}")` }}
+        />
+        <div className="absolute inset-0 bg-black/50" />
+        <div className="absolute inset-0 bg-gradient-to-r from-secondary-950 via-secondary-950/85 to-secondary-950/15" />
 
-        <div className="container-max relative z-10 text-center text-white h-full grid grid-rows-[auto_1fr_auto]">
-          <div>
+        <div className="container-max relative z-10 grid min-h-screen grid-rows-[auto_auto_auto] content-center gap-8 py-32 text-left text-white">
+          <div className="max-w-2xl">
             <span className="inline-block animate-fade-in py-1 px-3 rounded-full bg-white/10 border border-white/20 text-sm font-medium mb-6">
               ✨ Kenya&apos;s #1 Artisan Marketplace
             </span>
-            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-heading font-extrabold mb-6 tracking-tight animate-reveal [animation-delay:200ms]">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-heading font-extrabold mb-6 tracking-tight animate-reveal [animation-delay:200ms] drop-shadow-lg">
               Find Trusted <span className="gradient-text drop-shadow-[0_0_15px_rgba(249,115,22,0.3)]">Fundis</span> <br className="hidden md:block" /> Near You
             </h1>
-            <p className="max-w-2xl mx-auto text-base sm:text-lg md:text-xl text-white/80 mb-10 animate-reveal [animation-delay:400ms]">
+            <p className="max-w-xl text-base sm:text-lg md:text-xl text-white/90 mb-2 animate-reveal [animation-delay:400ms] drop-shadow-md">
               Connect with verified plumbers, electricians, carpenters, and more.
               Quality work, fair prices, and peace of mind.
             </p>
           </div>
 
-          <div className="animate-reveal [animation-delay:600ms] flex items-center justify-center w-full max-w-3xl mx-auto relative z-20 group">
+          <div className="animate-reveal [animation-delay:600ms] flex items-center justify-start w-full max-w-3xl relative z-20 group">
             <div className="absolute -inset-1 bg-gradient-to-r from-primary-500/0 via-primary-500/30 to-primary-500/0 rounded-[1.5rem] blur opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
             <div className="relative w-full">
               <SearchBar />
             </div>
           </div>
 
-          <div className="animate-reveal [animation-delay:800ms] relative z-0 mt-12">
-            <div className="glass-light/10 border-white/10 p-8 rounded-3xl backdrop-blur-md flex flex-wrap items-center justify-center gap-6 md:gap-16 border">
+          <div className="animate-reveal [animation-delay:800ms] relative z-0 max-w-3xl">
+            <div className="glass-light/10 border-white/10 p-6 sm:p-8 rounded-3xl backdrop-blur-md flex flex-wrap items-center justify-start gap-6 md:gap-12 border">
               <div className="text-center group cursor-default">
                 <p className="text-4xl font-heading font-bold text-white group-hover:translate-x-1 transition-transform">5,000+</p>
                 <p className="text-xs font-semibold uppercase tracking-widest text-primary-400">Verified Fundis</p>

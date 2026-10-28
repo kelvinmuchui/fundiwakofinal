@@ -53,7 +53,7 @@ export async function searchFundis({ service, location }: SearchFilters) {
     }
 
     const results = await usersCollection
-      .find(query, { projection: { password: 0 } })
+      .find(query, { projection: { password: 0, phone: 0, phoneEncrypted: 0 } })
       .sort({ createdAt: -1 })
       .toArray();
 
@@ -87,7 +87,6 @@ function filterMockWorkers({ service, location }: SearchFilters) {
     _id: w.id,
     name: w.name,
     email: w.email,
-    phone: w.phone,
     skill: w.skill,
     location: w.location,
     availability: w.availability,

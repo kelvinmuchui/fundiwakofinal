@@ -42,6 +42,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ status: 'not_found' });
     }
 
+    const user = session.user as { id?: string };
+    if (transaction.clientId !== user.id && transaction.fundiId !== user.id) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
     return NextResponse.json({
       status: transaction.status,
       amount: transaction.amount,

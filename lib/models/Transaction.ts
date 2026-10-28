@@ -1,6 +1,6 @@
 import { ObjectId } from 'mongodb';
 
-export type TransactionType = 'booking_escrow' | 'wallet_topup';
+export type TransactionType = 'booking_escrow' | 'wallet_topup' | 'contact_access';
 
 export interface Transaction {
   _id?: ObjectId;
@@ -27,4 +27,3 @@ export interface Transaction {
   createdAt: Date;
   updatedAt: Date;
 }
-

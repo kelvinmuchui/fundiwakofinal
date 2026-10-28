@@ -4,7 +4,7 @@ export interface Worker {
   skill: string;
   location: string;
   availability: string;
-  phone: string;
+  phone?: string;
   email: string;
   rating: number;
   jobsCompleted: number;

@@ -73,7 +73,6 @@ export default function SearchPage({ searchParams }: SearchPageProps) {
     location: user.location || "Nairobi",
     neighborhood: user.neighborhood || "",
     availability: user.availability ?? "Available Now",
-    phone: user.phone,
     email: user.email,
     rating: user.rating ?? 0,
     jobsCompleted: user.jobsCompleted ?? 0,

@@ -6,6 +6,7 @@ import { authOptions } from '../auth/[...nextauth]/route';
 import { ApiErrorHandler, createSuccessResponse } from '@/lib/errorHandler';
 import { bookingSchema, getValidationErrorMessages } from '@/lib/validation';
 import { logActivity } from '@/lib/activityLogger';
+import { hasContactAccess } from '@/lib/contactAccess';
 
 export async function POST(request: NextRequest) {
   return ApiErrorHandler.withErrorHandler(async () => {
@@ -118,7 +119,9 @@ export async function GET() {
             _id: fundi._id,
             name: fundi.name,
             skill: fundi.skill,
-            phone: fundi.phone,
+            ...(user?.role === 'client' && await hasContactAccess(userId, booking.fundiId)
+              ? { phone: fundi.phone }
+              : {}),
             photoURL: fundi.photoURL
           } : null,
           client: client ? {
