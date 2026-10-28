@@ -19,7 +19,7 @@ const footerLinks = {
     support: [
         { name: "Help Center", href: "/faq" },
         { name: "Safety", href: "/faq" },
-        { name: "Terms of Service", href: "/legal/terms" },
+        { name: "Terms of Service", href: "/legal/terms-of-service" },
         { name: "Privacy Policy", href: "/legal/privacy-policy" },
         { name: "Contact Us", href: "/contact" },
     ],

@@ -471,9 +471,9 @@ export default function AuthPage() {
                     />
                     <label htmlFor="accept-terms" className="text-sm text-gray-600">
                       I agree to the{' '}
-                      <Link href="/legal/terms" className="text-primary-600 hover:underline">Terms of Service</Link>
+                      <Link href="/legal/terms-of-service" className="text-primary-600 hover:underline">Terms of Service</Link>
                       {' '}and{' '}
-                      <Link href="/legal/privacy" className="text-primary-600 hover:underline">Privacy Policy</Link>
+                      <Link href="/legal/privacy-policy" className="text-primary-600 hover:underline">Privacy Policy</Link>
                     </label>
                   </div>
 

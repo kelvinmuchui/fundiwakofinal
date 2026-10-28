@@ -144,6 +144,22 @@
     transform: translateY(-2px);
   }
 
+  .legal-content h2 {
+    font-family: "Inter", system-ui, sans-serif;
+    color: #0f172a;
+  }
+
+  .legal-content p,
+  .legal-content li {
+    line-height: 1.8;
+    color: #334155;
+  }
+
+  .legal-content strong {
+    color: #0f172a;
+    font-weight: 700;
+  }
+
   .section-padding {
     padding-left: 1rem;
     padding-right: 1rem;
