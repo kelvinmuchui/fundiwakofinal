@@ -14,6 +14,13 @@ export const kenyanPhoneSchema = z
     return digits.startsWith('0') ? `+254${digits.slice(1)}` : `+${digits}`;
   });
 
+export function getPhoneNumberPattern(phone: string): string {
+  const digits = phone.replace(/\D/g, '');
+  const nationalNumber = `0${digits.slice(3)}`;
+  const formatted = (value: string) => value.split('').join('[\\s().-]*');
+  return `^(?:${formatted(nationalNumber)}|\\+?${formatted(digits)})$`;
+}
+
 export const registerSchema = z.object({
   email: z.string().trim().toLowerCase().email('Enter a valid email address').max(254, 'Email address is too long'),
   phone: kenyanPhoneSchema,

@@ -3,7 +3,7 @@ import bcrypt from 'bcryptjs';
 import { Binary, ObjectId, type Collection, type Document } from 'mongodb';
 import { getCollection } from '@/lib/db';
 import type { User, WorkerApplication } from '@/lib/models/User';
-import { registerSchema, getValidationErrorMessages } from '@/lib/validation';
+import { getPhoneNumberPattern, registerSchema, getValidationErrorMessages } from '@/lib/validation';
 import { generateVerificationToken, sendVerificationEmail } from '@/lib/emailService';
 import { logAuditAction, logComplianceAction } from '@/lib/auditLog';
 import { ensureServiceExists } from '@/lib/services';
@@ -343,13 +343,6 @@ export async function POST(request: NextRequest) {
 
 function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-function getPhoneNumberPattern(phone: string): string {
-  const digits = phone.replace(/\D/g, '');
-  const nationalNumber = `0${digits.slice(3)}`;
-  const formatted = (value: string) => value.split('').join('[\\s().-]*');
-  return `^(?:${formatted(nationalNumber)}|\\+?${formatted(digits)})$`;
 }
 
 function isDuplicateKeyError(error: unknown): boolean {

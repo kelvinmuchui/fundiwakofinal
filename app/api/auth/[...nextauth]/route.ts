@@ -3,23 +3,30 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import bcrypt from 'bcryptjs';
 import { getCollection } from '@/lib/db';
 import type { User } from '@/lib/models/User';
+import { getPhoneNumberPattern, kenyanPhoneSchema } from '@/lib/validation';
 
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
       name: 'credentials',
       credentials: {
-        email: { label: 'Email', type: 'email' },
+        identifier: { label: 'Email or phone number', type: 'text' },
+        email: { label: 'Email or phone number', type: 'text' },
         password: { label: 'Password', type: 'password' }
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
+        const identifier = credentials?.identifier || credentials?.email;
+        if (!identifier || !credentials?.password) {
           return null;
         }
 
         try {
           const usersCollection = await getCollection<User>('users');
-          const user = await usersCollection.findOne({ email: credentials.email });
+          const user = identifier.includes('@')
+            ? await usersCollection.findOne({
+                email: { $regex: `^${escapeRegExp(identifier.trim())}$`, $options: 'i' },
+              })
+            : await findUserByPhone(usersCollection, identifier);
 
           if (!user) {
             return null;
@@ -70,3 +77,15 @@ export const authOptions: NextAuthOptions = {
 
 const handler = NextAuth(authOptions);
 export { handler as GET, handler as POST };
+
+async function findUserByPhone(usersCollection: Awaited<ReturnType<typeof getCollection<User>>>, phone: string) {
+  const parsedPhone = kenyanPhoneSchema.safeParse(phone);
+  if (!parsedPhone.success) {
+    return null;
+  }
+  return usersCollection.findOne({ phone: { $regex: getPhoneNumberPattern(parsedPhone.data) } });
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}

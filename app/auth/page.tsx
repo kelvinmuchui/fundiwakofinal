@@ -17,7 +17,7 @@ export default function AuthPage() {
 
   // Sign In State
   const [signInData, setSignInData] = useState({
-    email: '',
+    identifier: '',
     password: '',
   });
 
@@ -39,13 +39,13 @@ export default function AuthPage() {
 
     try {
       const result = await signIn('credentials', {
-        email: signInData.email,
+        identifier: signInData.identifier,
         password: signInData.password,
         redirect: false,
       });
 
       if (result?.error) {
-        setError('Invalid email or password');
+        setError('Invalid email/phone number or password');
       } else {
         const session = await getSession();
         const userRole = (session?.user as { role?: string } | undefined)?.role;
@@ -228,17 +228,18 @@ export default function AuthPage() {
                   <h3 className="text-xl font-heading font-bold text-gray-900">Sign In</h3>
 
                   <div>
-                    <label htmlFor="signin-email" className="block text-sm font-medium text-gray-700 mb-2">
-                      Email Address
+                    <label htmlFor="signin-identifier" className="block text-sm font-medium text-gray-700 mb-2">
+                      Email or Phone Number
                     </label>
                     <input
-                      id="signin-email"
-                      type="email"
+                      id="signin-identifier"
+                      type="text"
                       required
-                      value={signInData.email}
-                      onChange={(e) => setSignInData({ ...signInData, email: e.target.value })}
+                      autoComplete="username"
+                      value={signInData.identifier}
+                      onChange={(e) => setSignInData({ ...signInData, identifier: e.target.value })}
                       className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                      placeholder="you@example.com"
+                      placeholder="you@example.com or 0712345678"
                     />
                   </div>
 
@@ -366,6 +367,7 @@ export default function AuthPage() {
                         className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                         placeholder="0712345678 or +254712345678"
                       />
+                      <p className="mt-1 text-xs text-gray-500">You can use this number to sign in.</p>
                     </div>
 
                     <div>
