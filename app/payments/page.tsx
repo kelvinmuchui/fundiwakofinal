@@ -1,7 +1,7 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import { useEffect, useState, useMemo } from "react";
+import { useCallback, useEffect, useState, useMemo, useRef } from "react";
 import Link from "next/link";
 import { 
   Wallet, 
@@ -72,7 +72,7 @@ interface Transaction {
 
 export default function PaymentsPage() {
   const { data: session, status } = useSession();
-  const user = session?.user as any;
+  const user = session?.user as { id?: string; role?: string; phone?: string; name?: string } | undefined;
 
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -106,6 +106,8 @@ export default function PaymentsPage() {
   const [topUpStep, setTopUpStep] = useState<"form" | "polling" | "success" | "failed">("form");
   const [topUpRequestId, setTopUpRequestId] = useState("");
   const [disputeLoadingId, setDisputeLoadingId] = useState<string | null>(null);
+  const [payoutConfirmationBooking, setPayoutConfirmationBooking] = useState<Booking | null>(null);
+  const handledBookingAction = useRef(false);
 
   useEffect(() => {
     if (status === "authenticated") {
@@ -211,7 +213,7 @@ export default function PaymentsPage() {
     }
   };
 
-  const handleOpenPayment = (booking: Booking) => {
+  const handleOpenPayment = useCallback((booking: Booking) => {
     setSelectedBooking(booking);
     // Pre-fill phone number
     const userPhone = user?.phone || "";
@@ -222,16 +224,39 @@ export default function PaymentsPage() {
     setCheckoutRequestId("");
     setPaymentStep("form");
     setPaymentModalOpen(true);
-  };
+  }, [user?.phone]);
+
+  useEffect(() => {
+    if (loading || handledBookingAction.current) return;
+
+    const params = new URLSearchParams(window.location.search);
+    const bookingId = params.get("bookingId");
+    const action = params.get("action");
+    if (!bookingId || !action) return;
+
+    const booking = bookings.find((item) => item._id === bookingId);
+    if (!booking) return;
+
+    handledBookingAction.current = true;
+    if (action === "fund" && booking.status === "accepted" && booking.paymentStatus !== "escrowed") {
+      handleOpenPayment(booking);
+    } else if (action === "release" && booking.status === "completed" && booking.paymentStatus === "escrowed") {
+      setPayoutConfirmationBooking(booking);
+    }
+  }, [bookings, handleOpenPayment, loading]);
 
   const handleInitiateSTK = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedBooking) return;
+    if (!selectedBooking.quoteAmount || selectedBooking.quoteAmount <= 0) {
+      setPaymentError("This booking needs a confirmed quote before escrow can be funded.");
+      return;
+    }
 
     setPaymentLoading(true);
     setPaymentError("");
 
-    const amountToPay = Number(customAmount) || selectedBooking.quoteAmount || 1000;
+    const amountToPay = selectedBooking.quoteAmount;
 
     try {
       const res = await fetch("/api/payments/stk-push", {
@@ -251,8 +276,8 @@ export default function PaymentsPage() {
 
       setCheckoutRequestId(data.checkoutRequestID);
       setPaymentStep("polling");
-    } catch (err: any) {
-      setPaymentError(err.message || "An error occurred");
+    } catch (err) {
+      setPaymentError(err instanceof Error ? err.message : "An error occurred");
     } finally {
       setPaymentLoading(false);
     }
@@ -282,8 +307,8 @@ export default function PaymentsPage() {
 
       setTopUpRequestId(data.checkoutRequestID);
       setTopUpStep("polling");
-    } catch (err: any) {
-      setTopUpError(err.message || "An error occurred");
+    } catch (err) {
+      setTopUpError(err instanceof Error ? err.message : "An error occurred");
     } finally {
       setTopUpLoading(false);
     }
@@ -319,18 +344,14 @@ export default function PaymentsPage() {
 
       alert("Dispute raised successfully. Escrow funds are frozen.");
       fetchData();
-    } catch (err: any) {
-      alert(`Error raising dispute: ${err.message}`);
+    } catch (err) {
+      alert(`Error raising dispute: ${err instanceof Error ? err.message : "An unexpected error occurred"}`);
     } finally {
       setDisputeLoadingId(null);
     }
   };
 
   const handleReleaseFunds = async (bookingId: string) => {
-    if (!confirm("Are you sure you want to release the escrowed funds to the Fundi? This action is irreversible.")) {
-      return;
-    }
-
     setPayoutLoadingId(bookingId);
     try {
       const res = await fetch("/api/payments/payout", {
@@ -345,11 +366,33 @@ export default function PaymentsPage() {
       }
 
       alert(data.message || "Funds released successfully!");
+      setPayoutConfirmationBooking(null);
       fetchData();
-    } catch (err: any) {
-      alert(`Error releasing funds: ${err.message}`);
+    } catch (err) {
+      alert(`Error releasing funds: ${err instanceof Error ? err.message : "An unexpected error occurred"}`);
     } finally {
       setPayoutLoadingId(null);
+    }
+  };
+
+  const handleConfirmCompletion = async (booking: Booking) => {
+    setJobActionLoadingId(booking._id);
+    try {
+      const response = await fetch("/api/bookings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bookingId: booking._id, status: "completed" }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || "Work completion could not be confirmed");
+
+      const confirmedBooking = { ...booking, status: "completed" };
+      setBookings((current) => current.map((item) => item._id === booking._id ? confirmedBooking : item));
+      setPayoutConfirmationBooking(confirmedBooking);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "Work completion could not be confirmed");
+    } finally {
+      setJobActionLoadingId(null);
     }
   };
 
@@ -396,8 +439,8 @@ export default function PaymentsPage() {
       setQuoteInputId(null);
       setQuoteValue("");
       fetchData();
-    } catch (error: any) {
-      alert(error.message);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "An unexpected error occurred");
     } finally {
       setUpdatingQuoteId(null);
     }
@@ -426,8 +469,8 @@ export default function PaymentsPage() {
       }
 
       fetchData();
-    } catch (error: any) {
-      alert(error.message);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "An unexpected error occurred");
     } finally {
       setJobActionLoadingId(null);
     }
@@ -435,7 +478,7 @@ export default function PaymentsPage() {
 
   // Fundi updates job status to completed
   const handleMarkCompleted = async (bookingId: string) => {
-    if (!confirm("Have you completed the work? This will notify the client to release the payment.")) {
+    if (!confirm("Have you completed the work? The client will need to confirm it before escrow can be released.")) {
       return;
     }
 
@@ -446,7 +489,7 @@ export default function PaymentsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           bookingId,
-          status: "completed",
+          status: "completion_requested",
         }),
       });
 
@@ -456,8 +499,8 @@ export default function PaymentsPage() {
       }
 
       fetchData();
-    } catch (error: any) {
-      alert(error.message);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "An unexpected error occurred");
     } finally {
       setJobActionLoadingId(null);
     }
@@ -490,7 +533,7 @@ export default function PaymentsPage() {
         .reduce((sum, tx) => sum + tx.amount, 0);
 
       const pendingRelease = bookings.filter(
-        (b) => b.status === "completed" && b.paymentStatus === "escrowed"
+        (b) => b.status === "completion_requested" && b.paymentStatus === "escrowed"
       ).reduce((sum, b) => sum + (b.quoteAmount || 0), 0);
 
       return { val1: lockedInEscrow, val2: pendingRelease, val3: totalEarned };
@@ -720,7 +763,7 @@ export default function PaymentsPage() {
                               <div className="text-right">
                                 <p className="text-[10px] text-slate-500 uppercase tracking-widest font-black">Agreed Quote</p>
                                 <p className="text-xl font-black text-orange-500">
-                                  KES {booking.quoteAmount?.toLocaleString() ?? "1,000"}
+                                  KES {booking.quoteAmount?.toLocaleString() ?? "—"}
                                 </p>
                               </div>
                             </div>
@@ -731,12 +774,18 @@ export default function PaymentsPage() {
                             </div>
                           </div>
 
-                          <button
-                            onClick={() => handleOpenPayment(booking)}
-                            className="mt-6 w-full btn-primary py-3 rounded-2xl flex items-center justify-center gap-2 text-sm"
-                          >
-                            <Wallet className="w-4 h-4" /> Pay to Escrow via M-Pesa
-                          </button>
+                          {booking.quoteAmount ? (
+                            <button
+                              onClick={() => handleOpenPayment(booking)}
+                              className="mt-6 w-full btn-primary py-3 rounded-2xl flex items-center justify-center gap-2 text-sm"
+                            >
+                              <Wallet className="w-4 h-4" /> Fund KES {booking.quoteAmount.toLocaleString()} in escrow
+                            </button>
+                          ) : (
+                            <p className="mt-6 rounded-xl border border-amber-500/20 bg-amber-500/5 p-3 text-xs text-amber-300">
+                              Waiting for the fundi to provide a quote before escrow can be funded.
+                            </p>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -757,6 +806,7 @@ export default function PaymentsPage() {
                     <div className="grid gap-6 md:grid-cols-2">
                       {bookings.filter(b => b.paymentStatus === "escrowed").map((booking) => {
                         const isCompleted = booking.status === "completed";
+                        const completionRequested = booking.status === "completion_requested";
                         return (
                           <div key={booking._id} className="rounded-3xl bg-slate-900/30 border border-slate-800/80 p-6 flex flex-col justify-between hover:border-slate-700 transition relative overflow-hidden">
                             <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-bl-full flex items-center justify-center text-emerald-500/20">
@@ -771,14 +821,16 @@ export default function PaymentsPage() {
                                       {booking.serviceType}
                                     </span>
                                     <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-md inline-flex items-center gap-1 ${
-                                      booking.status === "completed"
+                                      booking.status === "completed" || completionRequested
                                         ? "bg-emerald-500/10 text-emerald-500"
                                         : booking.status === "in_progress"
                                         ? "bg-sky-500/10 text-sky-400"
                                         : "bg-amber-500/10 text-amber-500"
                                     }`}>
                                       {booking.status === "completed"
-                                        ? "Completed"
+                                        ? "Client confirmed completion"
+                                        : completionRequested
+                                        ? "Fundi marked complete"
                                         : booking.status === "in_progress"
                                         ? "Work In Progress"
                                         : "Escrowed / Awaiting Start"}
@@ -789,7 +841,9 @@ export default function PaymentsPage() {
                                   </h3>
                                   <div className="mt-3 inline-flex items-center rounded-full bg-slate-900/60 text-slate-200 text-[10px] uppercase tracking-wider px-3 py-1">
                                     {booking.status === "completed"
-                                      ? "Ready for payout"
+                                      ? "Ready for payment confirmation"
+                                      : completionRequested
+                                      ? "Confirm the work to continue to payment"
                                       : booking.status === "in_progress"
                                       ? "Work in progress"
                                       : "Awaiting start"}
@@ -814,7 +868,7 @@ export default function PaymentsPage() {
                             <div className="mt-6 flex flex-col gap-2">
                               {isCompleted ? (
                                 <button
-                                  onClick={() => handleReleaseFunds(booking._id)}
+                                  onClick={() => setPayoutConfirmationBooking(booking)}
                                   disabled={payoutLoadingId === booking._id}
                                   className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-bold flex items-center justify-center gap-2 text-sm shadow-lg shadow-emerald-600/10 transition mb-3"
                                 >
@@ -822,15 +876,23 @@ export default function PaymentsPage() {
                                     <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
                                   ) : (
                                     <>
-                                      <Unlock className="w-4 h-4" /> Confirm & Release Payout
+                                      <Unlock className="w-4 h-4" /> Confirm Payment
                                     </>
                                   )}
+                                </button>
+                              ) : completionRequested ? (
+                                <button
+                                  onClick={() => void handleConfirmCompletion(booking)}
+                                  disabled={jobActionLoadingId === booking._id}
+                                  className="w-full py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-2xl font-bold flex items-center justify-center gap-2 text-sm transition mb-3 disabled:opacity-50"
+                                >
+                                  {jobActionLoadingId === booking._id ? "Confirming..." : "Confirm work complete"}
                                 </button>
                               ) : (
                                 <div className="rounded-xl bg-slate-900 border border-slate-800/60 p-3.5 text-xs text-slate-400 flex gap-2 items-start mb-3">
                                   <Info className="w-4 h-4 text-orange-500 shrink-0 mt-0.5" />
                                   <span>
-                                    Funds are safely locked. Once the Fundi completes the task and marks it finished, you can release the payment.
+                                    Funds stay locked in escrow. The fundi must finish the work and you must confirm it before payment can be released.
                                   </span>
                                 </div>
                               )}
@@ -1000,7 +1062,7 @@ export default function PaymentsPage() {
                   ) : (
                     <div className="grid gap-6 md:grid-cols-2">
                       {bookings.filter(b => b.paymentStatus === "escrowed").map((booking) => {
-                        const isCompleted = booking.status === "completed";
+                        const isCompleted = booking.status === "completion_requested";
                         return (
                           <div key={booking._id} className="rounded-3xl bg-slate-900/30 border border-slate-800/80 p-6 flex flex-col justify-between hover:border-slate-700 transition relative overflow-hidden">
                             <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-bl-full flex items-center justify-center text-emerald-500/20">
@@ -1015,14 +1077,14 @@ export default function PaymentsPage() {
                                       {booking.serviceType}
                                     </span>
                                     <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-md inline-flex items-center gap-1 ${
-                                      booking.status === "completed"
+                                      booking.status === "completion_requested"
                                         ? "bg-emerald-500/10 text-emerald-500"
                                         : booking.status === "in_progress"
                                         ? "bg-sky-500/10 text-sky-400"
                                         : "bg-amber-500/10 text-amber-500"
                                     }`}>
-                                      {booking.status === "completed"
-                                        ? "Completed"
+                                      {booking.status === "completion_requested"
+                                        ? "Awaiting Client Confirmation"
                                         : booking.status === "in_progress"
                                         ? "Work In Progress"
                                         : "Escrowed / Awaiting Start"}
@@ -1032,8 +1094,8 @@ export default function PaymentsPage() {
                                     Client: {booking.client?.name || "Valued Client"}
                                   </h3>
                                   <div className="mt-3 inline-flex items-center rounded-full bg-slate-900/60 text-slate-200 text-[10px] uppercase tracking-wider px-3 py-1">
-                                    {booking.status === "completed"
-                                      ? "Ready to be released"
+                                    {booking.status === "completion_requested"
+                                      ? "Waiting for client confirmation"
                                       : booking.status === "in_progress"
                                       ? "Service ongoing"
                                       : "Escrowed — awaiting start"}
@@ -1060,7 +1122,7 @@ export default function PaymentsPage() {
                                 <div className="rounded-xl bg-emerald-950/20 border border-emerald-900/30 p-4 text-xs text-slate-400 flex gap-2 items-start">
                                   <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5 animate-pulse" />
                                   <span>
-                                    You have completed the work. Client has been notified to release the KES {booking.quoteAmount} payment directly to your M-Pesa.
+                                    You have marked the work complete. The client must confirm the work before the escrow payment can be released.
                                   </span>
                                 </div>
                               ) : booking.status === "accepted" ? (
@@ -1091,13 +1153,13 @@ export default function PaymentsPage() {
 
                               {booking.status === "accepted" && (
                                 <p className="mt-3 text-[11px] text-slate-400">
-                                  Work has been funded but not started. Tap "Mark Job as Started" once you begin the task.
+                                  Work is funded but not started. Mark the job as started when you begin the task.
                                 </p>
                               )}
 
                               {booking.status === "in_progress" && (
                                 <p className="mt-3 text-[11px] text-slate-400">
-                                  Job is in progress. Once the work is finished, tap "Mark Job as Completed" so the client can release escrow funds.
+                                  Once the work is finished, mark it complete so the client can confirm and release escrow.
                                 </p>
                               )}
                             </div>
@@ -1147,7 +1209,6 @@ export default function PaymentsPage() {
                     </tr>
                   ) : (
                     transactions.map((tx) => {
-                      const isClient = user?.role === "client";
                       return (
                         <tr key={tx._id} className="hover:bg-slate-900/30 transition-colors">
                           <td className="px-6 py-4 font-mono text-xs text-slate-400">
@@ -1202,6 +1263,42 @@ export default function PaymentsPage() {
 
       </div>
 
+      {payoutConfirmationBooking && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-md" role="dialog" aria-modal="true" aria-labelledby="payout-confirmation-title">
+          <div className="w-full max-w-md rounded-3xl border border-slate-800 bg-slate-900 p-7 shadow-2xl">
+            <div className="flex items-start gap-3">
+              <span className="rounded-xl bg-emerald-500/10 p-3 text-emerald-400"><Unlock className="h-5 w-5" /></span>
+              <div>
+                <h2 id="payout-confirmation-title" className="text-xl font-bold text-white">Confirm payment</h2>
+                <p className="mt-1 text-sm text-slate-400">You confirmed that the work is complete. Releasing escrow sends the agreed amount to the fundi and cannot be undone.</p>
+              </div>
+            </div>
+            <div className="mt-5 rounded-2xl border border-slate-800 bg-slate-950 p-4">
+              <p className="text-sm font-semibold text-white">{payoutConfirmationBooking.serviceType} · {payoutConfirmationBooking.fundi?.name || "Fundi"}</p>
+              <p className="mt-2 text-lg font-black text-emerald-400">KES {Number(payoutConfirmationBooking.quoteAmount || 0).toLocaleString()}</p>
+            </div>
+            <div className="mt-6 flex gap-3">
+              <button
+                type="button"
+                onClick={() => setPayoutConfirmationBooking(null)}
+                disabled={payoutLoadingId === payoutConfirmationBooking._id}
+                className="flex-1 rounded-xl border border-slate-700 px-4 py-3 text-sm font-semibold text-slate-300 hover:bg-slate-800 disabled:opacity-50"
+              >
+                Not now
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleReleaseFunds(payoutConfirmationBooking._id)}
+                disabled={payoutLoadingId === payoutConfirmationBooking._id}
+                className="flex-1 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-50"
+              >
+                {payoutLoadingId === payoutConfirmationBooking._id ? "Processing..." : "Release escrow"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Payment STK Push Modal / Drawer */}
       {paymentModalOpen && selectedBooking && (
         <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-md flex items-center justify-center z-100 p-4">
@@ -1239,12 +1336,12 @@ export default function PaymentsPage() {
                   <input
                     type="number"
                     value={customAmount}
-                    onChange={(e) => setCustomAmount(e.target.value)}
+                    readOnly
                     placeholder="Enter amount"
                     className="w-full px-5 py-4 bg-slate-950 border border-slate-850 rounded-2xl text-white outline-none focus:border-orange-500 font-medium"
                     required
                   />
-                  <p className="text-[10px] text-slate-500 mt-1 ml-1">Agreed price as per the booking quote.</p>
+                  <p className="text-[10px] text-slate-500 mt-1 ml-1">Payment is fixed to the fundi’s agreed quote.</p>
                 </div>
 
                 <div>
@@ -1282,7 +1379,7 @@ export default function PaymentsPage() {
                   {paymentLoading ? (
                     <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
                   ) : (
-                    <>Pay KES {Number(customAmount || selectedBooking.quoteAmount || 1000).toLocaleString()} via M-Pesa</>
+                    <>Fund KES {Number(selectedBooking.quoteAmount || 0).toLocaleString()} in escrow via M-Pesa</>
                   )}
                 </button>
               </form>
@@ -1302,7 +1399,7 @@ export default function PaymentsPage() {
                 <div className="space-y-2">
                   <h4 className="text-lg font-bold text-white">M-Pesa STK Push Sent</h4>
                   <p className="text-xs text-slate-400 max-w-xs mx-auto leading-relaxed">
-                    We've initiated an M-Pesa request on your phone. Please check your screen, enter your M-Pesa PIN, and authorize the transaction.
+                    We have initiated an M-Pesa request on your phone. Please check your screen, enter your M-Pesa PIN, and authorize the transaction.
                   </p>
                 </div>
 
@@ -1343,7 +1440,7 @@ export default function PaymentsPage() {
                   <h4 className="text-xl font-bold text-white">Payment Escrowed!</h4>
                   <p className="text-xs text-slate-400 max-w-xs mx-auto leading-relaxed">
                     KES {Number(customAmount).toLocaleString()} has been received and is held securely in escrow. 
-                    The Fundi is notified and will begin working on your request.
+                    The Fundi is notified and can start the job once they are ready.
                   </p>
                 </div>
 
@@ -1484,7 +1581,7 @@ export default function PaymentsPage() {
                 <div className="space-y-2">
                   <h4 className="text-lg font-bold text-white">M-Pesa STK Push Sent</h4>
                   <p className="text-xs text-slate-400 max-w-xs mx-auto leading-relaxed">
-                    We've initiated an M-Pesa request on your phone. Please check your screen, enter your M-Pesa PIN to top up your wallet.
+                    We have initiated an M-Pesa request on your phone. Please check your screen and enter your M-Pesa PIN to top up your wallet.
                   </p>
                 </div>
               </div>

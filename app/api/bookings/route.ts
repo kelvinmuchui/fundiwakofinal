@@ -153,7 +153,7 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid booking update' }, { status: 400 });
     }
     const { bookingId, status, quoteAmount } = body;
-    const allowedStatuses = ['accepted', 'in_progress', 'completed', 'cancelled', 'declined'];
+    const allowedStatuses = ['accepted', 'in_progress', 'completion_requested', 'completed', 'cancelled', 'declined'];
 
     if (typeof bookingId !== 'string' || !ObjectId.isValid(bookingId) || !allowedStatuses.includes(status)) {
       return NextResponse.json({ error: 'Invalid booking update' }, { status: 400 });
@@ -177,14 +177,14 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    if (userRole === 'client' && status !== 'cancelled') {
-      return NextResponse.json({ error: 'Clients may only cancel bookings' }, { status: 403 });
+    if (userRole === 'client' && !['cancelled', 'completed'].includes(status)) {
+      return NextResponse.json({ error: 'Clients may only confirm completion or cancel bookings' }, { status: 403 });
     }
 
     const allowedFundiTransitions: Record<string, string[]> = {
       pending: ['accepted', 'declined'],
       accepted: ['in_progress'],
-      in_progress: ['completed']
+      in_progress: ['completion_requested']
     };
     if (
       userRole === 'fundi' &&
@@ -195,14 +195,51 @@ export async function PATCH(request: NextRequest) {
         { status: 409 }
       );
     }
-    if (userRole === 'client' && !['pending', 'accepted', 'in_progress'].includes(booking.status)) {
+    if (userRole === 'client' && status === 'cancelled' && !['pending', 'accepted', 'in_progress'].includes(booking.status)) {
       return NextResponse.json({ error: 'This booking can no longer be cancelled' }, { status: 409 });
+    }
+    if (userRole === 'client' && status === 'cancelled' && booking.paymentStatus === 'escrowed') {
+      return NextResponse.json({ error: 'This booking has escrow funds. Raise a dispute instead of cancelling it.' }, { status: 409 });
     }
     if (
       quoteAmount !== undefined &&
       (typeof quoteAmount !== 'number' || !Number.isFinite(quoteAmount) || quoteAmount <= 0)
     ) {
       return NextResponse.json({ error: 'Quote amount must be a positive number' }, { status: 400 });
+    }
+    if (userRole === 'fundi' && status === 'accepted' && quoteAmount === undefined) {
+      return NextResponse.json({ error: 'A quote amount is required before accepting this booking' }, { status: 400 });
+    }
+
+    const transactionsCollection = await getCollection('transactions');
+    if (userRole === 'client' && status === 'cancelled') {
+      const pendingPayment = await transactionsCollection.findOne({
+        bookingId: new ObjectId(bookingId),
+        status: 'pending'
+      });
+      if (pendingPayment) {
+        return NextResponse.json({ error: 'A payment request is in progress. Wait for its result before cancelling.' }, { status: 409 });
+      }
+    }
+
+    const hasHeldEscrow = booking.paymentStatus === 'escrowed' && Boolean(await transactionsCollection.findOne({
+      bookingId: new ObjectId(bookingId),
+      status: 'held'
+    }));
+
+    if (userRole === 'fundi' && status === 'in_progress' && !hasHeldEscrow) {
+      return NextResponse.json({ error: 'The client must fund the agreed quote in escrow before work can start' }, { status: 409 });
+    }
+    if (userRole === 'fundi' && status === 'completion_requested' && !hasHeldEscrow) {
+      return NextResponse.json({ error: 'This job does not have an active escrow payment' }, { status: 409 });
+    }
+    if (userRole === 'client' && status === 'completed') {
+      if (booking.status !== 'completion_requested') {
+        return NextResponse.json({ error: 'The fundi must mark the work complete before you can confirm it' }, { status: 409 });
+      }
+      if (!hasHeldEscrow) {
+        return NextResponse.json({ error: 'This booking does not have an active escrow payment to confirm' }, { status: 409 });
+      }
     }
 
     // Get booking details for activity logging
@@ -213,6 +250,9 @@ export async function PATCH(request: NextRequest) {
 
     const updatedAt = new Date();
     const updateFields: Record<string, unknown> = { status, updatedAt };
+    if (userRole === 'client' && status === 'completed') {
+      updateFields.clientConfirmedAt = updatedAt;
+    }
     if (status === 'accepted' && quoteAmount !== undefined) {
       updateFields.quoteAmount = quoteAmount;
       updateFields.paymentStatus = 'unpaid';
@@ -237,18 +277,18 @@ export async function PATCH(request: NextRequest) {
       const statusDescriptions: Record<string, string> = {
         accepted: 'Booking Accepted',
         in_progress: 'Booking In Progress',
+        completion_requested: 'Completion Awaiting Client Confirmation',
         completed: 'Job Completed',
         cancelled: 'Booking Cancelled',
         declined: 'Booking Declined'
       };
 
-      if (status === 'completed') {
-        // Log for both fundi and client
+      if (status === 'completion_requested') {
         await logActivity(
           booking.fundiId,
           'job_completed',
-          'Job Completed',
-          `Completed booking for ${booking.serviceType}`,
+          'Work Marked Complete',
+          `Marked booking complete and requested client confirmation for ${booking.serviceType}`,
           {
             relatedUserId: booking.clientId,
             metadata: {

@@ -5,11 +5,11 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import type { User } from '@/lib/models/User';
 import bcrypt from 'bcryptjs';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // Check if user is admin
     const session = await getServerSession(authOptions);
-    const userRole = (session?.user as any)?.role;
+    const userRole = (session?.user as { role?: string } | undefined)?.role;
     if (!session || userRole !== 'admin') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -50,28 +50,37 @@ export async function POST(request: NextRequest) {
   try {
     // Check if user is admin
     const session = await getServerSession(authOptions);
-    const userRole = (session?.user as any)?.role;
+    const userRole = (session?.user as { role?: string } | undefined)?.role;
     if (!session || userRole !== 'admin') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body = await request.json();
-    const { name, email, phone, role } = body;
+    const body: unknown = await request.json();
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      return NextResponse.json({ error: 'Invalid user data' }, { status: 400 });
+    }
+
+    const { name, email, phone, role } = body as Record<string, unknown>;
 
     // Validate required fields
-    if (!name || !email || !phone || !role) {
+    if (
+      typeof name !== 'string' || !name.trim() ||
+      typeof email !== 'string' || !email.trim() ||
+      typeof phone !== 'string' || !phone.trim() ||
+      typeof role !== 'string'
+    ) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
     // Validate role
-    if (!['admin', 'fundi', 'client'].includes(role)) {
+    if (role !== 'admin' && role !== 'fundi' && role !== 'client') {
       return NextResponse.json({ error: 'Invalid role' }, { status: 400 });
     }
 
     const usersCollection = await getCollection<User>('users');
 
     // Check if user already exists
-    const existingUser = await usersCollection.findOne({ email });
+    const existingUser = await usersCollection.findOne({ email: email.trim() });
     if (existingUser) {
       return NextResponse.json({ error: 'User with this email already exists' }, { status: 409 });
     }
@@ -81,18 +90,20 @@ export async function POST(request: NextRequest) {
     const hashedPassword = await bcrypt.hash(tempPassword, 10);
 
     // Create new user
-    const newUser = {
-      name,
-      email,
-      phone,
+    const newUser: Omit<User, '_id'> = {
+      name: name.trim(),
+      email: email.trim().toLowerCase(),
+      phone: phone.trim(),
       role,
       password: hashedPassword,
+      idNumber: '',
       isVerified: false,
+      emailVerified: false,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
 
-    const result = await usersCollection.insertOne(newUser as any);
+    const result = await usersCollection.insertOne(newUser);
 
     return NextResponse.json({
       _id: result.insertedId,

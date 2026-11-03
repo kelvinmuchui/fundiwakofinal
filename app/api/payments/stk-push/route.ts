@@ -9,7 +9,7 @@ import { logActivity } from '@/lib/activityLogger';
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    const user = session?.user as any;
+    const user = session?.user as { id?: string; role?: string } | undefined;
 
     if (!user || !user.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     let booking;
     try {
       booking = await bookingsCollection.findOne({ _id: new ObjectId(bookingId) });
-    } catch (e) {
+    } catch {
       return NextResponse.json({ error: 'Invalid Booking ID format' }, { status: 400 });
     }
 
@@ -40,10 +40,28 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden. You are not authorized to pay for this booking.' }, { status: 403 });
     }
 
-    // Determine payment amount
-    const paymentAmount = Number(amount || booking.quoteAmount || 1000); // fallback to 1000 KES if not set
-    if (isNaN(paymentAmount) || paymentAmount <= 0) {
-      return NextResponse.json({ error: 'Invalid payment amount' }, { status: 400 });
+    if (booking.status !== 'accepted') {
+      return NextResponse.json({ error: 'Escrow can only be funded after the fundi accepts the booking' }, { status: 409 });
+    }
+    if (booking.paymentStatus === 'escrowed' || booking.paymentStatus === 'released') {
+      return NextResponse.json({ error: 'This booking has already been funded' }, { status: 409 });
+    }
+    if (typeof booking.quoteAmount !== 'number' || !Number.isFinite(booking.quoteAmount) || booking.quoteAmount <= 0) {
+      return NextResponse.json({ error: 'This booking does not have a valid confirmed quote' }, { status: 400 });
+    }
+
+    const paymentAmount = Number(amount);
+    if (!Number.isFinite(paymentAmount) || paymentAmount !== booking.quoteAmount) {
+      return NextResponse.json({ error: 'Payment must match the fundi’s agreed quote' }, { status: 400 });
+    }
+
+    const transactionsCollection = await getCollection('transactions');
+    const pendingPayment = await transactionsCollection.findOne({
+      bookingId: new ObjectId(bookingId),
+      status: { $in: ['pending', 'held'] }
+    });
+    if (pendingPayment) {
+      return NextResponse.json({ error: 'A payment request is already in progress or funded for this booking' }, { status: 409 });
     }
 
     // Trigger STK Push via M-Pesa client
@@ -58,8 +76,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Create a transaction record in database
-    const transactionsCollection = await getCollection('transactions');
     await transactionsCollection.insertOne({
+      transactionType: 'booking_escrow',
       bookingId: new ObjectId(bookingId),
       clientId: booking.clientId,
       fundiId: booking.fundiId,
@@ -71,18 +89,6 @@ export async function POST(request: NextRequest) {
       createdAt: new Date(),
       updatedAt: new Date()
     });
-
-    // Update booking status
-    await bookingsCollection.updateOne(
-      { _id: new ObjectId(bookingId) },
-      { 
-        $set: { 
-          quoteAmount: paymentAmount,
-          paymentStatus: 'unpaid',
-          updatedAt: new Date()
-        } 
-      }
-    );
 
     // Log Activity
     try {
@@ -112,8 +118,8 @@ export async function POST(request: NextRequest) {
       mock: mpesaResult.mock,
     });
 
-  } catch (error: any) {
+  } catch (error) {
     console.error('STK Push API Error:', error);
-    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ error: error instanceof Error ? error.message : 'Internal server error' }, { status: 500 });
   }
 }

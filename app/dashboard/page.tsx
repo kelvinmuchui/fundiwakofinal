@@ -2,6 +2,7 @@
 
 import { useSession } from "next-auth/react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import ClientReviewForm from "@/app/components/ClientReviewForm";
 
@@ -14,6 +15,7 @@ interface Booking {
   preferredTime: string;
   location: string;
   status: string;
+  paymentStatus?: string;
   createdAt: string;
   quoteAmount?: number;
   fundi: {
@@ -30,6 +32,7 @@ const statusStyles: Record<string, string> = {
   pending: "bg-amber-50 text-amber-700",
   accepted: "bg-emerald-50 text-emerald-700",
   in_progress: "bg-sky-50 text-sky-700",
+  completion_requested: "bg-orange-50 text-orange-700",
   completed: "bg-slate-100 text-slate-600",
   cancelled: "bg-rose-50 text-rose-700",
   declined: "bg-rose-50 text-rose-700",
@@ -41,6 +44,7 @@ const isActiveBooking = (booking: Booking) =>
 
 export default function Dashboard() {
   const { data: session, status } = useSession();
+  const router = useRouter();
   const userRole = (session?.user as { role?: string } | undefined)?.role;
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
@@ -106,6 +110,27 @@ export default function Dashboard() {
       await fetchBookings();
     } catch (error) {
       setActionError(error instanceof Error ? error.message : "Your request could not be cancelled.");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const confirmCompletion = async (bookingId: string) => {
+    setActionLoading(bookingId);
+    setActionError("");
+    try {
+      const response = await fetch("/api/bookings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bookingId, status: "completed" }),
+      });
+      if (!response.ok) {
+        const result = await response.json().catch(() => ({}));
+        throw new Error(result.error || "Work completion could not be confirmed.");
+      }
+      router.push(`/payments?bookingId=${encodeURIComponent(bookingId)}&action=release`);
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : "Work completion could not be confirmed.");
     } finally {
       setActionLoading(null);
     }
@@ -245,7 +270,25 @@ export default function Dashboard() {
                         {booking.quoteAmount !== undefined && (
                           <span className="text-sm font-semibold text-slate-700">KES {booking.quoteAmount.toLocaleString()}</span>
                         )}
-                        {isActiveBooking(booking) && booking.status !== "in_progress" && (
+                        {userRole === "client" && booking.status === "accepted" && booking.paymentStatus !== "escrowed" && booking.quoteAmount && (
+                          <Link
+                            href={`/payments?bookingId=${encodeURIComponent(booking._id)}&action=fund`}
+                            className="rounded-lg bg-orange-500 px-3 py-2 text-sm font-semibold text-white transition hover:bg-orange-600"
+                          >
+                            Fund escrow · KES {booking.quoteAmount.toLocaleString()}
+                          </Link>
+                        )}
+                        {userRole === "client" && booking.status === "completion_requested" && (
+                          <button
+                            type="button"
+                            onClick={() => void confirmCompletion(booking._id)}
+                            disabled={actionLoading === booking._id}
+                            className="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50"
+                          >
+                            {actionLoading === booking._id ? "Confirming…" : "Confirm work complete"}
+                          </button>
+                        )}
+                        {isActiveBooking(booking) && ["pending", "accepted"].includes(booking.status) && (
                           <button
                             type="button"
                             onClick={() => void cancelBooking(booking._id)}

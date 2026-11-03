@@ -14,8 +14,9 @@ type Booking = {
   preferredTime: string;
   location: string;
   status: string;
-  createdAt: string;
+  paymentStatus?: string;
   quoteAmount?: number;
+  createdAt: string;
   client?: { name?: string; phone?: string };
 };
 
@@ -59,6 +60,7 @@ const statusStyles: Record<string, string> = {
   pending: "bg-amber-50 text-amber-700 border-amber-200",
   accepted: "bg-emerald-50 text-emerald-700 border-emerald-200",
   in_progress: "bg-sky-50 text-sky-700 border-sky-200",
+  completion_requested: "bg-orange-50 text-orange-700 border-orange-200",
   completed: "bg-neutral-100 text-neutral-600 border-neutral-200",
   cancelled: "bg-rose-50 text-rose-700 border-rose-200",
 };
@@ -84,6 +86,8 @@ export default function FundiDashboard() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [quoteInputId, setQuoteInputId] = useState<string | null>(null);
+  const [quoteValue, setQuoteValue] = useState("");
 
   useEffect(() => {
     if (status === "loading") return;
@@ -149,15 +153,25 @@ export default function FundiDashboard() {
     { value: completedBookings.length.toString(), label: "Completed", icon: CheckCircle2, style: "text-emerald-600 bg-emerald-50" },
   ];
 
-  const updateBooking = async (bookingId: string, nextStatus: string) => {
+  const updateBooking = async (bookingId: string, nextStatus: string, quoteAmount?: number) => {
     setActionLoading(bookingId);
     try {
       const response = await fetch("/api/bookings", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bookingId, status: nextStatus }),
+        body: JSON.stringify({ bookingId, status: nextStatus, ...(quoteAmount ? { quoteAmount } : {}) }),
       });
-      if (response.ok) setBookings((current) => current.map((booking) => booking._id === bookingId ? { ...booking, status: nextStatus } : booking));
+      if (!response.ok) {
+        const result = await response.json().catch(() => ({}));
+        throw new Error(result.error || "Could not update this booking.");
+      }
+      setBookings((current) => current.map((booking) => booking._id === bookingId
+        ? { ...booking, status: nextStatus, ...(quoteAmount ? { quoteAmount } : {}) }
+        : booking));
+      setQuoteInputId(null);
+      setQuoteValue("");
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : "Could not update this booking.");
     } finally {
       setActionLoading(null);
     }
@@ -265,9 +279,42 @@ export default function FundiDashboard() {
                     <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                       <div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><h3 className="font-semibold">{booking.serviceType}</h3><span className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold capitalize ${statusStyles[booking.status] || "bg-neutral-50 text-neutral-600 border-neutral-200"}`}>{booking.status.replace("_", " ")}</span></div><p className="mt-2 text-sm text-neutral-500">{booking.client?.name || "Client"} · {formatDate(booking.preferredDate)} at {booking.preferredTime}</p><p className="mt-1 flex items-center gap-1 text-xs text-neutral-400"><MapPin size={13} />{booking.location}</p><p className="mt-3 max-w-xl text-sm text-neutral-600">{booking.description}</p></div>
                       <div className="flex shrink-0 gap-2">
-                        {booking.status === "pending" && <><button type="button" disabled={actionLoading === booking._id} onClick={() => updateBooking(booking._id, "accepted")} className="rounded-xl bg-primary-500 px-3 py-2 text-xs font-bold text-white hover:bg-primary-600 disabled:opacity-50">Accept</button><button type="button" disabled={actionLoading === booking._id} onClick={() => updateBooking(booking._id, "declined")} className="rounded-xl border border-neutral-200 px-3 py-2 text-xs font-bold text-neutral-600 hover:bg-neutral-50 disabled:opacity-50">Decline</button></>}
-                        {booking.status === "accepted" && <button type="button" disabled={actionLoading === booking._id} onClick={() => updateBooking(booking._id, "in_progress")} className="rounded-xl bg-secondary-500 px-3 py-2 text-xs font-bold text-white disabled:opacity-50">Start job</button>}
-                        {booking.status === "in_progress" && <button type="button" disabled={actionLoading === booking._id} onClick={() => updateBooking(booking._id, "completed")} className="rounded-xl bg-emerald-600 px-3 py-2 text-xs font-bold text-white disabled:opacity-50">Mark complete</button>}
+                        {booking.status === "pending" && (
+                          <div className="flex flex-col items-end gap-2">
+                            {quoteInputId === booking._id ? (
+                              <div className="flex flex-wrap justify-end gap-2">
+                                <label className="sr-only" htmlFor={`quote-${booking._id}`}>Quote in Kenyan shillings</label>
+                                <input
+                                  id={`quote-${booking._id}`}
+                                  type="number"
+                                  min="1"
+                                  value={quoteValue}
+                                  onChange={(event) => setQuoteValue(event.target.value)}
+                                  placeholder="Quote (KES)"
+                                  className="w-32 rounded-xl border border-neutral-300 px-3 py-2 text-xs"
+                                />
+                                <button
+                                  type="button"
+                                  disabled={actionLoading === booking._id || !Number.isFinite(Number(quoteValue)) || Number(quoteValue) <= 0}
+                                  onClick={() => void updateBooking(booking._id, "accepted", Number(quoteValue))}
+                                  className="rounded-xl bg-primary-500 px-3 py-2 text-xs font-bold text-white hover:bg-primary-600 disabled:opacity-50"
+                                >
+                                  {actionLoading === booking._id ? "..." : "Send quote"}
+                                </button>
+                                <button type="button" onClick={() => setQuoteInputId(null)} className="rounded-xl border border-neutral-200 px-3 py-2 text-xs font-bold text-neutral-600">Cancel</button>
+                              </div>
+                            ) : (
+                              <button type="button" onClick={() => setQuoteInputId(booking._id)} className="rounded-xl bg-amber-700 px-3 py-2 text-xs font-bold text-white hover:bg-primary-600">
+                                Accept & provide quote
+                              </button>
+                            )}
+                            <button type="button" disabled={actionLoading === booking._id} onClick={() => void updateBooking(booking._id, "declined")} className="rounded-xl border border-neutral-200 px-3 py-2 text-xs font-bold text-neutral-600 hover:bg-neutral-50 disabled:opacity-50">Decline</button>
+                          </div>
+                        )}
+                        {booking.status === "accepted" && booking.paymentStatus === "escrowed" && <button type="button" disabled={actionLoading === booking._id} onClick={() => void updateBooking(booking._id, "in_progress")} className="rounded-xl bg-secondary-500 px-3 py-2 text-xs font-bold text-white disabled:opacity-50">Start job</button>}
+                        {booking.status === "accepted" && booking.paymentStatus !== "escrowed" && <span className="max-w-36 text-right text-xs text-amber-700">Waiting for client to fund escrow · KES {booking.quoteAmount?.toLocaleString() ?? "—"}</span>}
+                        {booking.status === "in_progress" && <button type="button" disabled={actionLoading === booking._id} onClick={() => void updateBooking(booking._id, "completion_requested")} className="rounded-xl bg-emerald-600 px-3 py-2 text-xs font-bold text-white disabled:opacity-50">Mark complete</button>}
+                        {booking.status === "completion_requested" && <span className="max-w-36 text-right text-xs text-orange-700">Work marked complete · awaiting client confirmation</span>}
                       </div>
                     </div>
                   </div>

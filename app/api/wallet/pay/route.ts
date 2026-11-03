@@ -13,7 +13,7 @@ import { logActivity } from '@/lib/activityLogger';
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    const user = session?.user as any;
+    const user = session?.user as { id?: string } | undefined;
 
     if (!user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -43,6 +43,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
+    if (booking.status !== 'accepted') {
+      return NextResponse.json({ error: 'Escrow can only be funded after the fundi accepts the booking' }, { status: 409 });
+    }
+
     if (!booking.quoteAmount || booking.quoteAmount <= 0) {
       return NextResponse.json({ error: 'This booking does not have a confirmed quote yet' }, { status: 400 });
     }
@@ -51,11 +55,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'This booking has already been paid' }, { status: 400 });
     }
 
+    const transactionsCollection = await getCollection('transactions');
+    const existingPayment = await transactionsCollection.findOne({
+      bookingId: new ObjectId(bookingId),
+      status: { $in: ['pending', 'held'] }
+    });
+    if (existingPayment) {
+      return NextResponse.json({ error: 'A payment request is already in progress or funded for this booking' }, { status: 409 });
+    }
+
     const amountRequired = booking.quoteAmount;
 
     // 2. Check wallet balance
     const walletsCollection = await getCollection('wallets');
-    let wallet = await walletsCollection.findOne({ userId: user.id });
+    const wallet = await walletsCollection.findOne({ userId: user.id });
 
     if (!wallet) {
       return NextResponse.json({ error: 'Wallet not found. Please top up your wallet first.' }, { status: 400 });
@@ -70,16 +83,18 @@ export async function POST(request: NextRequest) {
     }
 
     // 3. Deduct from wallet balance
-    await walletsCollection.updateOne(
-      { userId: user.id },
+    const debitResult = await walletsCollection.updateOne(
+      { userId: user.id, balance: { $gte: amountRequired } },
       {
         $inc: { balance: -amountRequired, totalWithdrawn: amountRequired },
         $set: { updatedAt: new Date() },
       }
     );
+    if (debitResult.modifiedCount !== 1) {
+      return NextResponse.json({ error: 'Wallet balance changed. Please refresh and try again.' }, { status: 409 });
+    }
 
     // 4. Create an 'held' transaction (already escrowed — no M-Pesa needed)
-    const transactionsCollection = await getCollection('transactions');
     await transactionsCollection.insertOne({
       transactionType: 'booking_escrow',
       bookingId: new ObjectId(bookingId),
@@ -95,12 +110,11 @@ export async function POST(request: NextRequest) {
       updatedAt: new Date(),
     });
 
-    // 5. Update booking status
+    // Keep the accepted status until the fundi explicitly starts the funded job.
     await bookingsCollection.updateOne(
-      { _id: new ObjectId(bookingId) },
+      { _id: new ObjectId(bookingId), status: 'accepted', paymentStatus: { $ne: 'escrowed' } },
       {
         $set: {
-          status: 'in_progress',
           paymentStatus: 'escrowed',
           updatedAt: new Date(),
         },
@@ -138,8 +152,8 @@ export async function POST(request: NextRequest) {
       message: `KES ${amountRequired.toLocaleString()} deducted from wallet and held in escrow.`,
       newBalance: wallet.balance - amountRequired,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Wallet Pay Error:', error);
-    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ error: error instanceof Error ? error.message : 'Internal server error' }, { status: 500 });
   }
 }

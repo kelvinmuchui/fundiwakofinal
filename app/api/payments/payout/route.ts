@@ -10,7 +10,7 @@ import { logActivity } from '@/lib/activityLogger';
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    const user = session?.user as any;
+    const user = session?.user as { id?: string; role?: string } | undefined;
 
     if (!user || !user.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     let booking;
     try {
       booking = await bookingsCollection.findOne({ _id: new ObjectId(bookingId) });
-    } catch (e) {
+    } catch {
       return NextResponse.json({ error: 'Invalid Booking ID format' }, { status: 400 });
     }
 
@@ -41,6 +41,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden. Only the client or admin can release funds.' }, { status: 403 });
     }
 
+    if (booking.status !== 'completed' || booking.paymentStatus !== 'escrowed' || !booking.clientConfirmedAt) {
+      return NextResponse.json({ error: 'The client must confirm the fundi’s completed work before releasing escrow' }, { status: 409 });
+    }
+
     // 3. Fetch transaction
     const transactionsCollection = await getCollection('transactions');
     const transaction = await transactionsCollection.findOne({
@@ -50,6 +54,9 @@ export async function POST(request: NextRequest) {
 
     if (!transaction) {
       return NextResponse.json({ error: 'No active escrow payment found for this booking (must be in "held" status).' }, { status: 400 });
+    }
+    if (transaction.disbursementStatus === 'pending') {
+      return NextResponse.json({ error: 'A payout is already being processed for this booking' }, { status: 409 });
     }
 
     // 4. Fetch Fundi details to get their payout phone number
@@ -173,8 +180,8 @@ export async function POST(request: NextRequest) {
       message: 'Payout request sent to Safaricom for processing. The status will update once Safaricom processes the transaction.'
     });
 
-  } catch (error: any) {
+  } catch (error) {
     console.error('Payout Release API Error:', error);
-    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ error: error instanceof Error ? error.message : 'Internal server error' }, { status: 500 });
   }
 }

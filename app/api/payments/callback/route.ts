@@ -119,12 +119,11 @@ export async function POST(request: NextRequest) {
           }
         );
 
-        // Update booking: status → in_progress, paymentStatus → escrowed
+        // Keep the accepted status so the fundi must explicitly start the job.
         await bookingsCollection.updateOne(
-          { _id: new ObjectId(bookingId) },
+          { _id: new ObjectId(bookingId), status: 'accepted' },
           {
             $set: {
-              status: 'in_progress',
               paymentStatus: 'escrowed',
               updatedAt: new Date(),
             },
@@ -194,8 +193,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ ResultCode: 0, ResultDesc: 'Callback processed successfully' });
 
-  } catch (error: any) {
+  } catch (error) {
     console.error('Callback Route Error:', error);
-    return NextResponse.json({ ResultCode: 1, ResultDesc: error.message || 'Internal error' }, { status: 400 });
+    return NextResponse.json({ ResultCode: 1, ResultDesc: error instanceof Error ? error.message : 'Internal error' }, { status: 400 });
   }
 }
