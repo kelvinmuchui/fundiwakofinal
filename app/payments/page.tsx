@@ -414,8 +414,8 @@ export default function PaymentsPage() {
 
   // Fundi submit quote and accept booking
   const handleAcceptWithQuote = async (bookingId: string) => {
-    if (!quoteValue || isNaN(Number(quoteValue)) || Number(quoteValue) <= 0) {
-      alert("Please enter a valid quote amount.");
+    if (!quoteValue || !Number.isInteger(Number(quoteValue)) || Number(quoteValue) <= 0) {
+      alert("Enter the whole KES amount the client will pay to fund escrow.");
       return;
     }
 
@@ -957,10 +957,12 @@ export default function PaymentsPage() {
                           <div className="mt-6 pt-4 border-t border-slate-800/30">
                             {quoteInputId === booking._id ? (
                               <div className="space-y-3">
-                                <label className="block text-xs text-slate-400 font-medium">Enter Quote Amount (KES):</label>
+                                <label className="block text-xs text-slate-400 font-medium">Amount client will pay to fund escrow (KES):</label>
                                 <div className="flex gap-2">
                                   <input
                                     type="number"
+                                    min="1"
+                                    step="1"
                                     value={quoteValue}
                                     onChange={(e) => setQuoteValue(e.target.value)}
                                     placeholder="e.g. 1500"
@@ -968,10 +970,10 @@ export default function PaymentsPage() {
                                   />
                                   <button
                                     onClick={() => handleAcceptWithQuote(booking._id)}
-                                    disabled={updatingQuoteId === booking._id}
+                                    disabled={updatingQuoteId === booking._id || !Number.isInteger(Number(quoteValue)) || Number(quoteValue) <= 0}
                                     className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-xs font-bold transition flex items-center justify-center min-w-20"
                                   >
-                                    {updatingQuoteId === booking._id ? "..." : "Accept"}
+                                    {updatingQuoteId === booking._id ? "..." : `Accept · KES ${Number(quoteValue || 0).toLocaleString()}`}
                                   </button>
                                   <button
                                     onClick={() => setQuoteInputId(null)}

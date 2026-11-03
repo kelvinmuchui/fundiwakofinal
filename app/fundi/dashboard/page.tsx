@@ -283,29 +283,30 @@ export default function FundiDashboard() {
                           <div className="flex flex-col items-end gap-2">
                             {quoteInputId === booking._id ? (
                               <div className="flex flex-wrap justify-end gap-2">
-                                <label className="sr-only" htmlFor={`quote-${booking._id}`}>Quote in Kenyan shillings</label>
+                                <label className="sr-only" htmlFor={`quote-${booking._id}`}>Amount the client will pay in Kenyan shillings</label>
                                 <input
                                   id={`quote-${booking._id}`}
                                   type="number"
                                   min="1"
+                                  step="1"
                                   value={quoteValue}
                                   onChange={(event) => setQuoteValue(event.target.value)}
-                                  placeholder="Quote (KES)"
+                                  placeholder="Client pays (KES)"
                                   className="w-32 rounded-xl border border-neutral-300 px-3 py-2 text-xs"
                                 />
                                 <button
                                   type="button"
-                                  disabled={actionLoading === booking._id || !Number.isFinite(Number(quoteValue)) || Number(quoteValue) <= 0}
+                                  disabled={actionLoading === booking._id || !Number.isInteger(Number(quoteValue)) || Number(quoteValue) <= 0}
                                   onClick={() => void updateBooking(booking._id, "accepted", Number(quoteValue))}
                                   className="rounded-xl bg-primary-500 px-3 py-2 text-xs font-bold text-white hover:bg-primary-600 disabled:opacity-50"
                                 >
-                                  {actionLoading === booking._id ? "..." : "Send quote"}
+                                  {actionLoading === booking._id ? "..." : `Accept · KES ${Number(quoteValue || 0).toLocaleString()}`}
                                 </button>
                                 <button type="button" onClick={() => setQuoteInputId(null)} className="rounded-xl border border-neutral-200 px-3 py-2 text-xs font-bold text-neutral-600">Cancel</button>
                               </div>
                             ) : (
                               <button type="button" onClick={() => setQuoteInputId(booking._id)} className="rounded-xl bg-amber-700 px-3 py-2 text-xs font-bold text-white hover:bg-primary-600">
-                                Accept & provide quote
+                                Accept with payable quote
                               </button>
                             )}
                             <button type="button" disabled={actionLoading === booking._id} onClick={() => void updateBooking(booking._id, "declined")} className="rounded-xl border border-neutral-200 px-3 py-2 text-xs font-bold text-neutral-600 hover:bg-neutral-50 disabled:opacity-50">Decline</button>

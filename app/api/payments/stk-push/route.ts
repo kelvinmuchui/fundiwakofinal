@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
     }
 
     const paymentAmount = Number(amount);
-    if (!Number.isFinite(paymentAmount) || paymentAmount !== booking.quoteAmount) {
+    if (!Number.isInteger(paymentAmount) || paymentAmount !== booking.quoteAmount) {
       return NextResponse.json({ error: 'Payment must match the fundi’s agreed quote' }, { status: 400 });
     }
 

@@ -203,9 +203,9 @@ export async function PATCH(request: NextRequest) {
     }
     if (
       quoteAmount !== undefined &&
-      (typeof quoteAmount !== 'number' || !Number.isFinite(quoteAmount) || quoteAmount <= 0)
+      (typeof quoteAmount !== 'number' || !Number.isInteger(quoteAmount) || quoteAmount <= 0)
     ) {
-      return NextResponse.json({ error: 'Quote amount must be a positive number' }, { status: 400 });
+      return NextResponse.json({ error: 'Quote amount must be a positive whole amount in KES' }, { status: 400 });
     }
     if (userRole === 'fundi' && status === 'accepted' && quoteAmount === undefined) {
       return NextResponse.json({ error: 'A quote amount is required before accepting this booking' }, { status: 400 });
