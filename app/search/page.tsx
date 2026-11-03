@@ -93,8 +93,7 @@ export default function SearchPage({ searchParams }: SearchPageProps) {
     experience: user.experience || "",
     skills: user.skills || [],
     tvetInstitution: user.tvetInstitution || "",
-    photoURL: user.photoURL ||
-      "https://images.unsplash.com/photo-1529101091764-c3526daf38fe?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
+    photoURL: user.photoURL || "/icon.svg",
     hourlyRate: user.hourlyRate ?? "Negotiable",
     description: user.description ?? "Experienced fundi ready to help with your project.",
     distance: user.distance,
@@ -134,6 +133,7 @@ export default function SearchPage({ searchParams }: SearchPageProps) {
                     <input
                       type="radio"
                       name="rating"
+                      checked={query.minRating === rating.toString()}
                       className="w-4 h-4 text-primary-600 focus:ring-primary-500 border-neutral-300"
                       onChange={() => {
                         const newQuery = { ...query, minRating: rating.toString() };
@@ -144,12 +144,27 @@ export default function SearchPage({ searchParams }: SearchPageProps) {
                     <span className="text-sm text-neutral-700">{rating}+ Stars</span>
                   </label>
                 ))}
+                <label className="flex items-center gap-3 cursor-pointer rounded-2xl border border-neutral-200 px-4 py-3 transition hover:border-primary-400">
+                  <input
+                    type="radio"
+                    name="rating"
+                    checked={!query.minRating}
+                    className="w-4 h-4 text-primary-600 focus:ring-primary-500 border-neutral-300"
+                    onChange={() => {
+                      const newQuery = { ...query, minRating: "" };
+                      setQuery(newQuery);
+                      void searchFundis(newQuery);
+                    }}
+                  />
+                  <span className="text-sm text-neutral-700">Any rating</span>
+                </label>
               </div>
             </div>
 
             <div className="space-y-2">
               <p className="text-sm font-semibold uppercase tracking-[0.24em] text-neutral-500">Price Range</p>
               <select
+                value={query.maxPrice}
                 className="w-full px-4 py-3 rounded-2xl border border-neutral-200 text-sm focus:ring-2 focus:ring-primary-500 outline-none"
                 onChange={(e) => {
                   const newQuery = { ...query, maxPrice: e.target.value };
@@ -197,7 +212,7 @@ export default function SearchPage({ searchParams }: SearchPageProps) {
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-8">
             <div>
               <h2 className="text-2xl font-heading font-bold text-secondary-500">
-                {query.service || query.location ? "Search Results" : "All Fundis"}
+                {query.service || query.location || query.minRating || query.maxPrice ? "Search Results" : "All Fundis"}
               </h2>
             </div>
             <div className="flex gap-3">

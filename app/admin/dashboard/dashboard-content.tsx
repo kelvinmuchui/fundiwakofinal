@@ -25,6 +25,13 @@ interface User {
   [key: string]: unknown;
 }
 
+interface AdminDashboardCache {
+  users: User[];
+  applications: WorkerApplication[];
+  postings: CorporatePosting[];
+  internshipApplications: InternshipApplication[];
+}
+
 interface WorkerApplication {
   _id: string;
   name: string;
@@ -79,6 +86,18 @@ interface InternshipApplication {
   resumeUrl?: string;
   status: string;
   submittedAt: string;
+}
+
+const ADMIN_CACHE_TTL = 5 * 60 * 1000;
+
+let adminDashboardCache: (AdminDashboardCache & { savedAt: number }) | null = null;
+
+function readAdminDashboardCache(): AdminDashboardCache | null {
+  if (!adminDashboardCache || Date.now() - adminDashboardCache.savedAt > ADMIN_CACHE_TTL) {
+    adminDashboardCache = null;
+    return null;
+  }
+  return adminDashboardCache;
 }
 
 const hiddenUserFields = new Set([
@@ -158,7 +177,15 @@ export default function AdminDashboardContent() {
       return;
     }
 
-    fetchData();
+    const cachedData = readAdminDashboardCache();
+    if (cachedData) {
+      setUsers(cachedData.users);
+      setApplications(cachedData.applications);
+      setPostings(cachedData.postings);
+      setInternshipApplications(cachedData.internshipApplications);
+      setLoading(false);
+    }
+    void fetchData({ showLoading: !cachedData });
   }, [session, status, router]);
 
   useEffect(() => {
@@ -168,8 +195,8 @@ export default function AdminDashboardContent() {
     }
   }, [searchParams]);
 
-  const fetchData = async () => {
-    setLoading(true);
+  const fetchData = async ({ showLoading = false }: { showLoading?: boolean } = {}) => {
+    if (showLoading) setLoading(true);
     try {
       const [usersRes, appsRes, postingsRes, internshipAppsRes] = await Promise.all([
         fetch('/api/admin/users', { credentials: 'include' }),
@@ -178,30 +205,42 @@ export default function AdminDashboardContent() {
         fetch('/api/internship-applications', { credentials: 'include' }),
       ]);
 
-      if (usersRes.ok) {
-        const usersData = await usersRes.json();
+      const usersData = usersRes.ok ? await usersRes.json() : null;
+      const appsData = appsRes.ok ? await appsRes.json() : null;
+      const postsData = postingsRes.ok ? await postingsRes.json() : null;
+      const internshipAppsData = internshipAppsRes.ok ? await internshipAppsRes.json() : null;
+
+      if (usersData) {
         setUsers(usersData);
       }
-
-      if (appsRes.ok) {
-        const appsData = await appsRes.json();
+      if (appsData) {
         setApplications(appsData);
       }
-
-      if (postingsRes.ok) {
-        const postsData = await postingsRes.json();
+      if (postsData) {
         setPostings(postsData);
       }
-
-      if (internshipAppsRes.ok) {
-        const internshipAppsData = await internshipAppsRes.json();
+      if (internshipAppsData) {
         setInternshipApplications(internshipAppsData);
+      }
+
+      if (usersData && appsData && postsData && internshipAppsData) {
+        adminDashboardCache = {
+          users: usersData,
+          applications: appsData,
+          postings: postsData,
+          internshipApplications: internshipAppsData,
+          savedAt: Date.now(),
+        };
       }
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const selectUser = (user: User) => {
+    setSelectedUser(user);
   };
 
   const updateApplicationStatus = async (id: string, newStatus: string) => {
@@ -302,6 +341,13 @@ export default function AdminDashboardContent() {
       }
 
       setUsers((currentUsers) => currentUsers.filter((currentUser) => currentUser._id !== user._id));
+      if (adminDashboardCache) {
+        adminDashboardCache = {
+          ...adminDashboardCache,
+          users: adminDashboardCache.users.filter((currentUser) => currentUser._id !== user._id),
+          savedAt: Date.now(),
+        };
+      }
       setSelectedUser(null);
       setSuccessMessage('User deleted successfully.');
       setTimeout(() => setSuccessMessage(''), 3000);
@@ -383,7 +429,7 @@ export default function AdminDashboardContent() {
         </div>
         <button
           type="button"
-          onClick={fetchData}
+          onClick={() => void fetchData()}
           className="inline-flex w-fit items-center gap-2 rounded-md border border-slate-300 bg-white px-3.5 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
         >
           <RefreshCw size={15} />
@@ -604,7 +650,7 @@ export default function AdminDashboardContent() {
                     </thead>
                     <tbody className="divide-y divide-gray-700">
                       {filteredUsers.map(user => (
-                        <tr key={user._id} className="group hover:bg-gray-700/50 transition-colors cursor-pointer" onClick={() => setSelectedUser(user)}>
+                        <tr key={user._id} className="group hover:bg-gray-700/50 transition-colors cursor-pointer" onClick={() => selectUser(user)}>
                           <td className="px-6 py-4 text-sm text-white font-medium">{user.name}</td>
                           <td className="px-6 py-4 text-sm text-gray-400">{user.email}</td>
                           <td className="px-6 py-4 text-sm text-gray-400">{user.phone}</td>

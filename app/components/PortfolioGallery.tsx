@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 interface PortfolioItem {
   _id: string;
@@ -25,53 +25,93 @@ export default function PortfolioGallery({ fundiId, isOwner = false }: Portfolio
   const [showAddForm, setShowAddForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [activeFilter, setActiveFilter] = useState('all');
+  const [errorMessage, setErrorMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   const [formData, setFormData] = useState({
     title: '', description: '', category: 'general',
     beforePhoto: '', afterPhoto: '', photos: [] as string[],
   });
 
-  useEffect(() => { fetchPortfolio(); }, [fundiId]);
-
-  const fetchPortfolio = async () => {
+  const fetchPortfolio = useCallback(async () => {
+    setErrorMessage('');
     try {
       const res = await fetch(`/api/fundi/${fundiId}/portfolio`);
-      if (res.ok) { const json = await res.json(); setItems(json.items || []); }
-    } catch (err) { console.error('Error fetching portfolio:', err); }
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Unable to load portfolio');
+      setItems(Array.isArray(json.items) ? json.items : []);
+    } catch (err) {
+      console.error('Error fetching portfolio:', err);
+      setErrorMessage(err instanceof Error ? err.message : 'Unable to load portfolio');
+    }
     finally { setLoading(false); }
-  };
+  }, [fundiId]);
+
+  useEffect(() => { void fetchPortfolio(); }, [fetchPortfolio]);
 
   const handlePhotoUpload = (field: 'beforePhoto' | 'afterPhoto' | 'photos') => (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    files.forEach(file => {
-      if (file.size > 5 * 1024 * 1024) return;
+    e.target.value = '';
+    setErrorMessage('');
+
+    const currentCount = formData.photos.length +
+      (formData.beforePhoto ? 1 : 0) +
+      (formData.afterPhoto ? 1 : 0) -
+      (field === 'beforePhoto' && formData.beforePhoto ? 1 : 0) -
+      (field === 'afterPhoto' && formData.afterPhoto ? 1 : 0);
+    const remainingSlots = 4 - currentCount;
+    const selectedFiles = files.slice(0, remainingSlots);
+
+    if (files.some((file) => !['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.type))) {
+      setErrorMessage('Choose a JPEG, PNG, GIF, or WebP image.');
+      return;
+    }
+    if (files.some((file) => file.size > 2 * 1024 * 1024)) {
+      setErrorMessage('Each portfolio image must be 2MB or smaller.');
+      return;
+    }
+    if (selectedFiles.length < files.length) {
+      setErrorMessage('A project can include up to 4 images, 2MB each.');
+    }
+
+    Promise.all(selectedFiles.map((file) => new Promise<string>((resolve, reject) => {
       const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64 = reader.result as string;
-        if (field === 'photos') {
-          setFormData(prev => ({ ...prev, photos: [...prev.photos, base64] }));
-        } else {
-          setFormData(prev => ({ ...prev, [field]: base64 }));
-        }
-      };
+      reader.onload = () => typeof reader.result === 'string'
+        ? resolve(reader.result)
+        : reject(new Error('Unable to read selected image'));
+      reader.onerror = () => reject(new Error('Unable to read selected image'));
       reader.readAsDataURL(file);
+    }))).then((images) => {
+      setFormData((previous) => {
+        if (field === 'photos') return { ...previous, photos: [...previous.photos, ...images] };
+        return { ...previous, [field]: images[0] ?? previous[field] };
+      });
+    }).catch((error: unknown) => {
+      setErrorMessage(error instanceof Error ? error.message : 'Unable to read selected image');
     });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
+    setErrorMessage('');
+    setSuccessMessage('');
     try {
       const res = await fetch(`/api/fundi/${fundiId}/portfolio`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       });
-      if (res.ok) {
-        setFormData({ title: '', description: '', category: 'general', beforePhoto: '', afterPhoto: '', photos: [] });
-        setShowAddForm(false);
-        fetchPortfolio();
-      }
-    } catch (err) { console.error('Error adding portfolio item:', err); }
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || 'Unable to add portfolio item');
+      if (!result.item) throw new Error('Portfolio item was saved but could not be displayed. Refresh the page.');
+      setItems((previous) => [result.item as PortfolioItem, ...previous]);
+      setFormData({ title: '', description: '', category: 'general', beforePhoto: '', afterPhoto: '', photos: [] });
+      setShowAddForm(false);
+      setSuccessMessage('Your project is now visible on your public profile.');
+    } catch (err) {
+      console.error('Error adding portfolio item:', err);
+      setErrorMessage(err instanceof Error ? err.message : 'Unable to add portfolio item');
+    }
     finally { setSaving(false); }
   };
 
@@ -79,8 +119,13 @@ export default function PortfolioGallery({ fundiId, isOwner = false }: Portfolio
     if (!confirm('Delete this portfolio item?')) return;
     try {
       const res = await fetch(`/api/fundi/${fundiId}/portfolio?itemId=${itemId}`, { method: 'DELETE' });
-      if (res.ok) setItems(prev => prev.filter(i => i._id !== itemId));
-    } catch (err) { console.error('Error deleting:', err); }
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || 'Unable to delete portfolio item');
+      setItems(prev => prev.filter(i => i._id !== itemId));
+    } catch (err) {
+      console.error('Error deleting portfolio item:', err);
+      setErrorMessage(err instanceof Error ? err.message : 'Unable to delete portfolio item');
+    }
   };
 
   const categories = [
@@ -121,6 +166,17 @@ export default function PortfolioGallery({ fundiId, isOwner = false }: Portfolio
         )}
       </div>
 
+      {errorMessage && (
+        <div role="alert" className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {errorMessage}
+        </div>
+      )}
+      {successMessage && (
+        <p role="status" className="mb-5 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+          {successMessage}
+        </p>
+      )}
+
       {/* Add Form */}
       {showAddForm && isOwner && (
         <form onSubmit={handleSubmit} className="mb-8 p-6 bg-neutral-50 rounded-2xl border border-neutral-100 space-y-4">
@@ -149,18 +205,19 @@ export default function PortfolioGallery({ fundiId, isOwner = false }: Portfolio
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-black text-neutral-400 uppercase tracking-widest mb-1">Before Photo</label>
-              <input type="file" accept="image/*" onChange={handlePhotoUpload('beforePhoto')} className="w-full text-sm file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-neutral-100 file:text-neutral-700 file:font-bold file:text-xs hover:file:bg-neutral-200" />
+              <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={handlePhotoUpload('beforePhoto')} className="w-full text-sm file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-neutral-100 file:text-neutral-700 file:font-bold file:text-xs hover:file:bg-neutral-200" />
               {formData.beforePhoto && <img src={formData.beforePhoto} alt="Before" className="mt-2 h-20 w-20 object-cover rounded-xl" />}
             </div>
             <div>
               <label className="block text-xs font-black text-neutral-400 uppercase tracking-widest mb-1">After Photo</label>
-              <input type="file" accept="image/*" onChange={handlePhotoUpload('afterPhoto')} className="w-full text-sm file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-neutral-100 file:text-neutral-700 file:font-bold file:text-xs hover:file:bg-neutral-200" />
+              <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={handlePhotoUpload('afterPhoto')} className="w-full text-sm file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-neutral-100 file:text-neutral-700 file:font-bold file:text-xs hover:file:bg-neutral-200" />
               {formData.afterPhoto && <img src={formData.afterPhoto} alt="After" className="mt-2 h-20 w-20 object-cover rounded-xl" />}
             </div>
           </div>
           <div>
             <label className="block text-xs font-black text-neutral-400 uppercase tracking-widest mb-1">Additional Photos</label>
-            <input type="file" accept="image/*" multiple onChange={handlePhotoUpload('photos')} className="w-full text-sm file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-neutral-100 file:text-neutral-700 file:font-bold file:text-xs hover:file:bg-neutral-200" />
+            <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple onChange={handlePhotoUpload('photos')} className="w-full text-sm file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-neutral-100 file:text-neutral-700 file:font-bold file:text-xs hover:file:bg-neutral-200" />
+            <p className="mt-1 text-xs text-neutral-500">Up to 4 images per project, 2MB each.</p>
             {formData.photos.length > 0 && (
               <div className="flex gap-2 mt-2 flex-wrap">
                 {formData.photos.map((p, i) => (

@@ -32,10 +32,14 @@ export async function GET(request: NextRequest) {
         blocked: 0,
         profileViews: 0,
         notifications: 0,
+        certificates: 0,
+        showcasePhotos: 0,
       }
     }).sort({ createdAt: -1 }).toArray();
 
-    return NextResponse.json(users);
+    return NextResponse.json(users, {
+      headers: { 'Cache-Control': 'private, max-age=30, stale-while-revalidate=120' },
+    });
   } catch (error) {
     console.error('Error fetching users:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

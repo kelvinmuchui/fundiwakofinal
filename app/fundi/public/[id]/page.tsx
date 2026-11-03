@@ -211,7 +211,7 @@ export default function PublicFundiProfile() {
           <div className="flex flex-col md:flex-row items-center md:items-end gap-6 text-center md:text-left">
             <div className="relative group">
               <div className="absolute inset-0 bg-white rounded-3xl blur-md opacity-20 group-hover:opacity-40 transition-opacity" />
-              <img src={profile.photoURL || 'https://images.unsplash.com/photo-1529101091764-c3526daf38fe?auto=format&fit=crop&q=80&w=400'}
+              <img src={profile.photoURL || '/icon.svg'}
                 alt={profile.name} className="w-32 h-32 md:w-48 md:h-48 rounded-3xl object-cover border-4 border-white shadow-2xl relative z-10" />
               {profile.isVerified && (
                 <div className="absolute -top-3 -right-3 bg-white p-2 rounded-2xl shadow-lg z-20">

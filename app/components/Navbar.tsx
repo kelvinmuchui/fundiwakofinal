@@ -29,7 +29,10 @@ export default function Navbar() {
     const pathname = usePathname();
     const user = session?.user as { name?: string | null; role?: string } | undefined;
     const isFundi = user?.role === 'fundi';
-    const visibleNavLinks = isFundi ? fundiNavLinks : navLinks;
+    const visibleNavLinks = isFundi
+        ? [{ name: "My Profile", href: "/fundi/profile" }, ...fundiNavLinks]
+        : navLinks;
+    const profileHref = isFundi ? "/fundi/profile" : "/profile";
     const isAdminPage = pathname?.startsWith('/admin');
     const [unreadMessages, setUnreadMessages] = useState(0);
 
@@ -156,10 +159,9 @@ export default function Navbar() {
                             <div className="w-10 h-10 bg-gray-200/20 rounded-full animate-pulse"></div>
                         ) : session ? (
                             <div className="flex items-center gap-3">
-                                {!isFundi && (
-                                    <>
+                                <>
                                         <Link
-                                            href="/profile"
+                                            href={profileHref}
                                             className={`flex items-center gap-2 px-3 py-2 rounded-xl transition-all duration-300 ${isScrolled ? "hover:bg-primary-50 text-gray-800 hover:text-primary-600" : "hover:bg-white/10 text-white"}`}
                                         >
                                             <div className="w-8 h-8 rounded-lg bg-primary-500/20 flex items-center justify-center text-xs font-bold text-primary-500">
@@ -168,7 +170,7 @@ export default function Navbar() {
                                             <span className="text-sm font-medium">Profile</span>
                                         </Link>
                                         <Link
-                                            href="/dashboard"
+                                            href={isFundi ? "/fundi/dashboard" : "/dashboard"}
                                             className={`px-4 py-2 rounded-xl text-sm font-heading font-semibold transition-all duration-300 border-2 ${isScrolled
                                                 ? "border-primary-500 text-primary-500 hover:bg-primary-500 hover:text-white"
                                                 : "border-white/30 text-white hover:bg-white/10"
@@ -176,6 +178,7 @@ export default function Navbar() {
                                         >
                                             Dashboard
                                         </Link>
+                                        {!isFundi && (
                                         <Link
                                             href="/payments"
                                             className={`px-4 py-2 rounded-xl text-sm font-heading font-semibold transition-all duration-300 ${isScrolled
@@ -186,8 +189,8 @@ export default function Navbar() {
                                         >
                                             💰 Wallet
                                         </Link>
+                                        )}
                                     </>
-                                )}
                                 {user?.role === 'admin' && (
                                     <Link href="/admin/dashboard" className="px-4 py-2 rounded-xl text-sm font-heading font-semibold bg-purple-600 text-white hover:bg-purple-700 transition-all duration-300">
                                         Admin
@@ -291,15 +294,15 @@ export default function Navbar() {
                                              <div className="text-xs text-gray-500 uppercase tracking-wider">{user?.role}</div>
                                          </div>
                                     </div>
+                                    <Link
+                                        href={profileHref}
+                                        className="block px-4 py-3 rounded-xl text-black font-medium hover:bg-primary-50 hover:text-primary-600 transition-all duration-200"
+                                        onClick={() => setIsMobileMenuOpen(false)}
+                                    >
+                                        My Profile
+                                    </Link>
                                     {!isFundi && (
                                         <>
-                                            <Link
-                                                href="/fundi/dashboard"
-                                                className="block px-4 py-3 rounded-xl text-black font-medium hover:bg-primary-50 hover:text-primary-600 transition-all duration-200"
-                                                onClick={() => setIsMobileMenuOpen(false)}
-                                            >
-                                                Fundi Dashboard
-                                            </Link>
                                             <Link
                                                 href="/dashboard"
                                                 className="block px-4 py-3 rounded-xl text-black font-medium hover:bg-primary-50 hover:text-primary-600 transition-all duration-200"
